@@ -1,0 +1,27 @@
+<?php
+
+namespace Database\Factories;
+
+use Illuminate\Database\Eloquent\Factories\Factory;
+
+/**
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Currency>
+ */
+class CurrencyFactory extends Factory
+{
+    /**
+     * Define the model's default state.
+     *
+     * @return array<string, mixed>
+     */
+    public function definition()
+    {
+        return [
+            "name" => $this->faker->word(),
+            "iso_code" => $this->faker->asciify("**"),
+            "sign" => $this->faker->randomElement(["$" , "S/.", "%", "&"]),
+            "sbs_code" => $this->faker->asciify("**"),
+            "active" => $this->faker->boolean(),
+        ];
+    }
+}
