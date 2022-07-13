@@ -22,7 +22,7 @@ return new class extends Migration
             $table->string('phone', 30);
             $table->integer('tries')->default(0);
             $table->string('password');
-            $table->timestamp('last_login');
+            $table->timestamp('last_login')->nullable();
             $table->enum('status', \App\Enums\UserStatus::asArray());
             $table->timestamps();
         });
