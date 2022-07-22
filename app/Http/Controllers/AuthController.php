@@ -3,13 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Enums\UserStatus;
+use App\Models\AccessLog;
+use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class AuthController extends Controller
 {
-    public function login(Request $request)
-    {
+    public function login(Request $request) {
         $credentials = $request->only('email', 'password');
 
         if (Auth::attempt(array_merge($credentials, ['status' => UserStatus::Activo]))) {
@@ -17,7 +19,14 @@ class AuthController extends Controller
             $request->session()->regenerate();
 
             $user = Auth::user();
-            //$user->load("assigned_client");
+            $user->tries = 0;
+            $user->last_login = Carbon::now();
+            $user->save();
+
+            AccessLog::create([
+                'ip' => $request->ip(),
+                'user_id' => $user->id
+            ]);
 
             return response()->json([
                 'success' => true,
@@ -25,12 +34,68 @@ class AuthController extends Controller
                     'user' => $user,
                     'assigned_client' => $user->assigned_client
                 ]
-            ], 200);
+            ]);
 
-        } else
-        {
+        } else {
+
+            // Add login attempt
+            $user = User::where('email', $credentials->email)->first();
+            $user->tries++;
+
+            // Check login attempts exceeds 5
+            if($user->tries >= 5) {
+                $user->status = UserStatus::Bloqueado;
+            }
+
+            $user->save();
+
             return response()->json([
-                'errors' => 'No cuenta con sufientes permisos',
+                'errors' => 'Usuario o contraseña incorrectos',
+            ], 403);
+        }
+    }
+
+    public function login_token(Request $request) {
+        $credentials = $request->only('email', 'password');
+
+        if (Auth::attempt(array_merge($credentials, ['status' => UserStatus::Activo]))) {
+
+            $request->session()->regenerate();
+
+            $user = Auth::user();
+            $user->tries = 0;
+            $user->last_login = Carbon::now();
+            $user->save();
+
+            AccessLog::create([
+                'ip' => $request->ip(),
+                'user_id' => $user->id
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'token' => $user->createToken("basic")->plainTextToken,
+                    'user' => $user,
+                    'assigned_client' => $user->assigned_client
+                ]
+            ]);
+
+        } else {
+
+            // Add login attempt
+            $user = User::where('email', $credentials->email)->first();
+            $user->tries++;
+
+            // Check login attempts exceeds 5
+            if($user->tries >= 5) {
+                $user->status = UserStatus::Bloqueado;
+            }
+
+            $user->save();
+
+            return response()->json([
+                'errors' => 'Usuario o contraseña incorrectos',
             ], 403);
         }
     }
