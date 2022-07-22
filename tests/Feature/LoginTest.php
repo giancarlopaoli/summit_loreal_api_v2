@@ -9,6 +9,7 @@ use App\Models\User;
 use Database\Factories\ClientFactory;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
+use Illuminate\Testing\Fluent\AssertableJson;
 use Tests\TestCase;
 
 class LoginTest extends TestCase
@@ -33,11 +34,17 @@ class LoginTest extends TestCase
 
         $response
             ->assertStatus(200)
-            ->assertJson([
-                'success' => true,
-            ]);
+            ->assertJson(fn (AssertableJson $json) =>
+                $json->where("success", true)
+                ->where("data.user.tries", 0)
+                ->etc()
+            );
 
         self::assertNotNull($response->getData()->data->user, "User was not returned");
         self::assertNotNull($response->getData()->data->assigned_client, "User client has not being assigned");
+
+        $this->assertDatabaseHas("access_logs", [
+            'user_id' => $response->getData()->data->user->id
+        ]);
     }
 }

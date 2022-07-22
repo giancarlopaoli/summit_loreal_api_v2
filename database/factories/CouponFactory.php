@@ -28,7 +28,8 @@ class CouponFactory extends Factory
             "value" => $this->faker->randomFloat(2, 3, 10),
             "limit_total" => $this->faker->randomNumber(5),
             "limit_individual" => $this->faker->randomNumber(3),
-            "start_month" => $this->faker->date("Y-m-d", "-1 month"),
+            "active" => $this->faker->boolean(),
+            "start_date" => $this->faker->date("Y-m-d", "-1 month"),
             "end_date" => $this->faker->date()
         ];
     }

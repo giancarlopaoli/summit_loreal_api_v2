@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Configuration;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -14,6 +15,82 @@ class ConfigurationSeeder extends Seeder
      */
     public function run()
     {
-        //
+        Configuration::create([
+            "shortname" => "IGV",
+            "description" => "Porcentage IGV",
+            "value" => 18,
+        ]);
+
+        Configuration::create([
+            "shortname" => "EXPTIME",
+            "description" => "Tiempo expiración en minutos",
+            "value" => 5,
+        ]);
+
+        Configuration::create([
+            "shortname" => "OPSSTARTTIME",
+            "description" => "Hora inicio operaciones",
+            "value" => "9:00",
+        ]);
+
+        Configuration::create([
+            "shortname" => "OPSENDTIME",
+            "description" => "Hora fin operaciones",
+            "value" => "18:00",
+        ]);
+
+        Configuration::create([
+            "shortname" => "OPSSTARTDATE",
+            "description" => "Dia inicio operaciones",
+            "value" => 1,
+        ]);
+
+        Configuration::create([
+            "shortname" => "OPSENDDATE",
+            "description" => "Dia fin operaciones",
+            "value" => 5,
+        ]);
+
+        Configuration::create([
+            "shortname" => "MARKETCLOSE",
+            "description" => "Hora de cierre del mercado",
+            "value" => "13:30",
+        ]);
+
+        Configuration::create([
+            "shortname" => "TIMECREATE",
+            "description" => "Tiempo de permanencia en crear operación",
+            "value" => 180,
+        ]);
+
+        Configuration::create([
+            "shortname" => "COUPAVAIL",
+            "description" => "Disponibilidad de cupones (ALL,PN,PJ)",
+            "value" => "ALL",
+        ]);
+
+        Configuration::create([
+            "shortname" => "MAILSOPS",
+            "description" => "Email de envio comprobante de pago billex",
+            "value" => "operaciones@billex.pe",
+        ]);
+
+        Configuration::create([
+            "shortname" => "MAILSCORFID",
+            "description" => "Email de envio comprobante de pago corfid",
+            "value" => "corfid@billex.pe",
+        ]);
+
+        Configuration::create([
+            "shortname" => "BTHS",
+            "description" => "Tiempo de bloqueo por spread alto en segundos",
+            "value" => 40,
+        ]);
+
+        Configuration::create([
+            "shortname" => "MNTMIN",
+            "description" => "Monto minimo requerido para crear una operacion",
+            "value" => 2000,
+        ]);
     }
 }

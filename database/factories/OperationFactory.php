@@ -33,6 +33,7 @@ class OperationFactory extends Factory
             "currency_id" => Currency::factory(),
             "exchange_rate" => $this->faker->randomFloat(6, 2.5, 4.5),
             "comission_spread" => $this->faker->randomFloat(2, 3, 10),
+            "comission_amount" => $this->faker->randomFloat(2, 10, 200),
             "spread" => $this->faker->randomFloat(2, 1, 5),
             "igv" => $this->faker->randomFloat(2, 100, 1000),
             "operation_status_id" => OperationStatus::factory(),

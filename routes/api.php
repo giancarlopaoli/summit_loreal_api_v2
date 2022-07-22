@@ -16,12 +16,21 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware('encryptresponses')->group(function () {
     Route::post('login', [\App\Http\Controllers\AuthController::class, 'login']);
+    Route::post('login/token', [\App\Http\Controllers\AuthController::class, 'login_token']);
     Route::post('logout', [\App\Http\Controllers\AuthController::class, 'logout']);
 
 
     Route::group(['middleware' => ['auth:sanctum']], function () {
         Route::get('/me', function(Request $request) {
             return auth()->user();
+        });
+
+        Route::prefix('dashboard')->group(function () {
+            Route::get('indicators', [\App\Http\Controllers\DashboardController::class, 'get_indicators']);
+        });
+
+        Route::prefix('immediate_operation')->group(function () {
+            Route::get('minimum_amount', [\App\Http\Controllers\InmediateOperationController::class, 'get_minimum_amount']);
         });
     });
 

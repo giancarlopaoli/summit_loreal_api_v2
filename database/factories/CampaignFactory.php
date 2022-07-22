@@ -22,7 +22,7 @@ class CampaignFactory extends Factory
             "started_at" => $this->faker->dateTimeInInterval("-1 month"),
             "finished_at" => $this->faker->dateTimeInInterval("+1 month"),
             "active" => $this->faker->boolean(),
-            "created_by" => User::factory()
+            "user_id" => User::factory()
         ];
     }
 }

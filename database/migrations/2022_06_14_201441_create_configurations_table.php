@@ -16,10 +16,10 @@ return new class extends Migration
         Schema::create('configurations', function (Blueprint $table) {
             $table->id();
             $table->string('shortname', 20);
-            $table->string('description', 45);
+            $table->string('description', 200);
             $table->string('value', 245);
-            $table->boolean('active');
-            $table->foreignId('updated_by')->constrained('users');
+            $table->boolean('active')->default(true);
+            $table->foreignId('updated_by')->nullable()->constrained('users');
             $table->timestamps();
         });
     }
