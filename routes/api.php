@@ -32,6 +32,11 @@ Route::middleware('encryptresponses')->group(function () {
         Route::prefix('immediate_operation')->group(function () {
             Route::get('minimum_amount', [\App\Http\Controllers\InmediateOperationController::class, 'get_minimum_amount']);
         });
+
+        Route::prefix('myOperations')->group(function () {
+            Route::get('list', [\App\Http\Controllers\MyOperationsController::class, 'list_my_operations']);
+            Route::get('{operation}', [\App\Http\Controllers\MyOperationsController::class, 'operation_detail']);
+        });
     });
 
     Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
