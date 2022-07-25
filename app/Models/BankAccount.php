@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class BankAccount extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     public function type() {
         return $this->belongsTo(AccountType::class);
@@ -31,5 +32,9 @@ class BankAccount extends Model
 
     public function currency() {
         return $this->belongsTo(Currency::class);
+    }
+
+    public function status() {
+        return $this->belongsTo(BankAccountStatus::class, 'bank_account_status_id');
     }
 }

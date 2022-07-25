@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\EconomicActivity;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -14,6 +15,9 @@ class EconomicActivitySeeder extends Seeder
      */
     public function run()
     {
-        //
+        EconomicActivity::create([
+           'name' => 'Test activity',
+           'code' => 'TEST'
+        ]);
     }
 }

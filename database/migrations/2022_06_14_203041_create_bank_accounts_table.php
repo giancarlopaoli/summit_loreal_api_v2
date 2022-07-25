@@ -20,11 +20,12 @@ return new class extends Migration
             $table->foreignIdFor(\App\Models\Bank::class)->constrained();
             $table->string('account_number', 25);
             $table->string('cci_number', 25);
-            $table->boolean('active');
+            $table->foreignIdFor(\App\Models\BankAccount::class)->constrained();
             $table->string('comments', 150);
             $table->foreignIdFor(\App\Models\AccountType::class)->constrained();
             $table->foreignIdFor(\App\Models\Currency::class)->constrained();
             $table->foreignId('updated_by')->constrained('users');
+            $table->softDeletes();
             $table->timestamps();
         });
     }

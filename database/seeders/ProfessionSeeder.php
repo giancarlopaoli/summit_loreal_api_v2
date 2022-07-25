@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Profession;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -14,6 +15,8 @@ class ProfessionSeeder extends Seeder
      */
     public function run()
     {
-        //
+        Profession::create([
+            'name' => 'Test Profession'
+        ]);
     }
 }

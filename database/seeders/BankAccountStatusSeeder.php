@@ -2,11 +2,11 @@
 
 namespace Database\Seeders;
 
-use App\Models\ClientStatus;
+use App\Enums\BankAccountStatus;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
-class ClientStatusSeeder extends Seeder
+class BankAccountStatusSeeder extends Seeder
 {
     /**
      * Run the database seeds.
@@ -15,21 +15,20 @@ class ClientStatusSeeder extends Seeder
      */
     public function run()
     {
-        ClientStatus::create([
+        BankAccountStatus::create([
             'name' => 'Activo'
         ]);
 
-        ClientStatus::create([
+        BankAccountStatus::create([
             'name' => 'Inactivo'
         ]);
 
-        ClientStatus::create([
-            'name' => 'Registrado'
+        BankAccountStatus::create([
+            'name' => 'Pendiente'
         ]);
 
-        ClientStatus::create([
-            'name' => 'Pendiente Activacion'
+        BankAccountStatus::create([
+            'name' => 'Rechazado'
         ]);
-
     }
 }

@@ -2,11 +2,11 @@
 
 namespace Database\Seeders;
 
-use App\Models\LeadStatus;
+use App\Models\TrackingStatus;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
-class LeadStatusSeeder extends Seeder
+class TrackingStatusSeeder extends Seeder
 {
     /**
      * Run the database seeds.
@@ -15,35 +15,27 @@ class LeadStatusSeeder extends Seeder
      */
     public function run()
     {
-        LeadStatus::create([
-            'name' => 'Registrado'
-        ]);
-
-        LeadStatus::create([
+        TrackingStatus::create([
             'name' => 'Interesado'
         ]);
 
-        LeadStatus::create([
+        TrackingStatus::create([
             'name' => 'No interesado'
         ]);
 
-        LeadStatus::create([
+        TrackingStatus::create([
             'name' => 'No contesta'
         ]);
 
-        LeadStatus::create([
+        TrackingStatus::create([
             'name' => 'Datos incorrectos'
         ]);
 
-        LeadStatus::create([
+        TrackingStatus::create([
             'name' => 'Seguimiento incumplido'
         ]);
 
-        LeadStatus::create([
-            'name' => 'Cliente'
-        ]);
-
-        LeadStatus::create([
+        TrackingStatus::create([
             'name' => 'Pendiente Respuesta'
         ]);
 
