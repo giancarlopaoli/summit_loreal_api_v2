@@ -67,7 +67,7 @@ class MyBankAccountsController extends Controller
             ]);
         }
 
-        $client->bank_accounts()->create([
+        $account = $client->bank_accounts()->create([
             'alias' => $request->alias ?? '',
             'bank_id' => $request->bank_id,
             'account_number' => $request->account_number,
@@ -77,6 +77,11 @@ class MyBankAccountsController extends Controller
             'account_type_id' => $request->account_type_id,
             'currency_id' => $request->currency_id,
             'updated_by' => auth()->id()
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'data' => $account
         ]);
     }
 }

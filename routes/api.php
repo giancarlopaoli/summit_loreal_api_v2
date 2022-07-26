@@ -37,6 +37,11 @@ Route::middleware('encryptresponses')->group(function () {
             Route::get('list', [\App\Http\Controllers\MyOperationsController::class, 'list_my_operations']);
             Route::get('{operation}', [\App\Http\Controllers\MyOperationsController::class, 'operation_detail']);
         });
+
+        Route::prefix('myBankAccounts')->group(function () {
+            Route::get('list', [\App\Http\Controllers\MyOperationsController::class, 'list_my_operations']);
+            Route::post('', [\App\Http\Controllers\MyOperationsController::class, 'operation_detail']);
+        });
     });
 
     Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
