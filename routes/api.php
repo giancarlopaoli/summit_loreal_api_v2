@@ -26,6 +26,7 @@ Route::middleware('encryptresponses')->group(function () {
 
         Route::prefix('dashboard')->group(function () {
             Route::get('indicators', [\App\Http\Controllers\DashboardController::class, 'get_indicators']);
+            Route::get('graphs', [\App\Http\Controllers\DashboardController::class, 'graphs']);
         });
 
         Route::prefix('immediate_operation')->group(function () {
