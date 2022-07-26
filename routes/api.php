@@ -19,7 +19,6 @@ Route::middleware('encryptresponses')->group(function () {
     Route::post('login/token', [\App\Http\Controllers\AuthController::class, 'login_token']);
     Route::post('logout', [\App\Http\Controllers\AuthController::class, 'logout']);
 
-
     Route::group(['middleware' => ['auth:sanctum']], function () {
         Route::get('/me', function(Request $request) {
             return auth()->user();
@@ -42,6 +41,14 @@ Route::middleware('encryptresponses')->group(function () {
             Route::get('list', [\App\Http\Controllers\MyBankAccountsController::class, 'list_accounts']);
             Route::post('', [\App\Http\Controllers\MyBankAccountsController::class, 'new_account']);
             Route::delete('{operation_id}', [\App\Http\Controllers\MyBankAccountsController::class, 'delete_account']);
+            Route::post('{operation_id}', [\App\Http\Controllers\MyBankAccountsController::class, 'set_main_account']);
+        });
+    });
+
+    Route::prefix('admin')->group(function () {
+        Route::prefix('tables')->group(function () {
+            Route::get('banks', [\App\Http\Controllers\MasterTablesController::class, 'banks']);
+            Route::get('accountTypes', [\App\Http\Controllers\MasterTablesController::class, 'account_types']);
         });
     });
 

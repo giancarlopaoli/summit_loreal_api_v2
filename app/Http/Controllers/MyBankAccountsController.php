@@ -118,4 +118,37 @@ class MyBankAccountsController extends Controller
             'success' => true
         ]);
     }
+
+    public function set_main_account(Request $request) {
+        $client = Client::find($request->client_id);
+
+        if($client == null) {
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'Cliente no encontrado'
+                ]
+            ], 404);
+        }
+
+        $account = $client->bank_accounts()->where('id', $request->account_id)->first();
+
+        if($account == null) {
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'La cuenta no es parte del cliente'
+                ]
+            ], 404);
+
+        }
+
+        $client->bank_accounts()->update(['main', false]);
+
+        $account->main = true;
+
+        return response()->json([
+            'success' => true
+        ]);
+    }
 }
