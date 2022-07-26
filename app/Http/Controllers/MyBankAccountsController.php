@@ -84,4 +84,38 @@ class MyBankAccountsController extends Controller
             'data' => $account
         ]);
     }
+
+    public function delete_account(Request $request, $account_id) {
+        $validator = Validator::make($request->all(), [
+            'client_id' => 'required|exists:clients,id',
+        ]);
+
+        if($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors()
+            ]);
+        }
+
+        $client = Client::find($request->client_id);
+        $account = $client->bank_accounts()->where('id', $account_id)->first();
+
+        if($account == null) {
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'Cuenta bancaria no encontrada para este cliente'
+                ]
+            ], 404);
+        }
+
+        $account->updated_by = auth()->id();
+        $account->save();
+
+        $account->delete();
+
+        return response()->json([
+            'success' => true
+        ]);
+    }
 }
