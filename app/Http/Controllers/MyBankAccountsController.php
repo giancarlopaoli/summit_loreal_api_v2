@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\BankAccountStatus;
 use App\Models\Client;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -19,7 +20,7 @@ class MyBankAccountsController extends Controller
         }
 
         $accounts = $client->bank_accounts()
-            ->where('active', true)
+            ->whereRelation('status', 'name', 'Active')
             ->with([
             'bank',
             'account_type',
