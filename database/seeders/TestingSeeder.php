@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Enums\UserStatus;
+use App\Models\BankAccount;
 use App\Models\Client;
 use App\Models\ClientStatus;
 use App\Models\Country;
@@ -56,9 +57,17 @@ class TestingSeeder extends Seeder
             'client_status_id' => ClientStatus::where('name', 'Activo')->first()->id
         ]);
 
+        $user->clients()->attach($client);
+
         $operations = Operation::factory()->state([
             'client_id' => $client->id,
             'user_id' => $user->id,
-        ])->count(10);
+        ])->count(20)
+        ->create();
+
+        $bank_accounts = BankAccount::factory()->state([
+            'client_id' => $client->id
+        ])->count(10)
+        ->create();
     }
 }

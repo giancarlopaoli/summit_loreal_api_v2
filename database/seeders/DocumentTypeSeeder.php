@@ -16,15 +16,52 @@ class DocumentTypeSeeder extends Seeder
     public function run()
     {
         DocumentType::create([
+            'name' => 'RUC',
+            'active' => true,
+            'size' => 11
+        ]);
+
+        DocumentType::create([
             'name' => 'DNI',
             'active' => true,
             'size' => 8
         ]);
 
         DocumentType::create([
-            'name' => 'RUC',
+            'name' => 'Carné de extranjería',
             'active' => true,
-            'size' => 15
+            'size' => null
         ]);
+
+        DocumentType::create([
+            'name' => 'Carné de identidad de las Fuerzas Policiales',
+            'active' => true,
+            'size' => null
+        ]);
+
+        DocumentType::create([
+            'name' => 'Carné de identidad de las Fuerzas Armadas',
+            'active' => true,
+            'size' => null
+        ]);
+
+        DocumentType::create([
+            'name' => 'Pasaporte',
+            'active' => true,
+            'size' => null
+        ]);
+
+        DocumentType::create([
+            'name' => 'Otros (Carta de Identidad, Cedula de identidad, Partida de Nacimiento, etc.) ',
+            'active' => true,
+            'size' => null
+        ]);
+
+        DocumentType::create([
+            'name' => 'No Domiciliado',
+            'active' => true,
+            'size' => null
+        ]);
+
     }
 }

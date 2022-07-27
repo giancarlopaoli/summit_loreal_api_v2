@@ -20,8 +20,10 @@ class DatabaseSeeder extends Seeder
     {
 
         $this->call([
+            AccountTypeSeeder::class,
             DocumentTypeSeeder::class,
             BankSeeder::class,
+            BankAccountStatusSeeder::class,
             ConfigurationSeeder::class,
             OperationStatusSeeder::class,
             ClientStatusSeeder::class,

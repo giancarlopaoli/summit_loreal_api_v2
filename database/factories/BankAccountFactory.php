@@ -25,14 +25,14 @@ class BankAccountFactory extends Factory
         return [
             "client_id" => Client::factory(),
             "alias" => $this->faker->words(2, true),
-            "bank_id" => Bank::factory(),
+            "bank_id" => Bank::all()->random()->id,
             "account_number" => $this->faker->creditCardNumber(),
             "cci_number" => $this->faker->creditCardNumber(),
-            "status" => BankAccountStatus::getRandomInstance(),
+            "bank_account_status_id" => \App\Models\BankAccountStatus::all()->random()->id,
             "comments" => $this->faker->words(4, true),
-            "account_type" => AccountType::factory(),
-            "currency_id" => Currency::factory(),
-            "updated_by" => User::factory()
+            "account_type_id" => AccountType::all()->random()->id,
+            "currency_id" => Currency::all()->random()->id,
+            "updated_by" => null,
         ];
     }
 }

@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Enums\BankAccountStatus;
+use App\Models\BankAccountStatus;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 

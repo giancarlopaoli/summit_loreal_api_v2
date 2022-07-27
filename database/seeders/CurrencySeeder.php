@@ -18,15 +18,15 @@ class CurrencySeeder extends Seeder
     {
         Currency::create([
             'name' => 'Soles',
-            'iso_code' => '',
-            'sign' => 'S/.',
+            'iso_code' => 'PEN',
+            'sign' => 'S/',
             'sbs_code' => '',
             'active' => true
         ]);
 
         Currency::create([
             'name' => 'Dolares',
-            'iso_code' => '',
+            'iso_code' => 'USD',
             'sign' => '$',
             'sbs_code' => '',
             'active' => true

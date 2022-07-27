@@ -15,9 +15,9 @@ return new class extends Migration
     {
         Schema::create('document_types', function (Blueprint $table) {
             $table->id();
-            $table->string('name', 45);
+            $table->string('name', 200);
             $table->boolean("active");
-            $table->integer('size');
+            $table->integer('size')->nullable();
             $table->timestamps();
         });
     }

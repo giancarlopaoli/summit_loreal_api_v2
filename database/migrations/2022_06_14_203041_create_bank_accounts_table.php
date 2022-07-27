@@ -25,7 +25,7 @@ return new class extends Migration
             $table->string('comments', 150);
             $table->foreignIdFor(\App\Models\AccountType::class)->constrained();
             $table->foreignIdFor(\App\Models\Currency::class)->constrained();
-            $table->foreignId('updated_by')->constrained('users');
+            $table->foreignId('updated_by')->nullable()->constrained('users');
             $table->softDeletes();
             $table->timestamps();
         });
