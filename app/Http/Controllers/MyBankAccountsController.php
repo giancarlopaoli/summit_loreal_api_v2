@@ -8,8 +8,8 @@ use Illuminate\Support\Facades\Validator;
 
 class MyBankAccountsController extends Controller
 {
-    public function list_accounts(Request $request, $client_id) {
-        $client = Client::find($client_id);
+    public function list_accounts(Request $request) {
+        $client = Client::find($request->client_id);
 
         if($client == null) {
             return response()->json([
