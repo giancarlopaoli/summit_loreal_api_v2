@@ -10,6 +10,8 @@ class BankAccount extends Model
 {
     use HasFactory, SoftDeletes;
 
+    protected $guarded = [];
+
     public function type() {
         return $this->belongsTo(AccountType::class);
     }
@@ -36,5 +38,9 @@ class BankAccount extends Model
 
     public function status() {
         return $this->belongsTo(BankAccountStatus::class, 'bank_account_status_id');
+    }
+
+    public function account_type() {
+        return $this->belongsTo(AccountType::class);
     }
 }

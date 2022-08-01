@@ -57,7 +57,7 @@ class TestingSeeder extends Seeder
             'client_status_id' => ClientStatus::where('name', 'Activo')->first()->id
         ]);
 
-        $user->clients()->attach($client);
+        $user->clients()->attach($client, ['status' => 'Asignado']);
 
         $operations = Operation::factory()->state([
             'client_id' => $client->id,
@@ -69,5 +69,9 @@ class TestingSeeder extends Seeder
             'client_id' => $client->id
         ])->count(10)
         ->create();
+
+        $main_bank_account = $bank_accounts->first();
+        $main_bank_account->main = true;
+        $main_bank_account->save();
     }
 }

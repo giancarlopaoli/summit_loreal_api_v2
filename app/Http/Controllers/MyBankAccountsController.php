@@ -20,7 +20,7 @@ class MyBankAccountsController extends Controller
         }
 
         $accounts = $client->bank_accounts()
-            ->whereRelation('status', 'name', 'Active')
+            ->whereRelation('status', 'name', 'Activo')
             ->with([
             'bank',
             'account_type',
@@ -42,9 +42,9 @@ class MyBankAccountsController extends Controller
         ]);
     }
 
-    public function new_account(Request $request, $client_id) {
+    public function new_account(Request $request) {
 
-        $client = Client::find($client_id);
+        $client = Client::find($request->client_id);
 
         if($client == null) {
             return response()->json([
@@ -55,10 +55,10 @@ class MyBankAccountsController extends Controller
 
         $validator = Validator::make($request->all(), [
             'bank_id' => 'required|exists:banks,id',
-            'account_type' => 'required|exists:account_types,id',
+            'account_type_id' => 'required|exists:account_types,id',
             'currency_id' => 'required|exists:currencies,id',
             'account_number' => 'required|min:10',
-            'cci' => 'required|min:10'
+            'cci_number' => 'required|min:10'
         ]);
 
         if($validator->fails()) {
@@ -73,7 +73,7 @@ class MyBankAccountsController extends Controller
             'bank_id' => $request->bank_id,
             'account_number' => $request->account_number,
             'cci_number' => $request->cci_number,
-            'active' => true,
+            'bank_account_status_id' => BankAccountStatus::where('name', 'Activo')->first()->id,
             'comments' => '',
             'account_type_id' => $request->account_type_id,
             'currency_id' => $request->currency_id,
@@ -144,9 +144,10 @@ class MyBankAccountsController extends Controller
 
         }
 
-        $client->bank_accounts()->update(['main', false]);
+        $client->bank_accounts()->update(['main' => false]);
 
         $account->main = true;
+        $account->save();
 
         return response()->json([
             'success' => true

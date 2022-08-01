@@ -39,10 +39,10 @@ Route::middleware('encryptresponses')->group(function () {
         });
 
         Route::prefix('myBankAccounts')->group(function () {
-            Route::get('list', [\App\Http\Controllers\MyBankAccountsController::class, 'list_accounts']);
             Route::post('', [\App\Http\Controllers\MyBankAccountsController::class, 'new_account']);
-            Route::delete('{operation_id}', [\App\Http\Controllers\MyBankAccountsController::class, 'delete_account']);
-            Route::post('{operation_id}', [\App\Http\Controllers\MyBankAccountsController::class, 'set_main_account']);
+            Route::get('list', [\App\Http\Controllers\MyBankAccountsController::class, 'list_accounts']);
+            Route::delete('{account_id}', [\App\Http\Controllers\MyBankAccountsController::class, 'delete_account']);
+            Route::post('{account_id}/main', [\App\Http\Controllers\MyBankAccountsController::class, 'set_main_account']);
         });
     });
 
