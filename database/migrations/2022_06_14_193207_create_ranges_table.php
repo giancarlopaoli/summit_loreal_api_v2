@@ -21,8 +21,8 @@ return new class extends Migration
             $table->decimal('comission_close', 7, 2);
             $table->decimal('spread_open', 7, 2);
             $table->decimal('spread_close', 7, 2);
-            $table->boolean('active');
-            $table->foreignId('modified_by')->constrained('users');
+            $table->boolean('active')->default(true);
+            $table->foreignId('modified_by')->nullable()->constrained('users');
             $table->timestamps();
         });
     }

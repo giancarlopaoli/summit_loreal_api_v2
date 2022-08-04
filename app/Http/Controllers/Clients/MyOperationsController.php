@@ -1,14 +1,10 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Clients;
 
+use App\Http\Controllers\Controller;
 use App\Models\Client;
-use App\Models\Operation;
-use App\Models\OperationStatus;
-use Dotenv\Validator;
-use http\Env\Response;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rules\Enum;
 
 class MyOperationsController extends Controller
 {

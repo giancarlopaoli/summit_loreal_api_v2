@@ -35,7 +35,8 @@ class DatabaseSeeder extends Seeder
             EconomicActivitySeeder::class,
             LeadStatusSeeder::class,
             ProfessionSeeder::class,
-            RegionSeeder::class
+            RegionSeeder::class,
+            RangeSeeder::class
         ]);
 
         if(env('APP_DEBUG')) {

@@ -1,8 +1,9 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Clients;
 
 use App\Enums\UserStatus;
+use App\Http\Controllers\Controller;
 use App\Models\AccessLog;
 use App\Models\User;
 use Carbon\Carbon;
