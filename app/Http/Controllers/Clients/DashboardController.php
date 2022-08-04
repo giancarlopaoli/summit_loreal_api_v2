@@ -23,6 +23,7 @@ class DashboardController extends Controller
         }
 
         $latest_operations = $client->operations()->latest()->take(5)->get();
+        $latest_operations->load(['status', 'currency']);
 
         $total_amount = $client->operations()->whereIn("operation_status_id", [4, 5])->selectRaw('SUM(amount) as total')->get();
 
