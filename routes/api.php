@@ -45,6 +45,10 @@ Route::middleware('encryptresponses')->group(function () {
             Route::delete('{account_id}', [\App\Http\Controllers\Clients\MyBankAccountsController::class, 'delete_account']);
             Route::post('{account_id}/main', [\App\Http\Controllers\Clients\MyBankAccountsController::class, 'set_main_account']);
         });
+
+        Route::prefix('profile')->group(function () {
+            Route::get('detail', [\App\Http\Controllers\Clients\ProfileController::class, 'profile_detail']);
+        });
     });
 
     Route::prefix('admin')->group(function () {
