@@ -6,6 +6,7 @@ use App\Enums\UserStatus;
 use App\Http\Controllers\Controller;
 use App\Models\AccessLog;
 use App\Models\User;
+use App\Models\Client;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -77,8 +78,8 @@ class AuthController extends Controller
                 'success' => true,
                 'data' => [
                     'token' => $user->createToken("basic")->plainTextToken,
-                    'user' => $user,
-                    'assigned_client' => $user->assigned_client
+                    'user' => $user->only(['id','name','last_name','email','document_number','phone']),
+                    'assigned_client' => $user->assigned_client[0]->only(['id','name','last_name','mothers_name','document_type_id','customer_type', 'created_at as registered_at'])
                 ]
             ]);
 

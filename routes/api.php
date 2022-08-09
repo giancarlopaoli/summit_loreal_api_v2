@@ -48,6 +48,8 @@ Route::middleware('encryptresponses')->group(function () {
 
         Route::prefix('profile')->group(function () {
             Route::get('detail', [\App\Http\Controllers\Clients\ProfileController::class, 'profile_detail']);
+            Route::get('clients_list', [\App\Http\Controllers\Clients\ProfileController::class, 'clients_list']);
+            Route::get('users_list', [\App\Http\Controllers\Clients\ProfileController::class, 'users_list']);
         });
     });
 

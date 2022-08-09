@@ -16,15 +16,36 @@ class ProfileController extends Controller
             ->with(['document_type:id,name'])
             ->find($request->client_id);
 
-        $user = User::select('id','name','last_name','email','document_number','phone')
-                ->find(Auth::user());
+        $user = Auth::user()->only(['id','name','last_name','email','document_number','phone']);
 
-         return response()->json([
-             'success' => true,
-             'data' => [
-                 'client' => $client,
-                 'user' => $user
-             ]
-         ]);
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'client' => $client,
+                'user' => $user
+            ]
+        ]);
+    }
+
+    public function clients_list(Request $request) {
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'clients' => Auth::user()->clients
+            ]
+        ]);
+    }
+
+    public function users_list(Request $request) {
+
+        $users = Client::find($request->client_id)->users;
+         
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'users' => $users
+            ]
+        ]);
     }
 }
