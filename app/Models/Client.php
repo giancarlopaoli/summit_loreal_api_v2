@@ -9,6 +9,10 @@ class Client extends Model
 {
     use HasFactory;
 
+    protected $fillable = [
+        'email', 'phone', 'address', 'accountable_email'
+    ];
+
     public function representatives() {
         return $this->hasMany(Representative::class);
     }
