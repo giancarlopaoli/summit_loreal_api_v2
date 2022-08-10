@@ -6,8 +6,10 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Client;
 use App\Models\User;
+use App\Models\ClientUser;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
+use App\Enums\ClientUserStatus;
 
 class ProfileController extends Controller
 {
@@ -110,5 +112,48 @@ class ProfileController extends Controller
                 'users' => $users
             ]
         ]);
+    }
+
+    public function change(Request $request) {
+        $validator = Validator::make($request->all(), [
+            'client_id' => 'required|string'
+        ]);
+        if($validator->fails()) return response()->json($validator->messages());
+        
+        $client = Auth::user()->clients->find($request->client_id);
+
+
+        if(!is_null($client)) {
+            $desactivando = ClientUser::where('user_id', Auth::user()->id)
+                ->where('status', ClientUserStatus::Asignado)
+                ->update([
+                    'status' => ClientUserStatus::Activo
+                ]);
+
+
+            $activando = ClientUser::where('user_id', Auth::user()->id)
+                ->where('client_id', $client->id)
+                ->update([
+                    'status' => ClientUserStatus::Asignado
+                ]);
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'client' => $client->only(['id','name','last_name','mothers_name','document_type_id','customer_type', 'created_at as registered_at'])
+                ]
+            ]);
+
+        }
+        else {
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'El Perfil seleccionado es incorrecto.'
+                ]
+            ]);
+        }
+
+        
     }
 }

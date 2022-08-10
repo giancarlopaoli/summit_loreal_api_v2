@@ -52,6 +52,7 @@ Route::middleware('encryptresponses')->group(function () {
             Route::put('edit_client', [\App\Http\Controllers\Clients\ProfileController::class, 'edit_client']);
             Route::get('clients_list', [\App\Http\Controllers\Clients\ProfileController::class, 'clients_list']);
             Route::get('users_list', [\App\Http\Controllers\Clients\ProfileController::class, 'users_list']);
+            Route::post('change', [\App\Http\Controllers\Clients\ProfileController::class, 'change']);
         });
     });
 

@@ -11,7 +11,7 @@ use BenSampo\Enum\Enum;
  */
 final class ClientUserStatus extends Enum
 {
-    const Active   = "Activo";
+    const Activo   = "Activo";
     const Asignado = "Asignado";
     const Inactivo = "Inactivo";
 }
