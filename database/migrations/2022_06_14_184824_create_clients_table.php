@@ -27,7 +27,7 @@ return new class extends Migration
             $table->foreignIdFor(\App\Models\District::class)->constrained();
             $table->foreignIdFor(\App\Models\Country::class)->constrained();
             $table->foreignIdFor(\App\Models\EconomicActivity::class)->constrained();
-            $table->foreignIdFor(\App\Models\Profession::class)->constrained();
+            $table->foreignIdFor(\App\Models\Profession::class)->nullable()->constrained();
             $table->enum('customer_type', ['PN', 'PJ']);
             $table->enum('type', ['Cliente', 'PL']);
             $table->foreignIdFor(\App\Models\ClientStatus::class);

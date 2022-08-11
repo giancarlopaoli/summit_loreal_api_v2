@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Clients;
 
 use App\Http\Controllers\Controller;
+use App\Models\AssociationComission;
 use App\Models\ClientComission;
 use App\Models\Configuration;
+use App\Models\Coupon;
 use App\Models\ExchangeRate;
 use App\Models\Range;
 use App\Models\SpecialExchangeRate;
@@ -50,6 +52,21 @@ class InmediateOperationController extends Controller
                 'errors' => $validator->errors()->toJson()
             ]);
         }
+
+        if($request->coupon != null) {
+            $coupon = Coupon::where('code', $request->coupon)->where('active', true)->latest()->first();
+
+            if($coupon == null) {
+                return repsonse()->json([
+                    'success' => false,
+                    'errors' => [
+                        'El cupon enviado no es valido'
+                    ]
+                ], 400);
+            }
+        }
+
+        $client = Cliet::find($request->client_id);
 
         $amount = (float) $request->amount;
 
@@ -107,14 +124,25 @@ class InmediateOperationController extends Controller
             ->where('active', true)
             ->latest()
             ->first();
-        if($client_comision == null) {
+
+        $association = $client->asociation;
+        if($association != null) {
+            $association_comision = AssociationComission::where('association_id'. $association->id)
+                ->where('active', true)
+                ->latest()
+                ->first();
+        }
+
+        if($association_comision != null) {
+
+        } else if($client_comision != null) {
+            $comission_spread = $market_closed ? $client_comision->comission_open : $client_comision->comission_close;
+        } else {
             $general_comission = Range::where('min_range', '<=', $amount)
                 ->where('max_range', '>', $amount)
                 ->where('active', true)
                 ->first();
             $comission_spread = $market_closed ? $general_comission->comission_open : $general_comission->comission_close;
-        } else {
-            $comission_spread = $market_closed ? $client_comision->comission_open : $client_comision->comission_close;
         }
         $comission_spread = (float) $comission_spread / 10000.0;
 

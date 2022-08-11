@@ -10,10 +10,23 @@ use App\Models\Client;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Validator;
 
 class AuthController extends Controller
 {
     public function login(Request $request) {
+        $val = Validator::make($request->all(), [
+            'email' => 'required|email',
+            'password' => 'required'
+        ]);
+
+        if ($val->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $val->errors()->toJson()
+            ]);
+        }
+
         $credentials = $request->only('email', 'password');
 
         if (Auth::attempt(array_merge($credentials, ['status' => UserStatus::Activo]))) {
@@ -39,17 +52,18 @@ class AuthController extends Controller
             ]);
 
         } else {
-
             // Add login attempt
-            $user = User::where('email', $credentials->email)->first();
-            $user->tries++;
+            $user = User::where('email', $credentials['email'])->first();
+            if($user != null) {
+                $user->tries++;
 
-            // Check login attempts exceeds 5
-            if($user->tries >= 5) {
-                $user->status = UserStatus::Bloqueado;
+                // Check login attempts exceeds 5
+                if($user->tries >= 5) {
+                    $user->status = UserStatus::Bloqueado;
+                }
+
+                $user->save();
             }
-
-            $user->save();
 
             return response()->json([
                 'errors' => 'Usuario o contraseña incorrectos',
