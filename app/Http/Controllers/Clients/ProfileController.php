@@ -19,7 +19,7 @@ class ProfileController extends Controller
         ]);
         if($validator->fails()) return response()->json($validator->messages());
 
-        $client = Client::select('name','last_name','mothers_name','document_type_id','email','address','phone','accountable_email','customer_type', 'created_at as registered_at')
+        $client = Client::select('name','last_name','mothers_name','document_type_id', 'document_number','email','address','phone','accountable_email','customer_type', 'created_at as registered_at')
             ->with(['document_type:id,name'])
             ->find($request->client_id);
 
@@ -140,7 +140,7 @@ class ProfileController extends Controller
             return response()->json([
                 'success' => true,
                 'data' => [
-                    'client' => $client->only(['id','name','last_name','mothers_name','document_type_id','customer_type', 'created_at as registered_at'])
+                    'client' => $client->only(['id','name','last_name','mothers_name','document_type_id', 'document_number', 'customer_type', 'created_at as registered_at'])
                 ]
             ]);
 
