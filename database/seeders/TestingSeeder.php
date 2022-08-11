@@ -33,6 +33,7 @@ class TestingSeeder extends Seeder
             'last_name' => 'admin',
             'email' => 'email@email.com',
             'document_number' => '12345678',
+            'document_type_id' => '2',
             'phone' => '987654321',
             'tries' => 0,
             'password' => Hash::make('password'),

@@ -6,6 +6,7 @@ use App\Enums\UserStatus;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use App\Models\DocumentType;
 
 /**
  * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\User>
@@ -24,6 +25,7 @@ class UserFactory extends Factory
             'last_name' => $this->faker->firstName(),
             'email' => $this->faker->unique()->safeEmail(),
             'phone' => $this->faker->phoneNumber(),
+            'document_type_id' => DocumentType::factory(),
             'document_number' => $this->faker->asciify("********"),
             'tries' => $this->faker->numberBetween(0, 3),
             'password' => Hash::make("password"),
