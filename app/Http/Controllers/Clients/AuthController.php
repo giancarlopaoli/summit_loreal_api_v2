@@ -47,6 +47,7 @@ class AuthController extends Controller
                 'success' => true,
                 'data' => [
                     'user' => $user,
+                    'token' => $user->createToken("basic")->plainTextToken,
                     'assigned_client' => $user->assigned_client
                 ]
             ]);
