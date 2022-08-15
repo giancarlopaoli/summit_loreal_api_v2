@@ -54,6 +54,10 @@ Route::middleware('encryptresponses')->group(function () {
             Route::get('users_list', [\App\Http\Controllers\Clients\ProfileController::class, 'users_list']);
             Route::post('change', [\App\Http\Controllers\Clients\ProfileController::class, 'change']);
         });
+
+        Route::prefix('interbank-operation')->group(function () {
+            Route::get('minimum-amount', [\App\Http\Controllers\Clients\InterbankOperationController::class, 'get_minimum_amount']);
+        });
     });
 
     Route::prefix('admin')->group(function () {

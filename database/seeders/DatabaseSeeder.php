@@ -29,6 +29,7 @@ class DatabaseSeeder extends Seeder
             ClientStatusSeeder::class,
             CountrySeeder::class,
             CurrencySeeder::class,
+            IbopsRangeSeeder::class,
             DepartmentSeeder::class,
             ProvinceSeeder::class,
             DistrictSeeder::class,

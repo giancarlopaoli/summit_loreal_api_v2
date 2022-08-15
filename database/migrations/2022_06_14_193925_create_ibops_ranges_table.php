@@ -17,9 +17,10 @@ return new class extends Migration
             $table->id();
             $table->decimal('min_range', 10, 2);
             $table->decimal('max_range', 10, 2);
+            $table->foreignIdFor(\App\Models\Currency::class)->constrained();
             $table->decimal('comission_spread', 6, 2);
             $table->decimal('spread', 6, 2);
-            $table->foreignIdFor(\App\Models\User::class)->constrained();
+            $table->foreignId('modified_by')->nullable()->constrained('users');
             $table->timestamps();
         });
     }
