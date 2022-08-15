@@ -18,6 +18,8 @@ return new class extends Migration
             $table->foreignIdFor(\App\Models\Client::class)->constrained();
             $table->decimal('comission_spread', 6, 2);
             $table->decimal('spread', 6, 2);
+            $table->decimal('exchange_rate', 5, 4);
+            $table->boolean('active');
             $table->timestamps();
         });
     }

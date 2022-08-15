@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\Log;
 use App\Models\IbopsRange;
 use App\Models\EscrowAccount;
 use App\Models\Client;
+use App\Models\ExchangeRate;
+use App\Models\IbopsClientComission;
 
 class InterbankOperationController extends Controller
 {
@@ -92,74 +94,71 @@ class InterbankOperationController extends Controller
         if($val->fails()) return response()->json($val->messages());
 
         try {
-            $comisiones = DB::connection('mysql')
-                ->table('ibops_comission')
-                ->select('comission','spread')
-                ->where('minval','<=',$request->monto)
-                ->where('maxval','>=',$request->monto)
-                ->where('currency_id',$request->divisa_id)
+            // Retrieving comission amount 
+            $range = IbopsRange::select('comission_spread', 'spread')
+                ->where('min_range','<=',$request->amount)
+                ->where('max_range','>=',$request->amount)
+                ->where('currency_id',$request->currency_id)
                 ->get();
 
-            if($comisiones->count() == 0){
+            if($range->count() == 0){
                 return response()->json([
-                    'error' => true,
-                    'msg' => 'Monto fuera de rango de operación'
+                    'success' => false,
+                    'errors' => [
+                        'Monto fuera de rango de operación'
+                    ]
                 ]);
             }
 
-            $comisiones = $comisiones->first();
+            $range = $range->first();
 
-            $val_comision = $comisiones->comission;
-            $val_spread = $comisiones->spread;
-            
-            $tc = DB::table('TipoCambio')
-                ->where('Estado', 'ACT')
-                ->first()->Venta;
+            $val_comision = $range->comission_spread;
+            $val_spread = $range->spread;
+
+            $exchange_rate = ExchangeRate::latest()->first()->venta;
+
 
             // Buscando comisiones del cliente
-            $comisiones_cliente = DB::connection('mysql')
-                ->table('ibops_client_comission')
-                ->where('client_id', $request->authuser->customer_id)
-                ->where('status', 'Activo')
+            $client_comision = IbopsClientComission::where('client_id', $request->client_id)
+                ->where('active', true)
                 ->get();
+            
+            if($client_comision->count() > 0){
+                $client_comision = $client_comision->first();
 
-            if($comisiones_cliente->count() > 0){
-                $comisiones_cliente = $comisiones_cliente->first();
-
-                if(!is_null($comisiones_cliente->comission)) $val_comision = $comisiones_cliente->comission;
-                if(!is_null($comisiones_cliente->spread)) $val_spread = $comisiones_cliente->spread;
-                if(!is_null($comisiones_cliente->exchange_rate)) $tc = $comisiones_cliente->exchange_rate;
+                if(!is_null($client_comision->comission)) $val_comision = $client_comision->comission;
+                if(!is_null($client_comision->spread)) $val_spread = $client_comision->spread;
+                if(!is_null($client_comision->exchange_rate)) $exchange_rate = $client_comision->exchange_rate;
             }
 
-            // Calculando gastos financieros en base a un spread resultante a 6 decimales
-            $spread = round (($tc + ($val_spread / 10000))/$tc, 6) - 1;
-            $gastos_financieros = round($request->monto * $spread, 2 );
+            /*return response()->json([
+                'error' => true,
+                'msg' => $exchange_rate
+            ]);*/
 
-            $tcventa = $tc + ($val_spread / 10000);
-            //$gastos_financieros = round ($request->monto * ($tc + ($val_spread / 10000))/$tc - $request->monto, 2);
+            // Calculating Vendor comission in base of 6 decimals spread
+            $spread = round (($exchange_rate + ($val_spread / 10000))/$exchange_rate, 6) - 1;
+            $financial_expenses = round($request->amount * $spread, 2 );
 
+            $tcventa = round($exchange_rate + ($val_spread / 10000), 4);
 
-            // Cálculo comisión
-            $comision_total = round($request->monto * ($val_comision / 10000), 2);
-            $comision = round($comision_total/1.18, 2);
-            $igv = round($comision_total - $comision,2);
+            // Calculating commission amount
+            $total_comission = round($request->amount * ($val_comision / 10000), 2);
+            $comission = round($total_comission/1.18, 2);
+            $igv = round($total_comission - $comission,2);
 
-            $depositar = round($request->monto + $gastos_financieros + $comision_total,2);
-
-            $terminos = DB::table('Cliente')->where('ClienteId', $request->authuser->customer_id)->first()->AprobacionTerminos;
+            $depositar = round($request->amount + $financial_expenses + $total_comission,2);
 
             return response()->json([
                 'success' => true,
                 'data' => [
-                    'transferir' => round($request->monto,2),
-                    'gastos_financieros' => $gastos_financieros,
-                    'comision' => $comision,
+                    'transfers' => round($request->amount,2),
+                    'financial_expenses' => $financial_expenses,
+                    'comission' => $comission,
                     'igv' => $igv,
-                    'tipocambio' => $tc,
-                    //'itf' => round($request->monto* (2/10000),2),
-                    'depositar' => $depositar,
-                    'tcventa' => $tcventa,
-                    'terminos' => $terminos
+                    'exchange_rate' => $exchange_rate,
+                    'receives' => $depositar,
+                    'selling_exchange_rate' => $tcventa
                 ]
             ]);
 
@@ -168,8 +167,11 @@ class InterbankOperationController extends Controller
         }
 
         return response()->json([
-            'error' => true,
-        ]);
+                'success' => false,
+                'data' => [
+                    "Se encontró un error al cotizar la operación"
+                ]
+            ]);
     }
 
 }
