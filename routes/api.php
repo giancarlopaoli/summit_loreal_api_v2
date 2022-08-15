@@ -57,6 +57,9 @@ Route::middleware('encryptresponses')->group(function () {
 
         Route::prefix('interbank-operation')->group(function () {
             Route::get('minimum-amount', [\App\Http\Controllers\Clients\InterbankOperationController::class, 'get_minimum_amount']);
+            Route::get('escrow-accounts', [\App\Http\Controllers\Clients\InterbankOperationController::class, 'get_escrow_accounts']);
+            Route::get('bank-accounts', [\App\Http\Controllers\Clients\InterbankOperationController::class, 'get_client_bank_accounts']);
+            Route::get('quote', [\App\Http\Controllers\Clients\InterbankOperationController::class, 'quote_operation']);
         });
     });
 
