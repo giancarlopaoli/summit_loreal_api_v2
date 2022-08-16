@@ -9,8 +9,14 @@ use Illuminate\Support\Facades\Log;
 use App\Models\IbopsRange;
 use App\Models\EscrowAccount;
 use App\Models\Client;
+use App\Models\Configuration;
 use App\Models\ExchangeRate;
 use App\Models\IbopsClientComission;
+use App\Models\Operation;
+use App\Models\OperationStatus;
+use Carbon\Carbon;
+use App\Enums;
+
 
 class InterbankOperationController extends Controller
 {
@@ -118,7 +124,7 @@ class InterbankOperationController extends Controller
             $exchange_rate = ExchangeRate::latest()->first()->venta;
 
 
-            // Buscando comisiones del cliente
+            // Retrieving client comissions
             $client_comision = IbopsClientComission::where('client_id', $request->client_id)
                 ->where('active', true)
                 ->get();
@@ -131,10 +137,6 @@ class InterbankOperationController extends Controller
                 if(!is_null($client_comision->exchange_rate)) $exchange_rate = $client_comision->exchange_rate;
             }
 
-            /*return response()->json([
-                'error' => true,
-                'msg' => $exchange_rate
-            ]);*/
 
             // Calculating Vendor comission in base of 6 decimals spread
             $spread = round (($exchange_rate + ($val_spread / 10000))/$exchange_rate, 6) - 1;
@@ -163,15 +165,110 @@ class InterbankOperationController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            logger('Error en detalleOperacion@InterbancariasController', ["error" => $e]);
+            logger('Error en quote_operation@InterbancariasController', ["error" => $e]);
         }
 
         return response()->json([
-                'success' => false,
-                'data' => [
-                    "Se encontró un error al cotizar la operación"
-                ]
+            'success' => false,
+            'data' => [
+                "Se encontró un error al cotizar la operación"
+            ]
+        ]);
+    }
+
+    //Creación de operación
+    public function create_operation(Request $request) {
+        $val = Validator::make($request->all(), [
+            'client_id' => 'required|exists:clients,id',
+            'bank_account_id' => 'required|exists:bank_accounts,id',
+            'escrow_account_id' => 'required|exists:escrow_accounts,id',
+            'amount' => 'required|numeric',
+            'comission' => 'required|numeric',
+            'igv' => 'required|numeric',
+            'currency_id' => 'required|numeric',
+            'exchange_rate' => 'required|numeric',
+            'financial_expenses' => 'required|numeric',
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+        try {
+
+            $client = Client::find($request->client_id);
+
+            if($client == null) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => 'Cliente no encontrado'
+                ], 404);
+            }
+
+            // Validating client accounts
+            $bank_accounts = $client->bank_accounts()
+                ->where('id', $request->bank_account_id)
+                ->where('currency_id', $request->currency_id)
+                ->whereRelation('status', 'name', 'Activo')
+                ->get();
+
+            if($bank_accounts->count() == 0) return response()->json(['success' => false,'data' => ['Error en la cuenta de destino seleccionada.']]);
+
+            // Validating escrow account
+            $escrow_accounts = EscrowAccount::where('id', $request->escrow_account_id)
+                ->where('currency_id', $request->currency_id)
+                ->where('active', true)
+                ->where('bank_id', '<>', $bank_accounts[0]->bank_id)
+                ->get();
+
+            if($escrow_accounts->count() == 0) return response()->json(['success' => false,'data' => ['Error en la cuenta de fideicomiso seleccionada']]);
+
+            $igv_porcentaje = round((float) Configuration::where('shortname', 'IGV')->first()->value / 100, 2);
+
+            $comision_total = $request->comission + $request->igv;
+
+            $comission_spread = round(10000*$comision_total / $request->amount,2);
+
+            $spread = round($request->financial_expenses / $request->amount,6)*10000;
+
+            $now = Carbon::now();
+            $code = $now->format('ymdHisv') . rand(0, 9);
+
+            $op = Operation::create([
+                'code' => $code,
+                'class' => Enums\OperationClass::Interbancaria,
+                'type' => Enums\OperationType::Interbancaria,
+                'client_id' => $request->client_id,
+                'user_id' => auth()->id(),
+                'amount' => $request->amount,
+                'currency_id' => $request->currency_id,
+                'exchange_rate' => $request->exchange_rate,
+                'comission_spread' => (float) $comission_spread,
+                'comission_amount' => $request->comission,
+                'igv' => $request->igv,
+                'spread' => $spread,
+                'operation_status_id' => OperationStatus::where('name', 'Disponible')->first()->id,
+                'operation_date' => $now->toDateTimeString()
             ]);
+
+            return response()->json([
+                'success' => true,
+                'data' => [ 
+                    'operation' => $op
+                ],
+            ]);
+
+            $rpta_mail = Mail::send(new NewOperation($op->OperacionId));
+            $rpta_mail = Mail::send(new NotifyOpItbc($op->OperacionId));
+
+        } catch (\Exception $e) {
+            return response()->json(['success' => false,'data' => ['Error al crear operación']]);
+            logger('Creación de Operación Interbancaria: create_operation@InterbankOperationController', ["error" => $e]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                "Operación creada exitosamente"
+            ]
+        ]);
     }
 
 }

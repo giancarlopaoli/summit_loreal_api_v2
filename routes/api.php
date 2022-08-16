@@ -60,6 +60,7 @@ Route::middleware('encryptresponses')->group(function () {
             Route::get('escrow-accounts', [\App\Http\Controllers\Clients\InterbankOperationController::class, 'get_escrow_accounts']);
             Route::get('bank-accounts', [\App\Http\Controllers\Clients\InterbankOperationController::class, 'get_client_bank_accounts']);
             Route::get('quote', [\App\Http\Controllers\Clients\InterbankOperationController::class, 'quote_operation']);
+            Route::post('create', [\App\Http\Controllers\Clients\InterbankOperationController::class, 'create_operation']);
         });
     });
 
