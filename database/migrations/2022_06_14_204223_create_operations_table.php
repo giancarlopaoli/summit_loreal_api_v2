@@ -17,7 +17,7 @@ return new class extends Migration
             $table->id();
             $table->string('code', 20);
             $table->enum('class', ['Inmediata', 'Programada', 'Interbancaria']);
-            $table->enum('type', ['Compra', 'Venta']);
+            $table->enum('type', ['Compra', 'Venta', 'Interbancaria']);
             $table->foreignIdFor(\App\Models\Client::class)->constrained();
             $table->foreignIdFor(\App\Models\User::class)->constrained();
             $table->decimal('amount', 11, 2);

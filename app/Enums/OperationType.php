@@ -13,4 +13,5 @@ final class OperationType extends Enum
 {
     const Compra = "Compra";
     const Venta = "Venta";
+    const Interbancaria = "Interbancaria";
 }

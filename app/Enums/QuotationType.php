@@ -13,5 +13,5 @@ final class QuotationType extends Enum
 {
     const Compra = "Compra";
     const Venta = "Venta";
-    const Interbancario = "Interbancario";
+    const Interbancaria = "Interbancaria";
 }
