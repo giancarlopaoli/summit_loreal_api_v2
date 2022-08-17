@@ -11,5 +11,6 @@ use BenSampo\Enum\Enum;
  */
 final class CouponType extends Enum
 {
-    const Spread =   "Spread";
+    const Comision   = "Comision";
+    const Porcentaje = "Porcentaje";
 }

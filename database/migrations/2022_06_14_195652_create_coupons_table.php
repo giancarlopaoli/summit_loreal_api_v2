@@ -18,7 +18,7 @@ return new class extends Migration
             $table->foreignIdFor(\App\Models\Campaign::class)->constrained();
             $table->string('code', 45);
             $table->string('description', 45);
-            $table->enum('type', ['Spread']);
+            $table->enum('type', \App\Enums\CouponType::asArray());
             $table->enum('class', ['Normal', 'Primera Operacion']);
             $table->decimal('value', 7, 2);
             $table->boolean('active');

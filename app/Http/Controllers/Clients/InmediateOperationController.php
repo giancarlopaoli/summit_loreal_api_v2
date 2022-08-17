@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Clients;
 
+use App\Enums\CouponType;
 use App\Http\Controllers\Controller;
 use App\Models\AssociationComission;
 use App\Models\ClientComission;
@@ -9,6 +10,7 @@ use App\Models\Configuration;
 use App\Models\Coupon;
 use App\Models\ExchangeRate;
 use App\Models\Range;
+use App\Models\Client;
 use App\Models\SpecialExchangeRate;
 use App\Models\VendorRange;
 use App\Models\VendorSpread;
@@ -53,8 +55,9 @@ class InmediateOperationController extends Controller
             ]);
         }
 
-        if($request->coupon != null) {
-            $coupon = Coupon::where('code', $request->coupon)->where('active', true)->latest()->first();
+        $coupon = null;
+        if($request->coupon_code != null) {
+            $coupon = Coupon::where('code', $request->coupon_code)->where('active', true)->latest()->first();
 
             if($coupon == null) {
                 return repsonse()->json([
@@ -66,7 +69,7 @@ class InmediateOperationController extends Controller
             }
         }
 
-        $client = Cliet::find($request->client_id);
+        $client = Client::find($request->client_id);
 
         $amount = (float) $request->amount;
 
@@ -125,24 +128,49 @@ class InmediateOperationController extends Controller
             ->latest()
             ->first();
 
-        $association = $client->asociation;
+        $association = $client->association;
+        $association_comision = null;
         if($association != null) {
-            $association_comision = AssociationComission::where('association_id'. $association->id)
+            $association_comision = AssociationComission::where('association_id', $association->id)
                 ->where('active', true)
                 ->latest()
                 ->first();
         }
-
-        if($association_comision != null) {
-
+        if($client_comision != null && $association_comision != null)  {
+            if($market_closed) {
+                $comission_spread = min((float) $client_comision->comission_close, (float) $association_comision->comission_close);
+            } else {
+                $comission_spread = min((float) $client_comision->comission_open, (float) $association_comision->comission_open);
+            }
         } else if($client_comision != null) {
-            $comission_spread = $market_closed ? $client_comision->comission_open : $client_comision->comission_close;
+            $comission_spread = $market_closed ? $client_comision->comission_close : $client_comision->comission_open;
+        } else if($association_comision != null) {
+            $comission_spread = $market_closed ? $association_comision->comission_close : $association_comision->comission_open;
         } else {
             $general_comission = Range::where('min_range', '<=', $amount)
                 ->where('max_range', '>', $amount)
                 ->where('active', true)
                 ->first();
             $comission_spread = $market_closed ? $general_comission->comission_open : $general_comission->comission_close;
+            if($coupon != null) {
+                if($coupon->type == CouponType::Comision) {
+                    if($request->type == "compra") {
+                        $comission_spread += $coupon->value;
+                    } else {
+                        $comission_spread -= $coupon->value;
+                        $comission_spread = $comission_spread < 0 ? 0 : $comission_spread;
+                    }
+                } else if($coupon->type == CouponType::Porcentaje) {
+                    $comission_spread = $comission_spread * ($coupon->value / 100.0);
+                } else {
+                    return repsonse()->json([
+                        'success' => false,
+                        'errors' => [
+                            'El cupon enviado no es valido'
+                        ]
+                    ], 400);
+                }
+            }
         }
         $comission_spread = (float) $comission_spread / 10000.0;
 
@@ -168,7 +196,9 @@ class InmediateOperationController extends Controller
             'comission_amount' => $comission_amount,
             'igv' => $igv,
             'final_mount' => $final_amount,
-            'final_exchange_rate' => $final_exchange_rate
+            'final_exchange_rate' => $final_exchange_rate,
+            'coupon_code' => $coupon?->code,
+            'coupon_value' => $coupon?->value,
         ];
 
         return response()->json([

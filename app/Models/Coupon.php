@@ -9,6 +9,8 @@ class Coupon extends Model
 {
     use HasFactory;
 
+    protected $guarded = [];
+
     public function campaign() {
         return $this->belongsTo(Campaign::class);
     }
@@ -20,4 +22,5 @@ class Coupon extends Model
     public function operations() {
         return $this->hasMany(Operation::class);
     }
+
 }
