@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\AccountType;
 use App\Models\Bank;
 use App\Models\EscrowAccount;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
 class MasterTablesController extends Controller

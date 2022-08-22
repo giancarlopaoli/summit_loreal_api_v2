@@ -24,8 +24,8 @@ class Coupon extends Model
         return $this->hasMany(Operation::class);
     }
 
-    public function validate(String $coupon_code) {
-        return This::where('code', $coupon_code)->where('active', true)->latest()->first();
+    public static function validate(String $coupon_code) {
+        return self::where('code', $coupon_code)->where('active', true)->latest()->first();
     }
 
 }

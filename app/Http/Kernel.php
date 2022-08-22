@@ -3,6 +3,7 @@
 namespace App\Http;
 
 use App\Http\Middleware\EnsureFrontendRequestsAreStateful;
+use App\Http\Middleware\ValidateClientUser;
 use Illuminate\Foundation\Http\Kernel as HttpKernel;
 
 class Kernel extends HttpKernel
@@ -45,6 +46,7 @@ class Kernel extends HttpKernel
             'throttle:api',
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
             //\Illuminate\Session\Middleware\StartSession::class
+            ValidateClientUser::class
         ],
     ];
 
