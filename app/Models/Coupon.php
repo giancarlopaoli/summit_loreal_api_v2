@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use phpDocumentor\Reflection\Types\This;
 
 class Coupon extends Model
 {
@@ -21,6 +22,10 @@ class Coupon extends Model
 
     public function operations() {
         return $this->hasMany(Operation::class);
+    }
+
+    public function validate(String $coupon_code) {
+        return This::where('code', $coupon_code)->where('active', true)->latest()->first();
     }
 
 }

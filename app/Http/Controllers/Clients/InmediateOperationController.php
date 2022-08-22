@@ -57,7 +57,7 @@ class InmediateOperationController extends Controller
 
         $coupon = null;
         if($request->coupon_code != null) {
-            $coupon = Coupon::where('code', $request->coupon_code)->where('active', true)->latest()->first();
+            $coupon = Coupon::validate($request->coupon_code);
 
             if($coupon == null) {
                 return repsonse()->json([
@@ -204,6 +204,26 @@ class InmediateOperationController extends Controller
         return response()->json([
             'success' => true,
             'data' => $data
+        ]);
+    }
+
+    public function validate_coupon(Request $request) {
+        $validator = Validator::make($request->all(), [
+            'coupon_code' => 'required|string'
+        ]);
+
+        if($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors()->toJson()
+            ]);
+        }
+
+        $coupon = Coupon::validate($request->coupon_code);
+
+        return response()->json([
+            'success' => true,
+            'data' => $coupon == null ? false : $coupon
         ]);
     }
 }
