@@ -45,7 +45,10 @@ class MyOperationsController extends Controller
             ], 404);
         }
 
-        $operation = $client->operations()->where('id', $operation_id)->first();
+        $operation = $client->operations()
+            ->select('id','code','class','type','user_id','amount','currency_id','exchange_rate','comission_amount','igv','operation_status_id','transfer_number','invoice_url','coupon_id','coupon_code','coupon_type','coupon_value','operation_date','funds_confirmation_date','deposit_date')
+            ->where('id', $operation_id)
+            ->first();
 
         if($operation == null) {
             return response()->json([
@@ -56,8 +59,9 @@ class MyOperationsController extends Controller
             ], 404);
         }
 
-        $operation->load('currency',
-            'status'
+        $operation->load(
+            'currency:id,name,sign',
+            'status:id,name'
         );
 
         return response()->json([

@@ -40,7 +40,7 @@ return new class extends Migration
             $table->string('coupon_type', 30)->nullable();
             $table->decimal('coupon_value', 5, 2)->nullable();
             $table->timestamp('operation_date');
-            $table->timestamp('funds_confirmation_table')->nullable();
+            $table->timestamp('funds_confirmation_date')->nullable();
             $table->timestamp('deposit_date')->nullable();
             $table->timestamp('sign_date')->nullable();
             $table->timestamp('mail_instructions')->nullable();
