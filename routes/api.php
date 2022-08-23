@@ -32,6 +32,7 @@ Route::middleware('encryptresponses')->group(function () {
         Route::prefix('immediate-operation')->group(function () {
             Route::get('minimum-amount', [\App\Http\Controllers\Clients\InmediateOperationController::class, 'get_minimum_amount']);
             Route::get('quote', [\App\Http\Controllers\Clients\InmediateOperationController::class, 'quote_operation']);
+            Route::get('validate-coupon', [\App\Http\Controllers\Clients\InmediateOperationController::class, 'validate_coupon']);
         });
 
         Route::prefix('my-operations')->group(function () {
@@ -53,6 +54,7 @@ Route::middleware('encryptresponses')->group(function () {
             Route::get('clients_list', [\App\Http\Controllers\Clients\ProfileController::class, 'clients_list']);
             Route::get('users_list', [\App\Http\Controllers\Clients\ProfileController::class, 'users_list']);
             Route::post('change', [\App\Http\Controllers\Clients\ProfileController::class, 'change']);
+            Route::get('bank-accounts', [\App\Http\Controllers\Clients\ProfileController::class, 'bank_accounts']);
         });
 
         Route::prefix('interbank-operation')->group(function () {
@@ -68,6 +70,7 @@ Route::middleware('encryptresponses')->group(function () {
         Route::prefix('tables')->group(function () {
             Route::get('banks', [\App\Http\Controllers\Admin\MasterTablesController::class, 'banks']);
             Route::get('account-types', [\App\Http\Controllers\Admin\MasterTablesController::class, 'account_types']);
+            Route::get('escrow-accounts', [\App\Http\Controllers\Admin\MasterTablesController::class, 'escrow_accounts']);
         });
     });
 

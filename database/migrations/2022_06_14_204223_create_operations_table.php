@@ -28,6 +28,7 @@ return new class extends Migration
             $table->decimal('igv', 6,2 );
             $table->decimal('spread', 7,2 );
             $table->foreignIdFor(\App\Models\OperationStatus::class)->constrained();
+            $table->boolean('post')->default(true);
             $table->string('transfer_number', 45);
             $table->integer('corfid_id')->nullable();
             $table->string('corfid_mesage', 255)->nullable();
