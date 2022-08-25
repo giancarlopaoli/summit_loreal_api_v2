@@ -191,7 +191,7 @@ class InterbankOperationController extends Controller
         ]);
         if($val->fails()) return response()->json($val->messages());
 
-        try {
+        //try {
 
             $client = Client::find($request->client_id);
 
@@ -211,6 +211,14 @@ class InterbankOperationController extends Controller
 
             if($bank_accounts->count() == 0) return response()->json(['success' => false,'data' => ['Error en la cuenta de destino seleccionada.']]);
 
+            $bank_account_operation = array(
+                "bank_account_id" => $request->bank_account_id,
+                "amount" => $request->amount,
+                "comission_amount" => 0
+            );
+            $bank_account_list = array();
+            array_push($bank_account_list,$bank_account_operation);
+
             // Validating escrow account
             $escrow_accounts = EscrowAccount::where('id', $request->escrow_account_id)
                 ->where('currency_id', $request->currency_id)
@@ -219,6 +227,15 @@ class InterbankOperationController extends Controller
                 ->get();
 
             if($escrow_accounts->count() == 0) return response()->json(['success' => false,'data' => ['Error en la cuenta de fideicomiso seleccionada']]);
+
+            $escrow_account_operation = array(
+                "escrow_account_id" => $request->escrow_account_id,
+                "amount" => $request->amount + round($request->amount * $request->spread/10000, 2) + $request->comission_amount + $request->igv,
+                "comission_amount" => $request->comission_amount + $request->igv
+            );
+            $escrow_account_list = array();
+            array_push($escrow_account_list,$escrow_account_operation);
+
 
             $igv_porcentaje = round((float) Configuration::where('shortname', 'IGV')->first()->value / 100, 2);
 
@@ -248,6 +265,9 @@ class InterbankOperationController extends Controller
                 'operation_date' => $now->toDateTimeString()
             ]);
 
+            $op->bank_accounts()->attach($bank_account_list);
+            $op->escrow_accounts()->attach($escrow_account_list);
+
             return response()->json([
                 'success' => true,
                 'data' => [ 
@@ -258,10 +278,10 @@ class InterbankOperationController extends Controller
             $rpta_mail = Mail::send(new NewOperation($op->OperacionId));
             $rpta_mail = Mail::send(new NotifyOpItbc($op->OperacionId));
 
-        } catch (\Exception $e) {
+        /*} catch (\Exception $e) {
             return response()->json(['success' => false,'data' => ['Error al crear operación']]);
             logger('Creación de Operación Interbancaria: create_operation@InterbankOperationController', ["error" => $e]);
-        }
+        }*/
 
         return response()->json([
             'success' => true,
