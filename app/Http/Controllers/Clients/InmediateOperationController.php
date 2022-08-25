@@ -126,7 +126,7 @@ class InmediateOperationController extends Controller
             $exchange_rate = $request->type == 'compra' ? $special_exchange_rate->buying : $special_exchange_rate->selling;
         }
 
-        round($exchange_rate, 4);
+        $exchange_rate = round($exchange_rate, 4);
 
         $conversion_amount = round($amount * $exchange_rate, 2);
 
@@ -186,7 +186,7 @@ class InmediateOperationController extends Controller
         $igv_percetage = Configuration::where('shortname', 'IGV')->first()->value / 100;
         $comission_amount = round($total_comission / (1+$igv_percetage), 2);
 
-        $igv = $total_comission - $comission_amount;
+        $igv = round($total_comission - $comission_amount,2);
 
         $final_amount = $request->type == 'compra' ? $conversion_amount + $total_comission : $conversion_amount - $total_comission;
         $final_amount = round($final_amount, 2);

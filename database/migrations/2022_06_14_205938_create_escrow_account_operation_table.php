@@ -1,4 +1,4 @@
-<?php
++<?php
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
@@ -13,7 +13,7 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('escrow_account_operations', function (Blueprint $table) {
+        Schema::create('escrow_account_operation', function (Blueprint $table) {
             $table->id();
             $table->foreignIdFor(\App\Models\EscrowAccount::class)->constrained();
             $table->foreignIdFor(\App\Models\Operation::class)->constrained();
@@ -30,6 +30,6 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('escrow_account_operations');
+        Schema::dropIfExists('escrow_account_operation');
     }
 };
