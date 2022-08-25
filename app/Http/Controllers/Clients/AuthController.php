@@ -72,51 +72,6 @@ class AuthController extends Controller
         }
     }
 
-    public function login_token(Request $request) {
-        $credentials = $request->only('email', 'password');
-
-        if (Auth::attempt(array_merge($credentials, ['status' => UserStatus::Activo]))) {
-
-            $request->session()->regenerate();
-
-            $user = Auth::user();
-            $user->tries = 0;
-            $user->last_login = Carbon::now();
-            $user->save();
-
-            AccessLog::create([
-                'ip' => $request->ip(),
-                'user_id' => $user->id
-            ]);
-
-            return response()->json([
-                'success' => true,
-                'data' => [
-                    'token' => $user->createToken("basic")->plainTextToken,
-                    'user' => $user->only(['id','name','last_name','email','document_number','phone']),
-                    'assigned_client' => $user->assigned_client[0]->only(['id','name','last_name','mothers_name','document_type_id', 'document_number', 'customer_type', 'created_at as registered_at'])
-                ]
-            ]);
-
-        } else {
-
-            // Add login attempt
-            $user = User::where('email', $credentials->email)->first();
-            $user->tries++;
-
-            // Check login attempts exceeds 5
-            if($user->tries >= 5) {
-                $user->status = UserStatus::Bloqueado;
-            }
-
-            $user->save();
-
-            return response()->json([
-                'errors' => 'Usuario o contraseña incorrectos',
-            ], 403);
-        }
-    }
-
     public function logout(Request $request)
     {
         $request->session()->invalidate();

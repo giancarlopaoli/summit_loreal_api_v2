@@ -16,7 +16,6 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware('encryptresponses')->group(function () {
     Route::post('login', [\App\Http\Controllers\Clients\AuthController::class, 'login']);
-    Route::post('login/token', [\App\Http\Controllers\Clients\AuthController::class, 'login_token']);
     Route::post('logout', [\App\Http\Controllers\Clients\AuthController::class, 'logout']);
 
     Route::group(['middleware' => ['auth:sanctum']], function () {
@@ -33,6 +32,7 @@ Route::middleware('encryptresponses')->group(function () {
             Route::get('minimum-amount', [\App\Http\Controllers\Clients\InmediateOperationController::class, 'get_minimum_amount']);
             Route::get('quote', [\App\Http\Controllers\Clients\InmediateOperationController::class, 'quote_operation']);
             Route::get('validate-coupon', [\App\Http\Controllers\Clients\InmediateOperationController::class, 'validate_coupon']);
+            Route::post('', [\App\Http\Controllers\Clients\InmediateOperationController::class, 'create_operation']);
         });
 
         Route::prefix('my-operations')->group(function () {
