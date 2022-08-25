@@ -24,6 +24,14 @@ class OperationStatusSeeder extends Seeder
         ]);
 
         OperationStatus::create([
+            'name' => 'Pendiente fondos contraparte'
+        ]);
+
+        OperationStatus::create([
+            'name' => 'Contravalor recaudado'
+        ]);
+
+        OperationStatus::create([
             'name' => 'Fondos enviados'
         ]);
 

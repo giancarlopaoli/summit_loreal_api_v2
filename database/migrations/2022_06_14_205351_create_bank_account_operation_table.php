@@ -13,7 +13,7 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('bank_account_operations', function (Blueprint $table) {
+        Schema::create('bank_account_operation', function (Blueprint $table) {
             $table->id();
             $table->foreignIdFor(\App\Models\BankAccount::class)->constrained();
             $table->foreignIdFor(\App\Models\Operation::class)->constrained();
@@ -30,6 +30,6 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('bank_account_operations');
+        Schema::dropIfExists('bank_account_operation');
     }
 };

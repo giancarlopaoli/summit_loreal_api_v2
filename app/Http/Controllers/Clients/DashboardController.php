@@ -24,7 +24,7 @@ class DashboardController extends Controller
 
         $latest_operations = $client
             ->operations()
-            ->select('code','class','type','amount','currency_id','operation_date','operation_status_id','exchange_rate')
+            ->select('id','code','class','type','amount','currency_id','operation_date','operation_status_id','exchange_rate')
             ->latest()
             ->take(5)
             ->get();
