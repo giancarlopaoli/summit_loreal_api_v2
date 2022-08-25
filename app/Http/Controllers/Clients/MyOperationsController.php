@@ -54,6 +54,7 @@ class MyOperationsController extends Controller
         $operation = $client->operations()
             ->select('id','code','class','type','user_id','amount','currency_id','exchange_rate','comission_amount','igv','operation_status_id','transfer_number','invoice_url','coupon_id','coupon_code','coupon_type','coupon_value','operation_date','funds_confirmation_date','deposit_date','spread','comission_spread')
             ->where('code', $operation_id)
+            ->where('client_id', $request->client_id)
             ->first();
 
         if($operation == null) {
@@ -78,12 +79,16 @@ class MyOperationsController extends Controller
             $operation->final_exchange_rate = $operation->exchange_rate - $operation->spread/10000 - $operation->comission_spread/10000;
 
             $comission_pl = round($operation->amount * $operation->spread/10000, 2);
-            $operation->counter_value = round(round($operation->amount * $operation->exchange_rate, 2) - $comission_pl - $operation->comission_amount + $operation->igv, 2);
+            $operation->counter_value = round(round($operation->amount * $operation->exchange_rate, 2) - $comission_pl - $operation->comission_amount - $operation->igv, 2);
         }
 
         // custom fiedls for interbank operations
         if($operation->type == Enums\OperationType::Interbancaria){
             $operation->selling_exchange_rate = round($operation->exchange_rate + $operation->spread/10000,4);
+
+            $comission_pl = round($operation->amount * $operation->spread/10000, 2);
+            
+            $operation->counter_value = round($operation->amount + $comission_pl + $operation->comission_amount + $operation->igv, 2);
         }
 
         $operation->load(
