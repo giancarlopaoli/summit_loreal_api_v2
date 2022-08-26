@@ -46,9 +46,9 @@ class AuthController extends Controller
             return response()->json([
                 'success' => true,
                 'data' => [
-                    'user' => $user,
                     'token' => $user->createToken("basic")->plainTextToken,
-                    'assigned_client' => $user->assigned_client
+                    'user' => $user->only(['id','name','last_name','email','document_number','phone']),
+                    'assigned_client' => $user->assigned_client[0]->only(['id','name','last_name','mothers_name','document_type_id', 'document_number', 'customer_type', 'created_at as registered_at'])
                 ]
             ]);
 

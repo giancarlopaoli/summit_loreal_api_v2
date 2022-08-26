@@ -52,9 +52,12 @@ Route::middleware('encryptresponses')->group(function () {
             Route::put('edit_user', [\App\Http\Controllers\Clients\ProfileController::class, 'edit_user']);
             Route::put('edit_client', [\App\Http\Controllers\Clients\ProfileController::class, 'edit_client']);
             Route::get('clients_list', [\App\Http\Controllers\Clients\ProfileController::class, 'clients_list']);
-            Route::get('users_list', [\App\Http\Controllers\Clients\ProfileController::class, 'users_list']);
+            Route::get('users', [\App\Http\Controllers\Clients\ProfileController::class, 'users_list']);
             Route::post('change', [\App\Http\Controllers\Clients\ProfileController::class, 'change']);
             Route::get('bank-accounts', [\App\Http\Controllers\Clients\ProfileController::class, 'bank_accounts']);
+            Route::post('users', [\App\Http\Controllers\Clients\ProfileController::class, 'add_user']);
+            Route::delete('users', [\App\Http\Controllers\Clients\ProfileController::class, 'delete_user']);
+
         });
 
         Route::prefix('interbank-operation')->group(function () {

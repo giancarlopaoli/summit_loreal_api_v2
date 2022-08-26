@@ -96,7 +96,6 @@ class ProfileController extends Controller
 
     public function clients_list(Request $request)
     {
-
         return response()->json([
             'success' => true,
             'data' => [
@@ -107,7 +106,6 @@ class ProfileController extends Controller
 
     public function users_list(Request $request)
     {
-
         $users = Client::find($request->client_id)->users;
 
         return response()->json([
@@ -176,6 +174,30 @@ class ProfileController extends Controller
             'success' => true,
             'data' => [
                 'bank_accounts' => $bank_accounts
+            ]
+        ]);
+    }
+
+    public function add_user(Request $request)
+    {
+        $users = Client::find($request->client_id)->users;
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'users' => $users
+            ]
+        ]);
+    }
+
+    public function delete_user(Request $request)
+    {
+        $users = Client::find($request->client_id)->users;
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'users' => $users
             ]
         ]);
     }
