@@ -228,15 +228,6 @@ class InterbankOperationController extends Controller
 
             if($escrow_accounts->count() == 0) return response()->json(['success' => false,'data' => ['Error en la cuenta de fideicomiso seleccionada']]);
 
-            $escrow_account_operation = array(
-                "escrow_account_id" => $request->escrow_account_id,
-                "amount" => $request->amount + round($request->amount * $request->spread/10000, 2) + $request->comission_amount + $request->igv,
-                "comission_amount" => $request->comission_amount + $request->igv
-            );
-            $escrow_account_list = array();
-            array_push($escrow_account_list,$escrow_account_operation);
-
-
             $igv_porcentaje = round((float) Configuration::where('shortname', 'IGV')->first()->value / 100, 2);
 
             $comision_total = $request->comission + $request->igv;
@@ -247,6 +238,15 @@ class InterbankOperationController extends Controller
 
             $now = Carbon::now();
             $code = $now->format('ymdHisv') . rand(0, 9);
+
+            $escrow_account_operation = array(
+                "escrow_account_id" => $request->escrow_account_id,
+                "amount" => $request->amount + round($request->amount * $spread/10000, 2) + $request->comission + $request->igv,
+                "comission_amount" => $request->comission + $request->igv
+            );
+            $escrow_account_list = array();
+            array_push($escrow_account_list,$escrow_account_operation);
+
 
             $op = Operation::create([
                 'code' => $code,
