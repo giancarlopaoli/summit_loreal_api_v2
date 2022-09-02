@@ -166,9 +166,23 @@ class ProfileController extends Controller
         if ($validator->fails()) return response()->json($validator->messages());
 
         $client = Client::find($request->client_id);
+
+        if($client == null) {
+            return response()->json([
+                'success' => false,
+                'errors' => 'Cliente no encontrado'
+            ], 404);
+        }
+
         $bank_accounts = $client->bank_accounts()
+            ->select('id','client_id','alias','account_number','cci_number','main','bank_account_status_id','currency_id','bank_id')
             ->where('currency_id', $request->currency_id)
-            ->get();
+            ->whereRelation('status', 'name', 'Activo')
+            ->with([
+            'bank:id,name,shortname,image',
+            'currency:id,name,sign'
+        ])->get();
+
 
         return response()->json([
             'success' => true,
