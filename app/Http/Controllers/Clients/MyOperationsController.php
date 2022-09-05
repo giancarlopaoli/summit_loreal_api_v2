@@ -90,7 +90,9 @@ class MyOperationsController extends Controller
 
             $comission_pl = round($operation->amount * $operation->spread/10000, 2);
             
-            $operation->counter_value = round($operation->amount + $comission_pl + $operation->comission_amount + $operation->igv, 2);
+            $operation->sends = round($operation->amount + $comission_pl + $operation->comission_amount + $operation->igv, 2);
+
+            $operation->counter_value = round($operation->amount + $comission_pl, 2);
         }
 
         $operation->load(

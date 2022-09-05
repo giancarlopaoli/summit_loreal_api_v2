@@ -238,7 +238,7 @@ class InmediateOperationController extends Controller
             ]);
         }
 
-        $coupon = Coupon::validate($request->coupon_code);
+        $coupon = Coupon::validate($request->coupon_code)->only(['id','code']);
 
         return response()->json([
             'success' => true,

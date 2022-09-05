@@ -32,8 +32,11 @@ class MasterTablesController extends Controller
         if ($validator->fails()) return response()->json($validator->messages());
 
         $escrow_accounts = EscrowAccount::when($request->currency_id, function ($query, $currency_id) {
-            $query->where('currency_id', $currency_id);
-        })->get();
+                $query->where('currency_id', $currency_id);
+            })
+            ->select('id','bank_id','account_number','cci_number','currency_id')
+            ->with('bank:id,name,shortname,image', 'currency:id,name,sign')
+            ->get();
 
         return response()->json([
             'success' => true,
