@@ -16,7 +16,6 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware('encryptresponses')->group(function () {
     Route::post('login', [\App\Http\Controllers\Clients\AuthController::class, 'login']);
-    Route::post('login/token', [\App\Http\Controllers\Clients\AuthController::class, 'login_token']);
     Route::post('logout', [\App\Http\Controllers\Clients\AuthController::class, 'logout']);
 
     Route::group(['middleware' => ['auth:sanctum']], function () {
@@ -33,6 +32,7 @@ Route::middleware('encryptresponses')->group(function () {
             Route::get('minimum-amount', [\App\Http\Controllers\Clients\InmediateOperationController::class, 'get_minimum_amount']);
             Route::get('quote', [\App\Http\Controllers\Clients\InmediateOperationController::class, 'quote_operation']);
             Route::get('validate-coupon', [\App\Http\Controllers\Clients\InmediateOperationController::class, 'validate_coupon']);
+            Route::post('', [\App\Http\Controllers\Clients\InmediateOperationController::class, 'create_operation']);
         });
 
         Route::prefix('my-operations')->group(function () {
@@ -74,6 +74,10 @@ Route::middleware('encryptresponses')->group(function () {
             Route::get('banks', [\App\Http\Controllers\Admin\MasterTablesController::class, 'banks']);
             Route::get('account-types', [\App\Http\Controllers\Admin\MasterTablesController::class, 'account_types']);
             Route::get('escrow-accounts', [\App\Http\Controllers\Admin\MasterTablesController::class, 'escrow_accounts']);
+        });
+
+        Route::prefix('datatec')->group(function () {
+            Route::post('', [\App\Http\Controllers\Admin\DatatecController::class, 'new_exchange_rate']);
         });
     });
 
