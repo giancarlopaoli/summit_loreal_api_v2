@@ -35,7 +35,7 @@ class AuthController extends Controller
 
             $user = Auth::user();
             $user->tries = 0;
-            $user->last_login = Carbon::now();
+            $user->last_active = Carbon::now();
             $user->save();
 
             AccessLog::create([

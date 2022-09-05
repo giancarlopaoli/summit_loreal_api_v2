@@ -29,7 +29,7 @@ class UserFactory extends Factory
             'document_number' => $this->faker->asciify("********"),
             'tries' => $this->faker->numberBetween(0, 3),
             'password' => Hash::make("password"),
-            'last_login' => $this->faker->dateTime(),
+            'last_active' => $this->faker->dateTime(),
             'status' => UserStatus::getRandomValue()
         ];
     }

@@ -12,4 +12,8 @@ class Range extends Model
     public function updater() {
         return $this->belongsTo(User::class, "modified_by");
     }
+
+    public static function minimun_amount() {
+        return self::min('min_range');
+    }
 }

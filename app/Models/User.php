@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\ClientUserStatus;
+use Carbon\Carbon;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -69,5 +70,14 @@ class User extends Authenticatable
 
     public function logs() {
         return $this->hasMany(AccessLog::class);
+    }
+
+    public function scopeActivityOlderThan($query, $interval)
+    {
+        return $query->where('last_active', '>=', Carbon::now()->subMinutes($interval)->toDateTimeString());
+    }
+
+    public static function get_authenticated_users() {
+        return self::activityOlderThan(5)->get();
     }
 }

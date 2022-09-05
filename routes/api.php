@@ -72,6 +72,10 @@ Route::middleware('encryptresponses')->group(function () {
             Route::get('account-types', [\App\Http\Controllers\Admin\MasterTablesController::class, 'account_types']);
             Route::get('escrow-accounts', [\App\Http\Controllers\Admin\MasterTablesController::class, 'escrow_accounts']);
         });
+
+        Route::prefix('datatec')->group(function () {
+            Route::post('', [\App\Http\Controllers\Admin\DatatecController::class, 'new_exchange_rate']);
+        });
     });
 
     Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
