@@ -307,28 +307,6 @@ class InmediateOperationController extends Controller
 
         if($request->type == 'compra') {
             foreach ($bank_accounts as $bank_account) {
-                if($bank_account->currency_id != $soles_id) {
-                    return response()->json([
-                        'success' => false,
-                        'errors' => [
-                            'La cuenta bancaria ' . $bank_account->id . ' no tiene la divisa valida'
-                        ]
-                    ]);
-                }
-            }
-
-            foreach ($escrow_accounts as $escrow_account) {
-                if($escrow_account->currency_id != $dolares_id) {
-                    return response()->json([
-                        'success' => false,
-                        'errors' => [
-                            'La cuenta fideicomiso ' . $escrow_account->id . ' no tiene la divisa valida'
-                        ]
-                    ]);
-                }
-            }
-        } else {
-            foreach ($bank_accounts as $bank_account) {
                 if($bank_account->currency_id != $dolares_id) {
                     return response()->json([
                         'success' => false,
@@ -341,6 +319,28 @@ class InmediateOperationController extends Controller
 
             foreach ($escrow_accounts as $escrow_account) {
                 if($escrow_account->currency_id != $soles_id) {
+                    return response()->json([
+                        'success' => false,
+                        'errors' => [
+                            'La cuenta fideicomiso ' . $escrow_account->id . ' no tiene la divisa valida'
+                        ]
+                    ]);
+                }
+            }
+        } else {
+            foreach ($bank_accounts as $bank_account) {
+                if($bank_account->currency_id != $soles_id) {
+                    return response()->json([
+                        'success' => false,
+                        'errors' => [
+                            'La cuenta bancaria ' . $bank_account->id . ' no tiene la divisa valida'
+                        ]
+                    ]);
+                }
+            }
+
+            foreach ($escrow_accounts as $escrow_account) {
+                if($escrow_account->currency_id != $dolares_id) {
                     return response()->json([
                         'success' => false,
                         'errors' => [
