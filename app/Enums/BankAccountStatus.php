@@ -11,7 +11,8 @@ use BenSampo\Enum\Enum;
  */
 final class BankAccountStatus extends Enum
 {
-    const OptionOne =   0;
-    const OptionTwo =   1;
-    const OptionThree = 2;
+    const Activo =   1;
+    const Inactivo = 2;
+    const Pendiente = 3;
+    const Rechazado = 4;
 }
