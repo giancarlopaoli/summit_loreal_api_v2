@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Clients;
 
 use App\Enums\CouponType;
 use App\Enums\OperationClass;
+use App\Enums\BankAccountStatus;
 use App\Http\Controllers\Controller;
 use App\Models\AssociationComission;
 use App\Models\BankAccount;
@@ -274,39 +275,32 @@ class InmediateOperationController extends Controller
             $coupon = Coupon::find($request->coupon_id);
         }
 
-        $bank_accounts = [];
-        foreach ($request->bank_accounts as $bank_account_data) {
-            $bank_account = BankAccount::find($bank_account_data['id']);
-            if($bank_account == null || $bank_account?->client_id != $request->client_id) {
-                return response()->json([
-                    'success' => false,
-                    'errors' => [
-                        'La cuenta bancaria ' . $bank_account_data['id'] . ' no pertenece al cliente'
-                    ]
-                ]);
-            }
-            $bank_accounts[] = $bank_account;
-        }
-
-        $escrow_accounts = [];
-        foreach ($request->escrow_accounts as $escrow_account_data) {
-            $escrow_account = EscrowAccount::find($escrow_account_data['id']);
-            if($escrow_account == null || $escrow_account?->active != true) {
-                return response()->json([
-                    'success' => false,
-                    'errors' => [
-                        'La cuenta fideicomiso ' . $escrow_account_data['id'] . ' no es valida'
-                    ]
-                ]);
-            }
-            $escrow_accounts[] = $escrow_account;
-        }
-
+        //Validating Bank Accounts
         $soles_id = Currency::where('name', 'Soles')->first()->id;
         $dolares_id = Currency::where('name', 'Dolares')->first()->id;
 
-        if($request->type == 'compra') {
-            foreach ($bank_accounts as $bank_account) {
+        $bank_accounts = [];
+        $total_amount_bank = 0;
+        $total_amount_scrow = 0;
+        $total_comission = round($request->comission_amount + $request->igv);
+
+        foreach ($request->bank_accounts as $bank_account_data) {
+            $bank_account = BankAccount::where('id', $bank_account_data['id'])
+                ->where('client_id',$request->client_id)
+                ->where('bank_account_status_id', BankAccountStatus::Activo)
+                ->first();
+
+            // Validating that the bank account is valid.
+            if(is_null($bank_account)) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => [
+                        'Error en la cuenta bancaria id = ' . $bank_account_data['id']
+                    ]
+                ]);
+            }
+
+            if($request->type == 'compra') {
                 if($bank_account->currency_id != $dolares_id) {
                     return response()->json([
                         'success' => false,
@@ -315,20 +309,9 @@ class InmediateOperationController extends Controller
                         ]
                     ]);
                 }
-            }
 
-            foreach ($escrow_accounts as $escrow_account) {
-                if($escrow_account->currency_id != $soles_id) {
-                    return response()->json([
-                        'success' => false,
-                        'errors' => [
-                            'La cuenta fideicomiso ' . $escrow_account->id . ' no tiene la divisa valida'
-                        ]
-                    ]);
-                }
-            }
-        } else {
-            foreach ($bank_accounts as $bank_account) {
+                $bank_account->comission_amount = 0 ;
+            } else {
                 if($bank_account->currency_id != $soles_id) {
                     return response()->json([
                         'success' => false,
@@ -337,9 +320,59 @@ class InmediateOperationController extends Controller
                         ]
                     ]);
                 }
+
+                if($bank_account_data['amount'] >= $total_comission){
+                    $bank_account->comission_amount = $total_comission;
+                    $total_comission = 0;
+                }
+                else{
+                    $bank_account->comission_amount = $bank_account_data['amount'];
+                    $total_comission = $total_comission -  $bank_account_data['amount'];
+                }
             }
 
-            foreach ($escrow_accounts as $escrow_account) {
+            $bank_account->amount = $bank_account_data['amount'];
+            $total_amount_bank += $bank_account_data['amount'];
+            $bank_accounts[] = $bank_account;
+        }
+
+
+        //Validating Escrow Accounts
+        $escrow_accounts = [];
+        foreach ($request->escrow_accounts as $escrow_account_data) {
+            $escrow_account = EscrowAccount::where('id', $escrow_account_data['id'])
+                ->where('active', true)
+                ->first();
+
+            if(is_null($escrow_account)) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => [
+                        'La cuenta fideicomiso ' . $escrow_account_data['id'] . ' no es valida'
+                    ]
+                ]);
+            }
+
+            if($request->type == 'compra') {
+                if($escrow_account->currency_id != $soles_id) {
+                    return response()->json([
+                        'success' => false,
+                        'errors' => [
+                            'La cuenta fideicomiso ' . $escrow_account->id . ' no tiene la divisa valida'
+                        ]
+                    ]);
+                }
+
+                if($escrow_account_data['amount'] >= $total_comission){
+                    $escrow_account->comission_amount = $total_comission;
+                    $total_comission = 0;
+                }
+                else{
+                    $escrow_account->comission_amount = $escrow_account_data['amount'];
+                    $total_comission = $total_comission -  $escrow_account_data['amount'];
+                }
+
+            } else {
                 if($escrow_account->currency_id != $dolares_id) {
                     return response()->json([
                         'success' => false,
@@ -348,8 +381,50 @@ class InmediateOperationController extends Controller
                         ]
                     ]);
                 }
+
+                $escrow_account->comission_amount = 0;
             }
+
+            $escrow_account->amount = $escrow_account_data['amount'];
+            $total_amount_scrow += $escrow_account_data['amount'];
+            $escrow_accounts[] = $escrow_account;
         }
+        
+        //Validating amounts in accounts
+        if($request->type == 'compra') {
+            $envia = round($request->amount * $request->exchange_rate + $request->comission_amount + $request->igv,2);
+            $recibe = $request->amount;
+        } else {
+            $envia = $request->amount;
+            $recibe = round($request->amount * $request->exchange_rate - $request->comission_amount - $request->igv,2);
+        }
+
+        if( $recibe != $total_amount_bank){
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'La suma de montos enviados en las cuentas bancarias del cliente es incorrecto = ' . $total_amount_bank . '. Debería ser ' . $recibe 
+                ]
+            ]);
+        }
+
+        if( $envia != $total_amount_scrow){
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'La suma de montos enviados en las cuentas de fideicomiso es incorrecto = ' . $total_amount_scrow . '. Debería ser ' . $envia 
+                ]
+            ]);
+        }
+
+        /*return response()->json([
+            'success' => true,
+            'data' => [
+                'bank_accounts' => $bank_accounts,
+                'escrow_accounts' => $escrow_accounts
+            ]
+        ]);*/
+
 
         $op_code = Carbon::now()->format('YmdHisv') . rand(0,9);
         $status_id = OperationStatus::where('name', 'Disponible')->first()->id;
@@ -376,14 +451,14 @@ class InmediateOperationController extends Controller
             'post' => true
         ]);
 
-        foreach ($request->bank_accounts as $bank_account_data) {
+        foreach ($bank_accounts as $bank_account_data) {
             $operation->bank_accounts()->attach($bank_account_data['id'], [
                 'amount' => $bank_account_data['amount'],
                 'comission_amount' => $bank_account_data['comission_amount']
             ]);
         }
 
-        foreach ($request->escrow_accounts as $escrow_account_data) {
+        foreach ($escrow_accounts as $escrow_account_data) {
             $operation->escrow_accounts()->attach($escrow_account_data['id'], [
                 'amount' => $escrow_account_data['amount'],
                 'comission_amount' => $escrow_account_data['comission_amount']

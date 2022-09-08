@@ -59,7 +59,27 @@ class TestingSeeder extends Seeder
             'client_status_id' => ClientStatus::where('name', 'Activo')->first()->id
         ]);
 
+        $client2 = Client::create([
+            'name' => 'Bill Financial Services SA',
+            'last_name' => 'Billex',
+            'mothers_name' => '',
+            'document_type_id' => DocumentType::all()->random()->id,
+            'document_number' => '20601788676',
+            'phone' => '987654321',
+            'email' => 'tenologia@billex.pe',
+            'address' => 'Av Benavides 1944 - Miraflores',
+            'birthdate' => Carbon::now(),
+            'district_id' => District::all()->random()->id,
+            'country_id' => Country::all()->random()->id,
+            'economic_activity_id' => EconomicActivity::all()->random()->id,
+            'profession_id' => Profession::all()->random()->id,
+            'customer_type' => 'PJ',
+            'type' => 'Cliente',
+            'client_status_id' => ClientStatus::where('name', 'Activo')->first()->id
+        ]);
+
         $user->clients()->attach($client, ['status' => 'Asignado']);
+        $user->clients()->attach($client2, ['status' => 'Activo']);
 
         $operations = Operation::factory()->state([
             'client_id' => $client->id,
