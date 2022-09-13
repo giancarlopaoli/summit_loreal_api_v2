@@ -61,7 +61,7 @@ class ExchangeRate extends Model
             ->latest()
             ->first();
 
-        $exchange_rate = ExchangeRate::latest()->first();
+        $exchange_rate = ExchangeRate::select('id','compra','venta')->latest()->first();
 
         if($special_exchange_rate == null) {
             $exchange_rate->compra = round($exchange_rate->compra + $buy_spread, 4);

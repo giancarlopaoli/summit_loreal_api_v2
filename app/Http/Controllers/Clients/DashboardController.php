@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Clients;
 use App\Http\Controllers\Controller;
 use App\Models\Client;
 use App\Models\ExchangeRate;
+use App\Models\Range;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
 {
@@ -107,6 +109,21 @@ class DashboardController extends Controller
         return response()->json([
             'success' => true,
             'data' => $data
+        ]);
+    }
+
+    
+    
+
+    public function exchange_rate(Request $request) {
+        $min_amount = Range::minimun_amount();
+        $exchange_rate = ExchangeRate::latest()->first()->for_user(Auth::user(), $min_amount);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'exchange_rate' => $exchange_rate
+            ]
         ]);
     }
 }
