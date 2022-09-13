@@ -26,6 +26,7 @@ Route::middleware('encryptresponses')->group(function () {
         Route::prefix('dashboard')->group(function () {
             Route::get('indicators', [\App\Http\Controllers\Clients\DashboardController::class, 'get_indicators']);
             Route::get('graphs', [\App\Http\Controllers\Clients\DashboardController::class, 'graphs']);
+            Route::get('exchange-rate', [\App\Http\Controllers\Clients\DashboardController::class, 'exchange_rate']);
         });
 
         Route::prefix('immediate-operation')->group(function () {
