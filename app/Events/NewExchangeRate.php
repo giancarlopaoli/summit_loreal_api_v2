@@ -17,7 +17,7 @@ class NewExchangeRate implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public ExchangeRate $exchange_rate;
+    public $compra, $venta;
     private User $user;
 
     /**
@@ -30,7 +30,9 @@ class NewExchangeRate implements ShouldBroadcast
         $this->user = $user;
         $exchange_rate = ExchangeRate::latest()->first();
         $min_amount = Range::minimun_amount();
-        $this->exchange_rate = $exchange_rate->for_user($this->user, $min_amount);
+        $exchange_rate = $exchange_rate->for_user($this->user, $min_amount);
+        $this->compra = $exchange_rate->compra;
+        $this->venta = $exchange_rate->venta;
     }
 
     /**
@@ -47,5 +49,9 @@ class NewExchangeRate implements ShouldBroadcast
     public function broadcastAs()
     {
       return 'get-exchangerate';
+    }
+
+    public function broadcastAs() {
+        return 'get-exchangerate';
     }
 }

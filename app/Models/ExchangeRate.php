@@ -61,17 +61,22 @@ class ExchangeRate extends Model
             ->latest()
             ->first();
 
-        $exchange_rate = ExchangeRate::select('id','compra','venta')->latest()->first();
+
+        $exchange_rate = ExchangeRate::latest()->first();
+        $user_exchange_rate = new ExchangeRate();
+        #$user_exchange_rate->id = $exchange_rate->id;
+        $user_exchange_rate->created_at = $exchange_rate->created_at;
+        $user_exchange_rate->updated_at = $exchange_rate->updated_at;
 
         if($special_exchange_rate == null) {
-            $exchange_rate->compra = round($exchange_rate->compra + $buy_spread, 4);
-            $exchange_rate->venta = round($exchange_rate->venta - $sell_spread, 4);
+            $user_exchange_rate->compra = round($exchange_rate->compra + $buy_spread, 4);
+            $user_exchange_rate->venta = round($exchange_rate->venta - $sell_spread, 4);
 
         } else {
-            $exchange_rate->compra = round($special_exchange_rate->buying, 4);
-            $exchange_rate->venta = round($special_exchange_rate->selling, 4);
+            $user_exchange_rate->compra = round($special_exchange_rate->buying, 4);
+            $user_exchange_rate->venta = round($special_exchange_rate->selling, 4);
         }
 
-        return $exchange_rate;
+        return $user_exchange_rate;
     }
 }
