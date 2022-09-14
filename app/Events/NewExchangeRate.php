@@ -50,8 +50,4 @@ class NewExchangeRate implements ShouldBroadcast
     {
       return 'get-exchangerate';
     }
-
-    public function broadcastAs() {
-        return 'get-exchangerate';
-    }
 }
