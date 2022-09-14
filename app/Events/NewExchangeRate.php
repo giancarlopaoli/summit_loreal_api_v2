@@ -42,7 +42,13 @@ class NewExchangeRate implements ShouldBroadcast
      */
     public function broadcastOn()
     {
-        return new PrivateChannel('exchange-rate.'.$this->user->id);
+        //return new PrivateChannel('exchange-rate.'.$this->user->id);
+        return ['exchange-rate.'.$this->user->id];
+    }
+
+    public function broadcastAs()
+    {
+      return 'get-exchangerate';
     }
 
     public function broadcastAs() {
