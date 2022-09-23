@@ -82,6 +82,20 @@ Route::middleware('encryptresponses')->group(function () {
         });
     });
 
+    Route::prefix('register')->group(function () {
+        Route::get('document-types', [\App\Http\Controllers\Register\RegisterController::class, 'document_types']);
+        Route::get('representatives-document-types', [\App\Http\Controllers\Register\RegisterController::class, 'representatives_document_types']);
+        Route::get('banks', [\App\Http\Controllers\Register\RegisterController::class, 'bank_list']);
+        Route::get('economic-activities', [\App\Http\Controllers\Register\RegisterController::class, 'economic_activities']);
+        Route::get('account-types', [\App\Http\Controllers\Register\RegisterController::class, 'account_types']);
+
+        Route::get('validate-dni', [\App\Http\Controllers\Register\RegisterController::class, 'validate_dni']);
+        Route::get('validate-ruc', [\App\Http\Controllers\Register\RegisterController::class, 'validate_ruc']);
+        Route::get('exists-person', [\App\Http\Controllers\Register\RegisterController::class, 'exists_person']);
+        Route::get('exists-company', [\App\Http\Controllers\Register\RegisterController::class, 'exists_company']);
+
+    });
+
     Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
         return $request->user();
     });
