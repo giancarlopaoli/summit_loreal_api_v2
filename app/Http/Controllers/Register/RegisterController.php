@@ -11,6 +11,10 @@ use App\Models\EconomicActivity;
 use App\Models\AccountType;
 use App\Models\DniData;
 use App\Models\RucData;
+use App\Models\Department;
+use App\Models\Province;
+use App\Models\District;
+use App\Models\Country;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
@@ -83,6 +87,66 @@ class RegisterController extends Controller
             'success' => true,
             'data' => [
                 'document_types' => $account_types
+            ]
+        ]);
+    }
+
+    public function departments() {
+
+        $departments = Department::select('id','name')->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'departments' => $departments
+            ]
+        ]);
+    }
+
+    public function provinces(Request $request) {
+        $validator = Validator::make($request->all(), [
+            'department_id' => 'required|exists:departments,id',
+        ]);
+
+        if($validator->fails()) {return response()->json(['success' => false,'errors' => $validator->errors()->toJson()]);}
+        
+
+        $provinces = Province::select('id','name','department_id')->where('department_id', $request->department_id)->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'provinces' => $provinces
+            ]
+        ]);
+    }
+
+    public function districts(Request $request) {
+        $validator = Validator::make($request->all(), [
+            'province_id' => 'required|exists:provinces,id',
+        ]);
+
+        if($validator->fails()) {return response()->json(['success' => false,'errors' => $validator->errors()->toJson()]);}
+        
+
+        $districts = District::select('id','name','province_id','ubigeo')->where('province_id', $request->province_id)->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'districts' => $districts
+            ]
+        ]);
+    }
+
+    public function countries(Request $request) {
+
+        $countries = Country::select('id','name','prefix')->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'countries' => $countries
             ]
         ]);
     }
