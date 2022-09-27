@@ -93,6 +93,7 @@ Route::middleware('encryptresponses')->group(function () {
         Route::get('provinces', [\App\Http\Controllers\Register\RegisterController::class, 'provinces']);
         Route::get('districts', [\App\Http\Controllers\Register\RegisterController::class, 'districts']);
         Route::get('countries', [\App\Http\Controllers\Register\RegisterController::class, 'countries']);
+        Route::get('professions', [\App\Http\Controllers\Register\RegisterController::class, 'professions']);
 
         Route::get('validate-dni', [\App\Http\Controllers\Register\RegisterController::class, 'validate_dni']);
         Route::get('validate-ruc', [\App\Http\Controllers\Register\RegisterController::class, 'validate_ruc']);

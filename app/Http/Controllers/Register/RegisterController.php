@@ -15,6 +15,7 @@ use App\Models\Department;
 use App\Models\Province;
 use App\Models\District;
 use App\Models\Country;
+use App\Models\Profession;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
@@ -147,6 +148,18 @@ class RegisterController extends Controller
             'success' => true,
             'data' => [
                 'countries' => $countries
+            ]
+        ]);
+    }
+
+    public function professions(Request $request) {
+
+        $professions = Profession::select('id','name')->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'professions' => $professions
             ]
         ]);
     }
