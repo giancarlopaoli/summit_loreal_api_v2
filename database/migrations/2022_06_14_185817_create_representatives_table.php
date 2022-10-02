@@ -25,6 +25,7 @@ return new class extends Migration
             $table->boolean('pep');
             $table->string('pep_company', 100);
             $table->string('pep_position', 100);
+            $table->decimal('share', 5,3 );
             $table->timestamps();
         });
     }

@@ -25,9 +25,9 @@ return new class extends Migration
             $table->string('address', 255);
             $table->date('birthdate');
             $table->foreignIdFor(\App\Models\District::class)->constrained();
-            $table->foreignIdFor(\App\Models\Country::class)->constrained();
-            $table->foreignIdFor(\App\Models\EconomicActivity::class)->constrained();
-            $table->foreignIdFor(\App\Models\Profession::class)->nullable()->constrained();
+            $table->foreignIdFor(\App\Models\Country::class)->nullable()->constrained();
+            $table->foreignIdFor(\App\Models\EconomicActivity::class)->nullable()->constrained();
+            $table->foreignIdFor(\App\Models\Profession::class)->nullable()->nullable()->constrained();
             $table->enum('customer_type', ['PN', 'PJ']);
             $table->enum('type', ['Cliente', 'PL']);
             $table->foreignIdFor(\App\Models\ClientStatus::class);
@@ -48,9 +48,11 @@ return new class extends Migration
             $table->foreignIdFor(\App\Models\Executive::class)->nullable()->constrained();
             $table->foreignIdFor(\App\Models\TrackingPhase::class)->nullable()->constrained();
             $table->timestamp('tracking_date')->nullable();
+            $table->timestamp('accepted_tyc_at')->nullable();
             $table->date('comission_start_date')->nullable();
             $table->decimal('comission', 5, 4)->nullable();
             $table->unsignedInteger("invoice_to")->nullable();
+            $table->boolean('accepts_publicity')->default(false);
             $table->timestamps();
         });
     }

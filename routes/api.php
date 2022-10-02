@@ -101,6 +101,10 @@ Route::middleware('encryptresponses')->group(function () {
         Route::get('exists-person', [\App\Http\Controllers\Register\RegisterController::class, 'exists_person']);
         Route::get('exists-company', [\App\Http\Controllers\Register\RegisterController::class, 'exists_company']);
 
+        Route::post('register-person', [\App\Http\Controllers\Register\RegisterController::class, 'register_person']);
+        Route::post('register-company', [\App\Http\Controllers\Register\RegisterController::class, 'register_company']);
+
+        
     });
 
     Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
