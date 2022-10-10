@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use App\Models\Province;
 use App\Models\District;
+use App\Models\DocumentType;
 
 class FicharucController extends Controller
 {
@@ -296,7 +297,7 @@ class FicharucController extends Controller
 
                 if(Str::startsWith($value2, ["DOC. NACIONAL DE IDENTIDAD"])){
                     $tmprep["tipo_documento"] = "DNI";
-                    $tmprep["id_tipo_documento"] = 2;
+                    $tmprep["id_tipo_documento"] = DocumentType::where('name', $tmprep["tipo_documento"])->first()->id;
 
                     if($size == 2) $tmprep["nro_documento"] = substr($tmp[1], 1);
 
@@ -307,15 +308,16 @@ class FicharucController extends Controller
 
                     if(Str::startsWith($value[$property2 +1], ["IDENTIDAD"])){
                         $tmprep["tipo_documento"] = "DNI";
-                        $tmprep["id_tipo_documento"] = 2;
+                        $tmprep["id_tipo_documento"] = DocumentType::where('name', $tmprep["tipo_documento"])->first()->id;
 
                         $tmprep["nro_documento"] = explode("-", $value[$property2 + 1])[1];
                     }
 
                 }
                 elseif (Str::startsWith($value2, ["CARNET DE", "CARNÉ DE"])) {
-                    $tmprep["tipo_documento"] = "CARNET DE EXTRANJERIA";
-                    $tmprep["id_tipo_documento"] = 3;
+                    $tmprep["tipo_documento"] = "Carné de extranjería";
+                    $tmprep["id_tipo_documento"] = DocumentType::where('name', $tmprep["tipo_documento"])->first()->id;
+
                     
                     if($size == 2) $tmprep["nro_documento"] = $tmp[1];
                     elseif(sizeof(explode("-", $value2)) == 2){
@@ -417,15 +419,16 @@ class FicharucController extends Controller
                 // Obteniendo tipos y nros de documento
                 if(Str::startsWith($value2, ["DOC. NACIONAL DE IDENTIDAD"]) || ($value2 == "DOC." && $value[$property2 + 1] == "NACIONAL")){
                     $tmpsocios["tipo_documento"] = "DNI";
-                    $tmpsocios["id_tipo_documento"] = 2;
+                    $tmpsocios["id_tipo_documento"] = DocumentType::where('name', $tmpsocios["tipo_documento"])->first()->id;
+
 
                     if($value2 == "DOC. NACIONAL DE IDENTIDAD" && substr($value[$property2 + 1], 0,1) == "-") $tmpsocios["nro_documento"] = substr($value[$property2 + 1], 1);
                     if($size == 2) $tmpsocios["nro_documento"] = substr($tmp[1], 1);
                     elseif(Str::startsWith($value[$property2 + 3], ["IDENTIDAD"])) $tmpsocios["nro_documento"] = explode("-", $value[$property2 + 3])[1];
                 }
                 elseif(Str::startsWith(str_replace(" ", "", $value2), ["PASAPORTE"])){
-                    $tmpsocios["tipo_documento"] = "PASAPORTE";
-                    $tmpsocios["id_tipo_documento"] = 9;
+                    $tmpsocios["tipo_documento"] = "Pasaporte";
+                    $tmpsocios["id_tipo_documento"] = DocumentType::where('name', $tmpsocios["tipo_documento"])->first()->id;
 
                     if($size == 2) $tmpsocios["nro_documento"] = substr($tmp[1], 1);
                     elseif($size == 1 && $value[$property2 + 1] == "-" && sizeof(explode("\t", $value[$property2 + 2])) == 1){
@@ -433,16 +436,16 @@ class FicharucController extends Controller
                     }
                 }
                 elseif(Str::startsWith($value2, ["CARNET DE"]) || Str::startsWith(str_replace(" ", "", $value2), ["CARNETDE"]) ){
-                    $tmpsocios["tipo_documento"] = "CARNET DE EXTRANJERIA";
-                    $tmpsocios["id_tipo_documento"] = 3;
+                    $tmpsocios["tipo_documento"] = "Carné de extranjería";
+                    $tmpsocios["id_tipo_documento"] = DocumentType::where('name', $tmpsocios["tipo_documento"])->first()->id;
 
                     if(sizeof(explode("-", $value2)) == 2){
                         $tmpsocios["nro_documento"] = explode("-", $value2)[1];
                     }
                 }
                 elseif(Str::startsWith($value2, ["DOC.TRIB.NO.DOM.SIN.RUC"])){
-                    $tmpsocios["tipo_documento"] = "NO DOMICILIADO";
-                    $tmpsocios["id_tipo_documento"] = 4;
+                    $tmpsocios["tipo_documento"] = "No Domiciliado";
+                    $tmpsocios["id_tipo_documento"] = DocumentType::where('name', $tmpsocios["tipo_documento"])->first()->id;
 
                     if($size == 2){
                         $tmpsocios["nro_documento"] = substr($value2, 1);
@@ -451,7 +454,7 @@ class FicharucController extends Controller
                 }
                 elseif(Str::startsWith($value2, ["REG. UNICO DE CONTRIBUYENTES"])){
                     $tmpsocios["tipo_documento"] = "RUC";
-                    $tmpsocios["id_tipo_documento"] = 1;
+                    $tmpsocios["id_tipo_documento"] = DocumentType::where('name', $tmpsocios["tipo_documento"])->first()->id;
 
                     if($size == 2){
                         $tmpsocios["nro_documento"] = substr($value2, 1);
@@ -803,7 +806,7 @@ class FicharucController extends Controller
 
                 if(Str::startsWith($value2, ["DOC. NACIONAL DE"])){
                     $tmprep["tipo_documento"] = "DNI";
-                    $tmprep["id_tipo_documento"] = 2;
+                    $tmprep["id_tipo_documento"] = DocumentType::where('name', $tmprep["tipo_documento"])->first()->id;
 
                     if($size == 2 && Str::startsWith($tmp[1], ["IDENTIDAD/LE"])) {
                         $tmprep["nro_documento"] = substr($tmp[1],  12);
@@ -815,8 +818,8 @@ class FicharucController extends Controller
                     }
                 }
                 elseif (Str::startsWith($value2, ["CARNET DEEXTRANJERIA"])) {
-                    $tmprep["tipo_documento"] = "CARNET DE EXTRANJERIA";
-                    $tmprep["id_tipo_documento"] = 3;
+                    $tmprep["tipo_documento"] = "Carné de extranjería";
+                    $tmprep["id_tipo_documento"] = DocumentType::where('name', $tmprep["tipo_documento"])->first()->id;
 
                     $tmprep["nro_documento"] = substr($value2,  20);
                     $tmprep["nombres"] = str_replace("\t", " ", $value[$property2 + 1]);
@@ -896,21 +899,23 @@ class FicharucController extends Controller
                 // Obteniendo tipos y nros de documento
                 if(Str::startsWith($value2, ["DOC. NACIONALDE IDENTIDAD"])){
                     $tmpsocios["tipo_documento"] = "DNI";
+                    $tmpsocios["id_tipo_documento"] = DocumentType::where('name', $tmpsocios["tipo_documento"])->first()->id;
+
                     $tmpsocios["id_tipo_documento"] = 2;
 
                     if($size == 2) $tmpsocios["nro_documento"] = substr($tmp[1], -8);
                     $tmpsocios["nombres"] = str_replace("\t", " ", $value[$property2 + 1]);
                 }
                 elseif(Str::startsWith($value2, ["PASAPORTE"])){
-                    $tmpsocios["tipo_documento"] = "PASAPORTE";
-                    $tmpsocios["id_tipo_documento"] = 9;
+                    $tmpsocios["tipo_documento"] = "Pasaporte";
+                    $tmpsocios["id_tipo_documento"] = DocumentType::where('name', $tmpsocios["tipo_documento"])->first()->id;
 
                     if($size == 1 && sizeof(explode("-", $value2)) == 2) $tmpsocios["nro_documento"] = explode("-", $value2)[1];
                     $tmpsocios["nombres"] = str_replace("\t", " ", $value[$property2 + 1]);
                 }
                 elseif(Str::startsWith($value2, ["REG. UNICO DECONTRIBUYENTES"])){
                     $tmpsocios["tipo_documento"] = "RUC";
-                    $tmpsocios["id_tipo_documento"] = 1;
+                    $tmpsocios["id_tipo_documento"] = DocumentType::where('name', $tmpsocios["tipo_documento"])->first()->id;
 
                     if($size == 1 && sizeof(explode("-", $value2)) == 2) $tmpsocios["nro_documento"] = trim(explode("-", $value2)[1]);
                     $tmpsocios["nombres"] = str_replace("\t", " ", $value[$property2 + 1]);
