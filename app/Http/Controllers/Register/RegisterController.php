@@ -758,7 +758,7 @@ class RegisterController extends Controller
     public function register_company(Request $request) {
         $val = Validator::make($request->all(), [
             'client' => 'required',
-            'client.document_type_id' => 'required|in:1',
+            'client.document_type_id' => 'required|in:2,3',
             'client.document_number' => 'required|string',
             'client.phone' => 'required|string',
             'client.email' => 'required|string',
