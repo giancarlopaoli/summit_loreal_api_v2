@@ -102,4 +102,8 @@ class Client extends Model
     public function status() {
         return $this->belongsTo(ClientStatus::class);
     }
+
+    public function documents() {
+        return $this->hasMany(Document::class);
+    }
 }

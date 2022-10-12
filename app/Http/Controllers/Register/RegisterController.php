@@ -21,6 +21,7 @@ use App\Models\ClientStatus;
 use App\Models\BankAccount;
 use App\Models\BankAccountStatus;
 use App\Models\Representative;
+use App\Models\Document;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
@@ -1135,6 +1136,8 @@ class RegisterController extends Controller
         ]);
         if($val->fails()) return response()->json($val->messages());
 
+
+
         logger('Archivo adjunto: RegisterController@uploadFile', ["client_id" => $request->client_id]);
 
         if($request->hasFile('file')){
@@ -1153,13 +1156,11 @@ class RegisterController extends Controller
 
             try {
                 $s3 = Storage::disk('s3')->putFileAs($path, $file, $filename);
-                $cliente = ($request->cliente_id) ? ( ($request->cliente_id <> "null") ? $request->cliente_id : null) : null;
+                $cliente = ($request->client_id) ? ( ($request->client_id <> "null") ? $request->client_id : null) : null;
 
-                $insert = DB::table('Documentos')->insert([
-                    'ClienteId' => $cliente,
-                    'Nombre' => $filename,
-                    'Ubicacion' => '',
-                    'Tipo' => ''
+                $insert = Document::create([
+                    'client_id' => $cliente,
+                    'name' => $filename
                 ]);
 
             } catch (\Exception $e) {
@@ -1171,7 +1172,7 @@ class RegisterController extends Controller
             return response()->json([
                 'success' => true,
                 'data' => [
-                    'Adjunto agregado'
+                    'Archivo agregado'
                 ]
             ]);
 
