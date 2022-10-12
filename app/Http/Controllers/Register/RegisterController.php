@@ -21,12 +21,14 @@ use App\Models\ClientStatus;
 use App\Models\BankAccount;
 use App\Models\BankAccountStatus;
 use App\Models\Representative;
+use App\Models\Document;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Hash;
 use App\Enums;
+use Illuminate\Support\Facades\Storage;
 
 class RegisterController extends Controller
 {
@@ -751,7 +753,10 @@ class RegisterController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $cliente_id
+            'client_id' => $cliente_id,
+            'data' => [
+                $mensaje
+            ]
         ]);
     }
 
@@ -1097,7 +1102,9 @@ class RegisterController extends Controller
                 return response()->json([
                     'success' => true,
                     'cliente_id' => $cliente_id,
-                    'mensaje' => $mensaje
+                    'data' => [
+                        $mensaje
+                    ]
                 ]);
                 //}
             }
@@ -1119,5 +1126,62 @@ class RegisterController extends Controller
                 'mensaje' => 'Se presentó un problema al guardar el registro.'
             ]);
         }*/
+    }
+
+    public function upload_file(Request $request)
+    {
+        $val = Validator::make($request->all(), [
+            'client_id' => 'required',
+            'file' => 'required|file'
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+
+
+        logger('Archivo adjunto: RegisterController@uploadFile', ["client_id" => $request->client_id]);
+
+        if($request->hasFile('file')){
+            $file = $request->file('file');
+            $path = 'test';
+
+            try {
+                $extension = strrpos($file->getClientOriginalName(), ".")? (Str::substr($file->getClientOriginalName(), strrpos($file->getClientOriginalName(), ".") , Str::length($file->getClientOriginalName()) -strrpos($file->getClientOriginalName(), ".") +1)): "";
+                
+                $now = Carbon::now();
+                $filename = md5($now->toDateTimeString().$file->getClientOriginalName()).$extension;
+            } catch (\Exception $e) {
+                $filename = $file->getClientOriginalName();
+            }
+
+
+            try {
+                $s3 = Storage::disk('s3')->putFileAs($path, $file, $filename);
+                $cliente = ($request->client_id) ? ( ($request->client_id <> "null") ? $request->client_id : null) : null;
+
+                $insert = Document::create([
+                    'client_id' => $cliente,
+                    'name' => $filename
+                ]);
+
+            } catch (\Exception $e) {
+                // Registrando el el log los datos ingresados
+                logger('ERROR: archivo adjunto: RegisterController@uploadFile', ["error" => $e]);
+            }
+
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'Archivo agregado'
+                ]
+            ]);
+
+        } else{
+            return response()->json([
+                'success' => false,
+                'error' => 'Error en el archivo adjunto',
+            ]);
+        }
+
     }
 }

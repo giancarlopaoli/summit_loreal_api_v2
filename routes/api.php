@@ -103,6 +103,7 @@ Route::middleware('encryptresponses')->group(function () {
 
         Route::post('register-person', [\App\Http\Controllers\Register\RegisterController::class, 'register_person']);
         Route::post('register-company', [\App\Http\Controllers\Register\RegisterController::class, 'register_company']);
+        Route::post('upload-file', [\App\Http\Controllers\Register\RegisterController::class, 'upload_file']);
 
         
     });

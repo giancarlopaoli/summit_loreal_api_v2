@@ -15,8 +15,8 @@ return new class extends Migration
     {
         Schema::create('documents', function (Blueprint $table) {
             $table->id();
+            $table->foreignIdFor(\App\Models\Client::class)->constrained();
             $table->string('name', 100);
-            $table->string('documentscol', 45);
             $table->timestamps();
         });
     }
