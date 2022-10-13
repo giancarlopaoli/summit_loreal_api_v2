@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Register;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
@@ -12,6 +11,7 @@ use Illuminate\Support\Str;
 use App\Models\Province;
 use App\Models\District;
 use App\Models\DocumentType;
+use App\Models\EconomicActivity;
 
 class FicharucController extends Controller
 {
@@ -203,7 +203,7 @@ class FicharucController extends Controller
         $codigo_act_eco =  (int) Str::substr($data['general']['actividad_economica'], 0, strpos($data['general']['actividad_economica'], " - ") );
 
         try {
-            $data['general']['id_actividad_economica'] = DB::table('ActividadEconomica')->where('Codigo', $codigo_act_eco)->first()->ActividadEconomicaId;
+            $data['general']['id_actividad_economica'] = EconomicActivity::where('code', $codigo_act_eco)->first()->id;
         } catch (\Exception $e) {
             logger('Actividad Económica: FicharucController@parseReporteFicharuc', ["error" => $e]);
         }
@@ -703,7 +703,7 @@ class FicharucController extends Controller
         $codigo_act_eco =  (int) Str::substr($data['general']['actividad_economica'], 0, strpos($data['general']['actividad_economica'], " - ") );
 
         try {
-            $data['general']['id_actividad_economica'] = DB::table('ActividadEconomica')->where('Codigo', $codigo_act_eco)->first()->ActividadEconomicaId;
+            $data['general']['id_actividad_economica'] = EconomicActivity::where('code', $codigo_act_eco)->first()->id;
         } catch (\Exception $e) {
             logger('Actividad Económica: FicharucController@parseReporteFicharuc', ["error" => $e]);
         }

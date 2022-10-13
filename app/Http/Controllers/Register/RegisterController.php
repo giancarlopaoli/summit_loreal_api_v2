@@ -22,6 +22,7 @@ use App\Models\BankAccount;
 use App\Models\BankAccountStatus;
 use App\Models\Representative;
 use App\Models\Document;
+use App\Models\Currency;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
@@ -812,8 +813,8 @@ class RegisterController extends Controller
                 'name' => $request->client['company_name'],
                 'last_name' => isset($request->client['brand_name']) ? $request->client['brand_name']: "-",
                 'mothers_name' => "",
-                'document_type_id' => $request->client['document_type_id'],
-                'document_number' => $request->client['document_number'],
+                'document_type_id' => DocumentType::where('name', 'RUC')->first()->id,
+                'document_number' => $request->client['ruc'],
                 'phone' => $request->client['phone'],
                 'address' => $request->client['address'],
                 'email' => $request->client['email'],
@@ -831,23 +832,17 @@ class RegisterController extends Controller
             ]);
 
             $mensaje = 'El registro se realizó de manera exitosa.';
-
-            return response()->json([
-                'success' => true,
-                'cliente_id' => $client->id,
-                'mensaje' => $mensaje
-            ]);
             
             if ($client) {
-                $cliente_id = $client->id;            
+                $client_id = $client->id;            
 
                 // Insertando representantes Legales
                 try {
                     foreach ($request->representatives as $representative) {
                         $representatives = Representative::create([
-                            'client_id' => $cliente_id,
+                            'client_id' => $client_id,
                             'representative_type' => Enums\RepresentativeType::RepresentanteLegal,
-                            'document_type_id' => isset($representative['id_tipo_documento']) ? $representative['id_tipo_documento'] : 2,
+                            'document_type_id' => isset($representative['document_type_id']) ? $representative['document_type_id'] : null,
                             'document_number' => isset($representative['document_number']) ? $representative['document_number'] : "",
                             'names' => ($representative['names'] != "") ? $representative['names'] : (isset($representative['company_name']) ? $representative['company_name'] : " " ),
                             'last_name' => $representative['last_name'],
@@ -864,25 +859,20 @@ class RegisterController extends Controller
 
                 // Insertando Socios
                 try {
-                    if(isset($request->socios)){
-                        foreach ($request->socios as $socio) {
+                    if(isset($request->business_associates)){
+                        foreach ($request->business_associates as $socio) {
                             $representatives = Representative::create([
-                                'client_id' => $cliente_id,
-                                'TipoEjecutivoId' => 1,
-                                'TipopersonaId' => ($socio['id_tipo_documento'] == 1 || $socio['id_tipo_documento'] == 4) ? 4 : 1,
-                                'TipodocumentoId' => isset($socio['id_tipo_documento']) ? $socio['id_tipo_documento'] : "",
-                                'Numerodocumento' => isset($socio['nro_documento']) ? $socio['nro_documento'] : "",
-                                'Nombres' =>  ($socio['nombres'] != "") ? $socio['nombres'] : (isset($socio['razon_social']) ? $socio['razon_social'] : " " ),
-                                'Apellidopaterno' => isset($socio['apellido_paterno']) ? $socio['apellido_paterno'] : null,
-                                'Apellidomaterno' => isset($socio['apellido_materno']) ? $socio['apellido_materno'] : null,
-                                'PaisNacionalidadId' => 375,
-                                'Telefono' => null,
-                                'ProfesionId' => 4,
-                                'CargoEmpresa' => "",
+                                'client_id' => $client_id,
+                                'representative_type' => Enums\RepresentativeType::Socio,
+                                'document_type_id' => isset($socio['document_type_id']) ? $socio['document_type_id'] : null,
+                                'document_number' => isset($socio['document_number']) ? $socio['document_number'] : "",
+                                'names' => ($socio['names'] != "") ? $socio['names'] : (isset($socio['company_name']) ? $socio['company_name'] : " " ),
+                                'last_name' => isset($socio['last_name']) ? $socio['last_name'] : null,
+                                'mothers_name' => isset($socio['mothers_name']) ? $socio['mothers_name'] : null,
                                 'PEP' => $socio['pep'],
-                                'EntidadPublica' => isset($socio['entidad']) ? $socio['entidad'] : null,
-                                'CargoPublica' => isset($socio['cargo']) ? $socio['cargo'] : null,
-                                'Participacion' => $socio['participacion']
+                                'pep_company' => isset($socio['pep_company']) ? $socio['pep_company'] : null,
+                                'pep_position' => isset($socio['pep_position']) ? $socio['pep_position'] : null,
+                                'share' => $socio['share']
                             ]);
                         }
                     }
@@ -891,47 +881,40 @@ class RegisterController extends Controller
                     logger('Registro Empresa Socios: RegisterController@register-company', ["error" => $e]);
                 }
 
-
                 // Insertando cuentas bancarias
                 try {
-                    foreach ($request->cuentas as $cuenta) {
-                        $alias = ($cuenta['divisa'] == 1) ? "SOLES" : "USD";
 
-                        $insert = DB::table('CuentasBancarias')->insert([
-                            'ClienteId' => $cliente,
-                            'Razon' => $request->client['razon_social'],
-                            'Alias' => $alias,
-                            'BancoId' => $cuenta['banco_id'],
-                            'TipoCuentaId' => $cuenta['tipo_cuenta'],
-                            'NroCuenta' => $cuenta['nro_cuenta'],
-                            'DivisaId' => $cuenta['divisa'],
-                            'EstadoId' => 'COF',
-                            'FechaModificacion' => $now->toDateTimeString(),
+                    foreach ($request->accounts as $account) {
+                        $alias = Bank::where('id', $account['bank_id'])->first()->shortname . " " . Currency::where('id', $account['currency_id'])->first()->name;
 
+                        $insert = BankAccount::create([
+                            'client_id' => $client_id,
+                            'alias' => $alias,
+                            'bank_id' => $account['bank_id'],
+                            'account_number' => $account['account_number'],
+                            'account_type_id' => $account['account_type_id'],
+                            'currency_id' => $account['currency_id'],
+                            'bank_account_status_id' => BankAccountStatus::where('name','Pendiente')->first()->id
                         ]);
                     }
+
                 } catch (\Exception $e) {
                     $error = true;
                     logger('Registro Empresa Cuentas banc: RegisterController@register-company', ["error" => $e]);
                 }
 
-                $usuario = User::where('Email', $request->client['email'])->first();
+                // Validando que Email no existe, sino no se crea usuario
+                $user = User::where('email', $request->client['email'])->first();
                         
 
-                if(!is_null($usuario)){
+                if(!is_null($user)){
 
-                    $usuario_id = $usuario->UsuarioId;
+                    $user_id = $user->id;
 
-                    if ($usuario_id) {
+                    if ($user) {
                         // Creando Cliente/Usuario
                         try {
-                            $insert = DB::table('ClienteUsuario')->insertGetId([
-                                'ClienteId' => $cliente,
-                                'UsuarioId' => $usuario_id,
-                                'Estado' => 'ACT',
-                                'FechaCreacion' => $now->toDateTimeString(),
-                                'UsuarioCreacion' => $cliente
-                            ]);
+                            $client->users()->attach($user->id, ['status' => Enums\ClientUserStatus::Activo,]);
                         } catch (\Exception $e) {
                             $error = true;
                         }
@@ -939,98 +922,31 @@ class RegisterController extends Controller
                     else{
                         $error = true;
                     }
-
-
-                    /*
-                    //Enviando confirmación de Registro al equipo Billex
-                    if($error){
-                        $mensaje ='Se presentó un problema al guardar el registro.';
-                    }
-                    else{
-                        $mensaje = 'El registro se realizó de manera exitosa.';
-                    }
-                    $rpta_mail = Mail::send(new InfoRegistro($request->client['razon_social'], $request->cliente, $mensaje));
-
-                    // Registrando cliente en CRM
-                    try {
-                        $lead_id = 2339;
-                        // Buscando si existe en prospecto
-                        $prospecto = DB::connection('mysql')->table('leads')
-                            ->where('ruc', $request->client['ruc'])
-                            ->get();
-
-                        if($prospecto->count() > 0){
-                            $actualiza = DB::connection('mysql')->table('leads')->where('ruc', $request->client['ruc'])
-                                ->update([
-                                  'status' => 'Cliente',
-                                  'tracking_status' => 'Completado',
-                                  'client_id' => $cliente_id,
-                            ]);
-
-                            $lead_id = $prospecto[0]->executive_id;
-                        }
-
-                        // agregando en tabla de cliente
-                        $clienteCRM = DB::connection('mysql')->table('clients')->insertGetId([
-                            'id' => $cliente_id,
-                            'executive_id' => $lead_id,
-                            'status' => 'No contactado',
-                            'tracking_phase_id' => 1,
-                            'tracking_status' => 'Pendiente',
-                            'tracking_date' => Carbon::now(),
-                            'sum_comission' => 0,
-                            'created_at' => Carbon::now(),
-                        ]);
-
-                    } catch (\Exception $e) {
-                        logger('Registro Persona Juridica CRM: RegisterController@register-company', ["error" => $e]);
-                    }
-
-                    return response()->json([
-                        'success' => true,
-                        'cliente_id' => $cliente_id,
-                        'mensaje' => $mensaje
-                    ]);*/
                 }
                 else{
 
-                    $params = [
-                        'Correo' => $request->client['email'], 
-                        'Password' => $request->client['password'],
-                        'Nombres' => $request->client['nombres'],
-                        'Apellidos' => $request->client['apellido_paterno'] . " " . $request->client['apellido_materno'],
-                        'TipoDocumentoId' => $request->client['tipo_documento'],
-                        'NroDocumento' => $request->client['nro_documento'],
-                        'ClienteId' => $cliente,
-                        'Telefono' => $request->client['telefono']
-                    ];
-
-                    
                     try {
                         // Creando Usuario
-                        $creausuario = Http::post(env('APIBILLEX_URL').'/API/RegistrarUsuario', $params);
-                        $rpta_json = json_decode($creausuario);
+                        $user = User::create([
+                            'name' => $request->client['name'],
+                            'last_name' => $request->client['last_name'] . " " . $request->client['mothers_name'],
+                            'email' => $request->client['email'],
+                            'document_type_id' => $request->client['document_type_id'],
+                            'document_number' => $request->client['document_number'],
+                            'phone' => $request->client['phone'],
+                            'password' => Hash::make($request->client['password']),
+                            'status' => Enums\UserStatus::Activo,
+                        ]);
 
-
-                        if(is_object($rpta_json)){
-                            if($rpta_json->result){
-                                $usuario = $rpta_json->usuarioId;
-
-                                USER::where('UsuarioId', $usuario)->update(['Estado' => 'ACT']);
-                            }
-                            else{
-                                logger('ERROR Registro Empresa Usuario: RegisterController@register-company - Crear usuario', ["error" => $rpta_json]);
-                            }
-                        }
+                        $client->users()->attach($user->id, ['status' => Enums\ClientUserStatus::Activo,]);
 
                     } catch (\Exception $e) {
-                        $error = true;
-                        logger('Registro Empresa Usuario: RegisterController@register-company', ["error" => $e]);
+                        logger('Register Person Usuario: RegisterController@register_person', ["error" => $e]);
                     }
                 }
 
                 // Registrando cliente en CRM
-                try {
+                /*try {
                     $executive_id = 2339;
                     $comision = 0.05;
                     // Buscando si existe en prospecto
@@ -1098,13 +1014,13 @@ class RegisterController extends Controller
                     $mensaje = 'El registro se realizó de manera exitosa.';
                 }
                 $rpta_mail = Mail::send(new InfoRegistro($request->client['razon_social'], $request->cliente, $mensaje,$cliente_id));
-
+*/
                 return response()->json([
                     'success' => true,
-                    'cliente_id' => $cliente_id,
-                    'data' => [
+                    'client_id' => $client_id,
+                    /*'data' => [
                         $mensaje
-                    ]
+                    ]*/
                 ]);
                 //}
             }
