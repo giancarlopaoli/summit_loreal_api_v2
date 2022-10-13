@@ -20,12 +20,12 @@ return new class extends Migration
             $table->foreignIdFor(\App\Models\DocumentType::class)->constrained();
             $table->string('document_number', 15);
             $table->string('names', 150);
-            $table->string('last_name', 50);
-            $table->string('mothers_name', 50);
+            $table->string('last_name', 50)->nullable();
+            $table->string('mothers_name', 50)->nullable();
             $table->boolean('pep');
-            $table->string('pep_company', 100);
-            $table->string('pep_position', 100);
-            $table->decimal('share', 5,3 );
+            $table->string('pep_company', 100)->nullable();
+            $table->string('pep_position', 100)->nullable();
+            $table->string('share', 20)->nullable();
             $table->timestamps();
         });
     }
