@@ -29,12 +29,20 @@ class Lead extends Model
         return $this->belongsTo(DocumentType::class);
     }
 
+    public function lead_contact_type() {
+        return $this->belongsTo(LeadContactType::class);
+    }
+
+    public function lead_status() {
+        return $this->belongsTo(LeadStatus::class);
+    }
+
     public function creator() {
         return $this->belongsTo(User::class, "created_by");
     }
 
     public function executive() {
-        return $this->belongsTo(Executive::class);
+        return $this->belongsTo(Executive::class, "executive_id");
     }
 
     public function status() {

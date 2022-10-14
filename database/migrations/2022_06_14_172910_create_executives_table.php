@@ -17,8 +17,8 @@ return new class extends Migration
             $table->id();
             $table->enum('type', ['Tiempo Completo', 'Freelance']);
             $table->decimal('comission', 4, 2);
-            $table->integer('years');
-            $table->string('comments', 255);
+            $table->integer('years')->nullable();
+            $table->string('comments', 255)->nullable();
             $table->timestamps();
         });
     }

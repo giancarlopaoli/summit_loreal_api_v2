@@ -23,6 +23,10 @@ use App\Models\BankAccountStatus;
 use App\Models\Representative;
 use App\Models\Document;
 use App\Models\Currency;
+use App\Models\Lead;
+use App\Models\LeadStatus;
+use App\Models\Executive;
+use App\Models\ExecutiveComission;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
@@ -560,12 +564,32 @@ class RegisterController extends Controller
             logger('ERROR: Register Person: RegisterController@register_person', ["mensaje" => "No se pudo enviar el correo de bienvenida", "error" => $e]);  
         }
 
-        $cliente_id = null;
-
+        $client_id = null;
     
 
         //try {
-            // Creando Cliente
+            // Creating Client
+
+            $executive_id = User::where('email', env('PERSONS_EXECUTIVE'))->first()->id;
+            $comission = 0.05;
+            
+            // Looking for a existing lead       
+            $lead = Lead::where('contact_type', 'Natural')->where('document_number', $request->client['document_number'])->get();
+
+            // Retrieving executive
+            if($lead->count() > 0){                
+                $executive = Executive::where('id', $lead[0]->executive_id)->first();
+
+                // Si es freelance, se agrega ejecutivo en tabla executives_comission
+                if($executive->type == 'Freelance'){
+                    $comision = 0;
+                }
+                else{
+                    $comission = $executive->comission;
+                    $executive_id = $executive->id;
+                }
+            }
+
             $client = Client::create([
                 'name' => $request->client['name'],
                 'last_name' => $request->client['last_name'],
@@ -589,13 +613,16 @@ class RegisterController extends Controller
                 'pep_company' => isset($request->client['pep_company']) ? $request->client['pep_company'] : null,
                 'pep_position' => isset($request->client['pep_position']) ? $request->client['pep_position'] : null,
                 'accepted_tyc_at' => $now,
-                'accepts_publicity' => isset($request->client['accepts_publicity']) ? $request->client['accepts_publicity'] : 'false'
+                'accepts_publicity' => isset($request->client['accepts_publicity']) ? $request->client['accepts_publicity'] : 'false',
+                'executive_id' => $executive_id,
+                'tracking_phase_id' => null,
+                'tracking_date' => Carbon::now(),
+                'comission' => $comission
             ]);
 
-             
-
+            
             if ($client) {
-                $cliente_id = $client->id;
+                $client_id = $client->id;
 
                 try {
                     // Insertando cuentas bancarias
@@ -603,7 +630,7 @@ class RegisterController extends Controller
                         $alias = Bank::where('id', $account['bank_id'])->first()->shortname .  ($account['currency_id'] == 1) ? " SOLES" : " USD";
 
                         $insert = BankAccount::create([
-                            'client_id' => $cliente_id,
+                            'client_id' => $client_id,
                             'alias' => $alias,
                             'bank_id' => $account['bank_id'],
                             'account_number' => $account['account_number'],
@@ -658,57 +685,28 @@ class RegisterController extends Controller
                     }
                 }
 
-                // Registrando cliente en CRM
-                /*try {
-                    $executive_id = 2196;
-                    $comision = 0.05;
-                    // Buscando si existe en prospecto
-                    $prospecto = DB::connection('mysql')->table('leads')
-                        ->where('ruc', $request->client['nro_documento'])
-                        ->get();
-
-                    if($prospecto->count() > 0){
-                        $actualiza = DB::connection('mysql')->table('leads')->where('ruc', $request->client['nro_documento'])
+                // Actualizando lead
+                try {
+                    // Actualizando Lead
+                    if($lead->count() > 0){
+                        $actualiza = lead::where('contact_type', 'Natural')
+                            ->where('document_number', $request->client['document_number'])
                             ->update([
-                              'status' => 'Cliente',
-                              'tracking_status' => 'Completado',
-                              'client_id' => $cliente_id,
-                        ]);
-                        
-                        $ejecutivo = DB::connection('mysql')->table('executives')->where('user_id', $prospecto[0]->executive_id)->first();
-
-                        // Si es freelance, se agrega ejecutivo en tabla executives_comission
-                        if($ejecutivo->type == 'Freelance'){
-                            $comision = 0;
-                        }
-                        else{
-                            $comision = $ejecutivo->comission;
-                            $executive_id = $ejecutivo->user_id;
-                        }
+                                'lead_status_id' => LeadStatus::where('name', 'Cliente')->first()->id,
+                                'tracking_status' => 'Completado',
+                                'client_id' => $client_id,
+                            ]);
                     }
 
-                    // agregando en tabla de cliente
-                    $clienteCRM = DB::connection('mysql')->table('clients')->insertGetId([
-                        'id' => $cliente_id,
-                        'executive_id' => $executive_id,
-                        'status' => 'No contactado',
-                        'tracking_phase_id' => 1,
-                        'tracking_status' => 'Pendiente',
-                        'tracking_date' => Carbon::now(),
-                        'comission' => $comision,
-                        'comission_start_date' => Carbon::now(),
-                        'created_at' => Carbon::now(),
-                    ]);
-
                     // Si es freelance, se agrega ejecutivo en tabla executives_comission
-                    if(isset($ejecutivo)){
-                        if($ejecutivo->type == 'Freelance'){
+                    if(isset($executive)){
+                        if($executive->type == 'Freelance'){
 
                             // agregando en tabla de cliente
-                            $executive_comission = DB::connection('mysql')->table('executives_comission')->insertGetId([
-                                'executive_id' => $ejecutivo->user_id,
-                                'client_id' => $cliente_id,
-                                'comission' => $ejecutivo->comission
+                            $executive_comission = ExecutiveComission::create([
+                                'executive_id' => $executive->id,
+                                'client_id' => $client_id,
+                                'comission' => $executive->comission
                             ]);
                         }
                     }
@@ -717,7 +715,6 @@ class RegisterController extends Controller
                 }
 
                 //Enviando confirmación de Registro al equipo Billex
-
                 if($error){
                     $mensaje ='Se presentó un problema al guardar el registro.';
                 }
@@ -725,12 +722,14 @@ class RegisterController extends Controller
                     $mensaje = 'El registro se realizó de manera exitosa.';
                 }
 
-                $rpta_mail = Mail::send(new InfoRegistro($request->client['nombres']." ".$request->client['apellido_paterno']." ".$request->client['apellido_materno'], $request->cliente, $mensaje, $cliente_id));*/
+                //$rpta_mail = Mail::send(new InfoRegistro($request->client['nombres']." ".$request->client['apellido_paterno']." ".$request->client['apellido_materno'], $request->cliente, $mensaje, $client_id));
 
                 return response()->json([
                     'success' => true,
-                    'cliente_id' => $cliente_id,
-                    //'mensaje' => $mensaje
+                    'client_id' => $client_id,
+                    'data' => [ 
+                        $mensaje
+                    ]
                 ]);
                 //}
             }
@@ -743,18 +742,20 @@ class RegisterController extends Controller
 
             //Enviando confirmación de Registro al equipo Billex
             $mensaje = "El registro no se realizó o se realizó de manera parcial.";
-            $rpta_mail = Mail::send(new InfoRegistro($request->client['nombres']." ".$request->client['apellido_paterno']." ".$request->client['apellido_materno'], $request->cliente, $mensaje,$cliente_id));
+            //$rpta_mail = Mail::send(new InfoRegistro($request->client['nombres']." ".$request->client['apellido_paterno']." ".$request->client['apellido_materno'], $request->cliente, $mensaje,$client_id));
 
             return response()->json([
                 'success' => true,
-                'cliente_id' => $cliente_id,
-                'mensaje' => 'Se presentó un problema al guardar el registro.'
+                'client_id' => $client_id,
+                'data' => [
+                    $mensaje
+                ]
             ]);
         }*/
 
         return response()->json([
             'success' => true,
-            'client_id' => $cliente_id,
+            'client_id' => $client_id,
             'data' => [
                 $mensaje
             ]
@@ -794,21 +795,39 @@ class RegisterController extends Controller
         $now = Carbon::now();
         $error = false;
 
-        
-
-        /*try {
+        try {
             //Enviando mensaje de bienvenida al cliente
-            $rpta_mail = Mail::send(new MailBienvenida($request->client['nombres'], $request->client['email'], $request->client['razon_social']));
+            //$rpta_mail = Mail::send(new MailBienvenida($request->client['nombres'], $request->client['email'], $request->client['razon_social']));
 
         } catch (\Exception $e) {
             $error = true;
             logger('ERROR: Registro Persona Natural: RegisterController@register-company', ["mensaje" => "No se pudo enviar el correo de bienvenida", "error" => $e]);  
-        }*/
+        }
 
-        $cliente_id = null;
+        $client_id = null;
 
-        //try {
-            // Creando Cliente
+        try {
+            // Creating Client
+            $executive_id = User::where('email', env('COMPANIES_EXECUTIVE'))->first()->id;
+            $comission = 0.05;
+
+            // Looking for a existing lead       
+            $lead = Lead::where('contact_type', 'Juridica')->where('document_number', $request->client['ruc'])->get();
+
+            // Retrieving executive
+            if($lead->count() > 0){                
+                $executive = Executive::where('id', $lead[0]->executive_id)->first();
+
+                // Si es freelance, se agrega ejecutivo en tabla executives_comission
+                if($executive->type == 'Freelance'){
+                    $comision = 0;
+                }
+                else{
+                    $comission = $executive->comission;
+                    $executive_id = $executive->id;
+                }
+            }
+
             $client = Client::create([
                 'name' => $request->client['company_name'],
                 'last_name' => isset($request->client['brand_name']) ? $request->client['brand_name']: "-",
@@ -821,14 +840,18 @@ class RegisterController extends Controller
                 'birthdate' => isset($request->client['constitution_date']) ? $request->client['constitution_date'] : $now,
                 'district_id' => $request->client['district_id'],
                 'economic_activity_id' => $request->client['economic_activity_id'],
-                'customer_type' => 'PN',
+                'customer_type' => 'PJ',
                 'type' => 'Cliente',
                 'client_status_id' => ClientStatus::where('name','Registrado')->first()->id,
                 'funds_source' => ($request->client['funds_source'] != "" )  ? $request->client['funds_source'] : " ",
                 'funds_comments' => isset($request->client['funds_comments']) ? $request->client['funds_comments']: null,
                 'other_funds_comments' => isset($request->client['other_funds_comments']) ? $request->client['other_funds_comments']: null,
                 'accepted_tyc_at' => $now,
-                'accepts_publicity' => isset($request->client['accepts_publicity']) ? $request->client['accepts_publicity'] : 'false'
+                'accepts_publicity' => isset($request->client['accepts_publicity']) ? $request->client['accepts_publicity'] : 'false',
+                'executive_id' => $executive_id,
+                'tracking_phase_id' => null,
+                'tracking_date' => Carbon::now(),
+                'comission' => $comission
             ]);
 
             $mensaje = 'El registro se realizó de manera exitosa.';
@@ -945,60 +968,27 @@ class RegisterController extends Controller
                     }
                 }
 
-                // Registrando cliente en CRM
-                /*try {
-                    $executive_id = 2339;
-                    $comision = 0.05;
-                    // Buscando si existe en prospecto
-                    $prospecto = DB::connection('mysql')->table('leads')
-                        ->where('ruc', $request->client['ruc'])
-                        ->get();
-
-                    if($prospecto->count() > 0){
-                        $actualiza = DB::connection('mysql')->table('leads')->where('ruc', $request->client['ruc'])
+                // Updating Lead
+                try {
+                    if($lead->count() > 0){
+                        $actualiza = lead::where('contact_type', 'Juridica')
+                            ->where('document_number', $request->client['ruc'])
                             ->update([
-                              'status' => 'Cliente',
-                              'tracking_status' => 'Completado',
-                              'client_id' => $cliente_id,
-                        ]);
-                        
-                        $ejecutivo = DB::connection('mysql')->table('executives')->where('user_id', $prospecto[0]->executive_id)->first();
-
-                        // Si es freelance, se agrega ejecutivo en tabla executives_comission
-                        if(isset($ejecutivo)){
-                            if($ejecutivo->type == 'Freelance'){
-                                $comision = 0;
-                            }
-                            else{
-                                $comision = $ejecutivo->comission;
-                                $executive_id = $ejecutivo->user_id;
-                            }
-                        }
+                                'lead_status_id' => LeadStatus::where('name', 'Cliente')->first()->id,
+                                'tracking_status' => 'Completado',
+                                'client_id' => $client_id,
+                            ]);
                     }
 
-                    // agregando en tabla de cliente
-                    $clienteCRM = DB::connection('mysql')->table('clients')->insertGetId([
-                        'id' => $cliente_id,
-                        'executive_id' => $executive_id,
-                        'status' => 'No contactado',
-                        'tracking_phase_id' => 1,
-                        'tracking_status' => 'Pendiente',
-                        'tracking_date' => Carbon::now(),
-                        'comission' => $comision,
-                        'comission_start_date' => Carbon::now(),
-                        'created_at' => Carbon::now(),
-                    ]);
-
                     // Si es freelance, se agrega ejecutivo en tabla executives_comission
-                    if(isset($ejecutivo)){
-                        if($ejecutivo->type == 'Freelance'){
+                    if(isset($executive)){
+                        if($executive->type == 'Freelance'){
 
                             // agregando en tabla de cliente
-                            $executive_comission = DB::connection('mysql')->table('executives_comission')->insertGetId([
-                                'executive_id' => $ejecutivo->user_id,
-                                'client_id' => $cliente_id,
-                                'comission' => $ejecutivo->comission,
-                                'start_date' => Carbon::now()
+                            $executive_comission = ExecutiveComission::create([
+                                'executive_id' => $executive->id,
+                                'client_id' => $client_id,
+                                'comission' => $executive->comission
                             ]);
                         }
                     }
@@ -1013,35 +1003,35 @@ class RegisterController extends Controller
                 else{
                     $mensaje = 'El registro se realizó de manera exitosa.';
                 }
-                $rpta_mail = Mail::send(new InfoRegistro($request->client['razon_social'], $request->cliente, $mensaje,$cliente_id));
-*/
+                //$rpta_mail = Mail::send(new InfoRegistro($request->client['razon_social'], $request->cliente, $mensaje,$client_id));
+
                 return response()->json([
                     'success' => true,
                     'client_id' => $client_id,
-                    /*'data' => [
+                    'data' => [
                         $mensaje
-                    ]*/
+                    ]
                 ]);
-                //}
             }
 
-            
 
-        /*} catch (\Exception $e) {
+        } catch (\Exception $e) {
             // Registrando el el log los datos ingresados
             logger('ERROR: Registro Empresa: RegisterController@register-company', ["error" => $e]);
             
 
             //Enviando confirmación de Registro al equipo Billex
             $mensaje = "El registro no se realizó o se realizó de manera parcial.";
-            $rpta_mail = Mail::send(new InfoRegistro($request->client['razon_social'], $request->cliente, $mensaje,$cliente_id));
+            //$rpta_mail = Mail::send(new InfoRegistro($request->client['razon_social'], $request->cliente, $mensaje, $client_id));
 
             return response()->json([
                 'success' => true,
-                'cliente_id' => $cliente_id,
-                'mensaje' => 'Se presentó un problema al guardar el registro.'
+                'client_id' => $client_id,
+                'data' => [
+                    $mensaje
+                ]
             ]);
-        }*/
+        }
     }
 
     public function upload_file(Request $request)
