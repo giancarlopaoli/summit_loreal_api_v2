@@ -38,7 +38,8 @@ class DatabaseSeeder extends Seeder
             ProfessionSeeder::class,
             RegionSeeder::class,
             RangeSeeder::class,
-            EscrowAccountSeeder::class
+            EscrowAccountSeeder::class,
+            ExecutiveSeeder::class,
         ]);
 
         if(env('APP_DEBUG')) {

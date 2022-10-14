@@ -40,6 +40,18 @@ class TestingSeeder extends Seeder
             'status' => UserStatus::Activo
         ]);
 
+        $user = User::create([
+            'name' => 'giancarlopaoli',
+            'last_name' => 'Paoli',
+            'email' => 'giancarlopaoli@gmail.com',
+            'document_number' => '42868509',
+            'document_type_id' => '2',
+            'phone' => '998102921',
+            'tries' => 0,
+            'password' => Hash::make('password'),
+            'status' => UserStatus::Activo
+        ]);
+
         $client = Client::create([
             'name' => 'admin',
             'last_name' => 'admin',
