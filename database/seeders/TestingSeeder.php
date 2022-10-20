@@ -18,6 +18,8 @@ use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\Models\Permission;
 
 class TestingSeeder extends Seeder
 {
@@ -28,6 +30,17 @@ class TestingSeeder extends Seeder
      */
     public function run()
     {
+        
+
+        $role = Role::create(['name' => 'cliente']);
+        $role = Role::create(['name' => 'administrador']);
+        $role = Role::create(['name' => 'operaciones']);
+        $role = Role::create(['name' => 'proveedor']);
+        $role = Role::create(['name' => 'corfid']);
+        $role = Role::create(['name' => 'ejecutivos']);
+        $role = Role::create(['name' => 'supervisores']);
+        Permission::create(['name' => 'firmar_operaciones']);
+
         $user = User::create([
             'name' => 'admin',
             'last_name' => 'admin',
@@ -40,7 +53,9 @@ class TestingSeeder extends Seeder
             'status' => UserStatus::Activo
         ]);
 
-        $user = User::create([
+        $user->assignRole('cliente');
+
+        $user1 = User::create([
             'name' => 'giancarlopaoli',
             'last_name' => 'Paoli',
             'email' => 'giancarlopaoli@gmail.com',
@@ -51,6 +66,28 @@ class TestingSeeder extends Seeder
             'password' => Hash::make('password'),
             'status' => UserStatus::Activo
         ]);
+
+        $user1->assignRole('cliente');
+
+        $user2 = User::create([
+            'name' => 'Giancarlo',
+            'last_name' => 'Paoli',
+            'email' => 'giancarlo.paoli@billex.pe',
+            'document_number' => '42868509-1',
+            'document_type_id' => '2',
+            'phone' => '998102921',
+            'tries' => 0,
+            'password' => Hash::make('password'),
+            'status' => UserStatus::Activo
+        ]);
+
+        $user2->assignRole('administrador');
+        $user2->assignRole('operaciones');
+        $user2->assignRole('proveedor');
+        $user2->assignRole('corfid');
+        $user2->assignRole('ejecutivos');
+        $user2->assignRole('supervisores');
+        $user2->givePermissionTo('firmar_operaciones');
 
         $client = Client::create([
             'name' => 'admin',
@@ -92,6 +129,7 @@ class TestingSeeder extends Seeder
 
         $user->clients()->attach($client, ['status' => 'Asignado']);
         $user->clients()->attach($client2, ['status' => 'Activo']);
+        $user1->clients()->attach($client2, ['status' => 'Activo']);
 
         $operations = Operation::factory()->state([
             'client_id' => $client->id,

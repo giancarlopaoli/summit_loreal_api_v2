@@ -678,6 +678,8 @@ class RegisterController extends Controller
                             'status' => Enums\UserStatus::Activo,
                         ]);
 
+                        $user->assignRole('cliente');
+
                         $client->users()->attach($user->id, ['status' => Enums\ClientUserStatus::Activo,]);
 
                     } catch (\Exception $e) {
@@ -960,6 +962,8 @@ class RegisterController extends Controller
                             'password' => Hash::make($request->client['password']),
                             'status' => Enums\UserStatus::Activo,
                         ]);
+
+                        $user->assignRole('cliente');
 
                         $client->users()->attach($user->id, ['status' => Enums\ClientUserStatus::Activo,]);
 
