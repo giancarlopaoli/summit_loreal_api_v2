@@ -15,10 +15,15 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::middleware('encryptresponses')->group(function () {
+
+    ###############################
+    ###### Módulo de clientes #####
+    ###############################
+
     Route::post('login', [\App\Http\Controllers\Clients\AuthController::class, 'login']);
     Route::post('logout', [\App\Http\Controllers\Clients\AuthController::class, 'logout']);
 
-    Route::group(['middleware' => ['auth:sanctum']], function () {
+    Route::group(['middleware' => ['auth:sanctum'], 'middleware' => ['role:cliente']], function () {
         Route::get('/me', function(Request $request) {
             return auth()->user();
         });
@@ -68,9 +73,7 @@ Route::middleware('encryptresponses')->group(function () {
             Route::get('quote', [\App\Http\Controllers\Clients\InterbankOperationController::class, 'quote_operation']);
             Route::post('create', [\App\Http\Controllers\Clients\InterbankOperationController::class, 'create_operation']);
         });
-    });
 
-    Route::prefix('admin')->group(function () {
         Route::prefix('tables')->group(function () {
             Route::get('banks', [\App\Http\Controllers\Admin\MasterTablesController::class, 'banks']);
             Route::get('account-types', [\App\Http\Controllers\Admin\MasterTablesController::class, 'account_types']);
@@ -81,6 +84,10 @@ Route::middleware('encryptresponses')->group(function () {
             Route::post('', [\App\Http\Controllers\Admin\DatatecController::class, 'new_exchange_rate']);
         });
     });
+
+    ########################################
+    ###### Registro de nuevos clientes #####
+    ########################################
 
     Route::prefix('register')->group(function () {
         Route::get('document-types', [\App\Http\Controllers\Register\RegisterController::class, 'document_types']);
@@ -106,6 +113,27 @@ Route::middleware('encryptresponses')->group(function () {
         Route::post('upload-file', [\App\Http\Controllers\Register\RegisterController::class, 'upload_file']);
 
         
+    });
+    
+
+    #####################################
+    ###### Módulo de Administración #####
+    #####################################
+
+    Route::post('admin/login', [\App\Http\Controllers\Admin\AdminController::class, 'login']);
+
+    Route::prefix('admin')->middleware('auth:sanctum')->group(function () {
+
+        ########## General admin  #############
+        Route::get('has-permission', [\App\Http\Controllers\Admin\AdminController::class, 'has_permission']);
+        Route::get('has-role', [\App\Http\Controllers\Admin\AdminController::class, 'has_role']);
+
+
+        ########## Módulo de Operaciones  #############
+        Route::prefix('operations')->middleware('role:operaciones')->group(function () {
+            Route::get('daily-operations', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'daily_operations']);
+        });
+
     });
 
     Route::middleware('auth:sanctum')->get('/user', function (Request $request) {

@@ -43,12 +43,14 @@ class AuthController extends Controller
                 'user_id' => $user->id
             ]);
 
+            $assigned_client = ($user->assigned_client->count() == 0) ? null : $user->assigned_client[0]->only(['id','name','last_name','mothers_name','document_type_id', 'document_number', 'customer_type', "created_at"]);
+
             return response()->json([
                 'success' => true,
                 'data' => [
                     'token' => $user->createToken("basic")->plainTextToken,
                     'user' => $user->only(['id','name','last_name','email','document_number','phone']),
-                    'assigned_client' => $user->assigned_client[0]->only(['id','name','last_name','mothers_name','document_type_id', 'document_number', 'customer_type', 'created_at as registered_at'])
+                    'assigned_client' => $assigned_client
                 ]
             ]);
 
