@@ -28,6 +28,7 @@ class UserFactory extends Factory
             'document_type_id' => DocumentType::factory(),
             'document_number' => $this->faker->asciify("********"),
             'tries' => $this->faker->numberBetween(0, 3),
+            'role_id' => 1,
             'password' => Hash::make("password"),
             'last_active' => $this->faker->dateTime(),
             'status' => UserStatus::getRandomValue()

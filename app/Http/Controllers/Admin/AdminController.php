@@ -42,7 +42,7 @@ class AdminController extends Controller
                 'success' => true,
                 'data' => [
                     'token' => $user->createToken("basic")->plainTextToken,
-                    'user' => $user->only(['id','name','last_name','email','phone']),
+                    'user' => $user->only(['id','name','last_name','email','phone','role']),
                     'roles' => $user->getRoleNames()
                 ]
             ]);

@@ -82,6 +82,10 @@ class User extends Authenticatable
         return $this->hasMany(AccessLog::class);
     }
 
+    public function role() {
+        return $this->belongsTo(Role::class);
+    }
+
     public function scopeActivityOlderThan($query, $interval)
     {
         return $query->where('last_active', '>=', Carbon::now()->subMinutes($interval)->toDateTimeString());

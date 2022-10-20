@@ -114,6 +114,11 @@ class CreatePermissionTables extends Migration
             $table->primary([PermissionRegistrar::$pivotPermission, PermissionRegistrar::$pivotRole], 'role_has_permissions_permission_id_role_id_primary');
         });
 
+        // Adding foreign keys in users table
+        Schema::table('users', function (Blueprint $table) {
+            $table->foreignId('role_id')->constrained()->nullable()->after('last_active');
+        });
+
         app('cache')
             ->store(config('permission.cache.store') != 'default' ? config('permission.cache.store') : null)
             ->forget(config('permission.cache.key'));
