@@ -11,18 +11,18 @@ class MyOperationsController extends Controller
 {
     public function list_my_operations(Request $request) {
 
-         $client = Client::find($request->client_id);
+        $client = Client::find($request->client_id);
 
-         if($client == null) {
-             return response()->json([
-                 'success' => false,
-                 'errors' => 'El client no existe'
-             ], 404);
+        if($client == null) {
+            return response()->json([
+                'success' => false,
+                'errors' => 'El client no existe'
+            ], 404);
          }
 
-         $ops = $client->operations()->where('operation_status_id', $request->status)->get();
+        $ops = $client->operations()->where('operation_status_id', $request->status)->get();
 
-         $ops->load(
+        $ops->load(
             'currency:id,name,sign',
             'status:id,name',
             'bank_accounts:id,bank_id,currency_id,account_number,cci_number',
@@ -33,12 +33,12 @@ class MyOperationsController extends Controller
             'escrow_accounts.bank:id,name,shortname,image'
         );
 
-         return response()->json([
-             'success' => true,
-             'data' => [
-                 'operations' => $ops
-             ]
-         ]);
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'operations' => $ops
+            ]
+        ]);
     }
 
     public function operation_detail(Request $request, $operation_id) {

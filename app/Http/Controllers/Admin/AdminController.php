@@ -20,13 +20,7 @@ class AdminController extends Controller
             'email' => 'required|email',
             'password' => 'required'
         ]);
-
-        if ($val->fails()) {
-            return response()->json([
-                'success' => false,
-                'errors' => $val->errors()->toJson()
-            ]);
-        }
+        if($val->fails()) return response()->json($val->messages());
 
         $credentials = $request->only('email', 'password');
 
@@ -71,5 +65,33 @@ class AdminController extends Controller
                 'errors' => 'Usuario o contraseña incorrectos',
             ], 403);
         }
+    }
+
+    public function has_permission(Request $request) {
+        $val = Validator::make($request->all(), [
+            'permission' => 'required|exists:permissions,name',
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'permission' => Auth::user()->hasPermissionTo($request->permission)
+            ]
+        ]);
+    }
+
+    public function has_role(Request $request) {
+        $val = Validator::make($request->all(), [
+            'role' => 'required|exists:roles,name',
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'role' => Auth::user()->hasRole($request->role)
+            ]
+        ]);
     }
 }

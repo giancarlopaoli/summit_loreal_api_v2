@@ -31,7 +31,6 @@ class TestingSeeder extends Seeder
     public function run()
     {
         
-
         $role = Role::create(['name' => 'cliente']);
         $role = Role::create(['name' => 'administrador']);
         $role = Role::create(['name' => 'operaciones']);
@@ -88,6 +87,22 @@ class TestingSeeder extends Seeder
         $user2->assignRole('ejecutivos');
         $user2->assignRole('supervisores');
         $user2->givePermissionTo('firmar_operaciones');
+
+        $user3 = User::create([
+            'name' => 'Rodrigo',
+            'last_name' => 'Cuenca',
+            'email' => 'rodrigo.cuenca@billex.pe',
+            'document_number' => '44444444',
+            'document_type_id' => '2',
+            'phone' => '967707915',
+            'tries' => 0,
+            'password' => Hash::make('password'),
+            'status' => UserStatus::Activo
+        ]);
+
+        $user3->assignRole('operaciones');
+        $user3->assignRole('corfid');
+        $user3->assignRole('supervisores');
 
         $client = Client::create([
             'name' => 'admin',
