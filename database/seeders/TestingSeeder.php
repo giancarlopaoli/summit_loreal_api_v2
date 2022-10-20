@@ -48,6 +48,7 @@ class TestingSeeder extends Seeder
             'document_type_id' => '2',
             'phone' => '987654321',
             'tries' => 0,
+            'role_id' => 2,
             'password' => Hash::make('password'),
             'status' => UserStatus::Activo
         ]);
@@ -62,6 +63,7 @@ class TestingSeeder extends Seeder
             'document_type_id' => '2',
             'phone' => '998102921',
             'tries' => 0,
+            'role_id' => 1,
             'password' => Hash::make('password'),
             'status' => UserStatus::Activo
         ]);
@@ -76,6 +78,7 @@ class TestingSeeder extends Seeder
             'document_type_id' => '2',
             'phone' => '998102921',
             'tries' => 0,
+            'role_id' => 2,
             'password' => Hash::make('password'),
             'status' => UserStatus::Activo
         ]);
@@ -96,6 +99,7 @@ class TestingSeeder extends Seeder
             'document_type_id' => '2',
             'phone' => '967707915',
             'tries' => 0,
+            'role_id' => 3,
             'password' => Hash::make('password'),
             'status' => UserStatus::Activo
         ]);
