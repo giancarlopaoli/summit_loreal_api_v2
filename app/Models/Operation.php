@@ -40,7 +40,7 @@ class Operation extends Model
     }
 
     public function matches() {
-        return $this->belongsToMany(Operation::class, "operations_matches", "operation_id", "matched_id");
+        return $this->belongsToMany(Operation::class, "operation_matches", "operation_id", "matched_id");
     }
 
     public function status() {
