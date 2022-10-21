@@ -44,6 +44,10 @@ class OperationStatusSeeder extends Seeder
         ]);
 
         OperationStatus::create([
+            'name' => 'Pendiente facturar'
+        ]);
+
+        OperationStatus::create([
             'name' => 'Cancelado'
         ]);
 

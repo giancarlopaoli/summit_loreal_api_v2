@@ -16,7 +16,7 @@ class MyOperationsController extends Controller
         if($client == null) {
             return response()->json([
                 'success' => false,
-                'errors' => 'El client no existe'
+                'errors' => 'El cliente no existe'
             ], 404);
          }
 
