@@ -23,7 +23,7 @@ Route::middleware('encryptresponses')->group(function () {
     Route::post('login', [\App\Http\Controllers\Clients\AuthController::class, 'login']);
     Route::post('logout', [\App\Http\Controllers\Clients\AuthController::class, 'logout']);
 
-    Route::group(['middleware' => ['auth:sanctum'], 'middleware' => ['role:cliente'], 'middleware' => ['validate_client_user']], function () {
+    Route::middleware('auth:sanctum','role:cliente','validate_client_user')->group(function () {
         Route::get('/me', function(Request $request) {
             return auth()->user();
         });
