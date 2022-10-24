@@ -23,7 +23,7 @@ Route::middleware('encryptresponses')->group(function () {
     Route::post('login', [\App\Http\Controllers\Clients\AuthController::class, 'login']);
     Route::post('logout', [\App\Http\Controllers\Clients\AuthController::class, 'logout']);
 
-    Route::group(['middleware' => ['auth:sanctum'], 'middleware' => ['role:cliente']], function () {
+    Route::group(['middleware' => ['auth:sanctum'], 'middleware' => ['role:cliente'], 'middleware' => ['validate_client_user']], function () {
         Route::get('/me', function(Request $request) {
             return auth()->user();
         });
@@ -132,6 +132,7 @@ Route::middleware('encryptresponses')->group(function () {
         ########## Módulo de Operaciones  #############
         Route::prefix('operations')->middleware('role:operaciones')->group(function () {
             Route::get('daily-operations', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'daily_operations']);
+            Route::get('detail/{operation}', [\App\Http\Controllers\Clients\MyOperationsController::class, 'operation_detail']);
         });
 
     });
