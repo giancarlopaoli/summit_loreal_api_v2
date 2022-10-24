@@ -48,7 +48,7 @@ class Kernel extends HttpKernel
             'throttle:500,1',
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
             //\Illuminate\Session\Middleware\StartSession::class
-            ValidateClientUser::class,
+            //ValidateClientUser::class,
             RefreshUser::class,
         ],
     ];
@@ -75,5 +75,6 @@ class Kernel extends HttpKernel
         'role' => \Spatie\Permission\Middlewares\RoleMiddleware::class,
         'permission' => \Spatie\Permission\Middlewares\PermissionMiddleware::class,
         'role_or_permission' => \Spatie\Permission\Middlewares\RoleOrPermissionMiddleware::class,
+        'validate_client_user' => \App\Http\Middleware\ValidateClientUser::class,
     ];
 }
