@@ -68,7 +68,7 @@ class InmediateOperationController extends Controller
             $coupon = Coupon::validate($request->coupon_code);
 
             if($coupon == null) {
-                return repsonse()->json([
+                return response()->json([
                     'success' => false,
                     'errors' => [
                         'El cupon enviado no es valido'
@@ -171,7 +171,7 @@ class InmediateOperationController extends Controller
                 } else if($coupon->type == CouponType::Porcentaje) {
                     $comission_spread = $comission_spread * ($coupon->value / 100.0);
                 } else {
-                    return repsonse()->json([
+                    return response()->json([
                         'success' => false,
                         'errors' => [
                             'El cupon enviado no es valido'
@@ -239,11 +239,11 @@ class InmediateOperationController extends Controller
             ]);
         }
 
-        $coupon = Coupon::validate($request->coupon_code)->only(['id','code']);
+        $coupon = Coupon::validate($request->coupon_code);
 
         return response()->json([
             'success' => true,
-            'data' => $coupon == null ? false : $coupon
+            'data' => $coupon == null ? false : $coupon->only(['id','code','type'])
         ]);
     }
 
