@@ -31,7 +31,19 @@ class DailyOperationsController extends Controller
         $finalizadas = OperationStatus::wherein('name', ['Facturado','Finalizado sin factura', 'Pendiente facturar'])->get()->pluck('id');
         $todas = OperationStatus::get()->pluck('id');
 
-        $status = ($request->status == 'Pendientes') ? $pendientes : (($request->status == 'Finalizadas') ? $finalizadas : $todas);
+
+        if($request->status == 'Pendientes'){
+            $status = $pendientes;
+            $status_str = "(op1.operation_status_id in (" . substr($pendientes, 1, Str::length($pendientes)-2) . ") or op2.operation_status_id in (" . substr($pendientes, 1, Str::length($pendientes)-2) . ") )";
+        }
+        elseif($request->status == 'Finalizadas'){
+            $status = $finalizadas;
+            $status_str = "(op1.operation_status_id in (" . substr($finalizadas, 1, Str::length($finalizadas)-2) . ") and op2.operation_status_id in (" . substr($finalizadas, 1, Str::length($finalizadas)-2) . ") )";
+        }
+        else{
+            $status = $todas;
+            $status_str = "(1)";
+        }
 
         #############################################
 
@@ -61,30 +73,52 @@ class DailyOperationsController extends Controller
             ->with('client:id,name,last_name,mothers_name,customer_type')
             ->with('currency:id,name:sign')
             ->with('status:id,name')
-            ->get();
-
-        $matched_operations = Operation::select('operations.id','code','class','type','client_id','user_id','amount','currency_id','exchange_rate','comission_spread','comission_amount','igv','spread','operation_status_id','post','operation_date')
-            ->join('operation_matches', 'operation_matches.operation_id' , "=", "operations.id")
-            //->whereIn('operation_status_id', $status)
-            ->whereRaw("date(operation_date) = '$date'")
-            ->with('client:id,name,last_name,mothers_name,customer_type')
-            ->with('currency:id,name:sign')
             ->with('bank_accounts:id,bank_id,currency_id,account_number,cci_number')
             ->with('bank_accounts.currency:id,name,sign')
             ->with('bank_accounts.bank:id,name,shortname,image')
             ->with('escrow_accounts:id,bank_id,currency_id,account_number,cci_number')
             ->with('escrow_accounts.currency:id,name,sign')
             ->with('escrow_accounts.bank:id,name,shortname,image')
-            ->with('matches.client')
-            ->with('matches.client:id,name,last_name,mothers_name,customer_type')
-            ->with('matches.currency:id,name:sign')
-            //->with('matches.bank_accounts:id,bank_id,currency_id,account_number,cci_number')
-            ->with('matches.bank_accounts.currency:id,name,sign')
-            ->with('matches.bank_accounts.bank:id,name,shortname,image')
-            //->with('matches.escrow_accounts:id,bank_id,currency_id,account_number,cci_number')
-            ->with('matches.escrow_accounts.currency:id,name,sign')
-            ->with('matches.escrow_accounts.bank:id,name,shortname,image')
+
             ->get();
+
+        $matched_operations = DB::table('operation_matches')
+            ->select('operation_id', 'matched_id')
+            ->join('operations as op1', 'op1.id', "=", "operation_matches.operation_id")
+            ->join('operations as op2', 'op2.id', "=", "operation_matches.matched_id")
+            ->whereRaw("date(operation_matches.created_at) = '$date'")
+            ->whereRaw("$status_str")
+            ->get();
+
+
+        $matched_operations->each(function ($item, $key) {
+
+            $item->created_operation = Operation::where('id',$item->operation_id)
+                ->select('operations.id','code','class','type','client_id','user_id','amount','currency_id','exchange_rate','comission_spread','comission_amount','igv','spread','operation_status_id','post','operation_date')
+                ->with('status:id,name')
+                ->with('client:id,name,last_name,mothers_name,customer_type')
+                ->with('currency:id,name:sign')
+                ->with('bank_accounts:id,bank_id,currency_id,account_number,cci_number')
+                ->with('bank_accounts.bank:id,name,shortname,image')
+                ->with('bank_accounts.currency:id,name,sign')
+                ->with('escrow_accounts:id,bank_id,currency_id,account_number,cci_number')
+                ->with('escrow_accounts.currency:id,name,sign')
+                ->with('escrow_accounts.bank:id,name,shortname,image')
+                ->first();
+
+            $item->matched_operation = Operation::where('id',$item->matched_id)
+                ->select('operations.id','code','class','type','client_id','user_id','amount','currency_id','exchange_rate','comission_spread','comission_amount','igv','spread','operation_status_id','post','operation_date')
+                ->with('status:id,name')
+                ->with('client:id,name,last_name,mothers_name,customer_type')
+                ->with('currency:id,name:sign')
+                ->with('bank_accounts:id,bank_id,currency_id,account_number,cci_number')
+                ->with('bank_accounts.currency:id,name,sign')
+                ->with('bank_accounts.bank:id,name,shortname,image')
+                ->with('escrow_accounts:id,bank_id,currency_id,account_number,cci_number')
+                ->with('escrow_accounts.currency:id,name,sign')
+                ->with('escrow_accounts.bank:id,name,shortname,image')
+                ->first();
+        });
 
 
         return response()->json([
