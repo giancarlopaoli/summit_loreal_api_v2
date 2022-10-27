@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('last_name', 50);
             $table->string('email', 100)->unique();
             $table->foreignIdFor(\App\Models\DocumentType::class)->constrained();
-            $table->string('document_number', 15)->unique();
+            $table->string('document_number', 15);
             $table->string('phone', 30);
             $table->integer('tries')->default(0);
             $table->string('password');

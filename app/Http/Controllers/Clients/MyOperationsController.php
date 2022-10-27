@@ -70,7 +70,7 @@ class MyOperationsController extends Controller
 
         // custom fiedls for Buying operations
         if($operation->type == Enums\OperationType::Compra){
-            $operation->final_exchange_rate = $operation->exchange_rate + $operation->spread/10000 + $operation->comission_spread/10000;
+            $operation->final_exchange_rate = round($operation->exchange_rate + $operation->spread/10000 + $operation->comission_spread/10000, 4);
 
             $comission_pl = round($operation->amount * $operation->spread/10000, 2);
             $operation->counter_value = round(round($operation->amount * $operation->exchange_rate, 2) + $comission_pl + $operation->comission_amount + $operation->igv, 2);
@@ -78,7 +78,7 @@ class MyOperationsController extends Controller
 
         // custom fiedls for Selling operations
         if($operation->type == Enums\OperationType::Venta){
-            $operation->final_exchange_rate = $operation->exchange_rate - $operation->spread/10000 - $operation->comission_spread/10000;
+            $operation->final_exchange_rate = round($operation->exchange_rate - $operation->spread/10000 - $operation->comission_spread/10000, 4);
 
             $comission_pl = round($operation->amount * $operation->spread/10000, 2);
             $operation->counter_value = round(round($operation->amount * $operation->exchange_rate, 2) - $comission_pl - $operation->comission_amount - $operation->igv, 2);

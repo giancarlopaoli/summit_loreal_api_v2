@@ -7,10 +7,14 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
+use App\Models\Client;
+use App\Models\BankAccount;
+use App\Models\EscrowAccount;
 use App\Models\Operation;
 use App\Models\OperationStatus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use App\Enums;
 
 class DailyOperationsController extends Controller
 {
@@ -47,9 +51,9 @@ class DailyOperationsController extends Controller
 
         #############################################
 
-        $indicators = Operation::selectRaw("date(operation_date) as date, sum(amount) as total_amount, count(id) as num_operations")
-            ->selectRaw("(select sum(op1.amount) from operations op1 where month(op1.operation_date) = $month and year(op1.operation_date) = $year and op1.id = operations.id) as monthly_amount")
-            ->selectRaw("(select count(op1.amount) from operations op1 where month(op1.operation_date) = $month and year(op1.operation_date) = $year and op1.id = operations.id) as monthly_operations")
+        $indicators = Operation::selectRaw("coalesce(sum(amount),0) as total_amount, count(id) as num_operations")
+            ->selectRaw("(select sum(op1.amount) from operations op1 where month(op1.operation_date) = $month and year(op1.operation_date) = $year and op1.operation_status_id in (" . substr($finalizadas, 1, Str::length($finalizadas)-2) . ")) as monthly_amount")
+            ->selectRaw("(select count(op1.amount) from operations op1 where month(op1.operation_date) = $month and year(op1.operation_date) = $year and op1.operation_status_id in (" . substr($finalizadas, 1, Str::length($finalizadas)-2) . ")) as monthly_operations")
             ->whereRaw("date(operation_date) = '$date'")
             ->whereIn('operation_status_id', $finalizadas)
             ->get();
@@ -70,7 +74,7 @@ class DailyOperationsController extends Controller
         $pending_operations = Operation::select('id','code','class','type','client_id','user_id','amount','currency_id','exchange_rate','comission_spread','comission_amount','igv','spread','operation_status_id','post','operation_date')
             ->whereIn('operation_status_id', OperationStatus::wherein('name', ['Disponible','Cancelado'])->get()->pluck('id'))
             ->whereRaw("date(operation_date) = '$date'")
-            ->with('client:id,name,last_name,mothers_name,customer_type')
+            ->with('client:id,name,last_name,mothers_name,customer_type,type')
             ->with('currency:id,name:sign')
             ->with('status:id,name')
             ->with('bank_accounts:id,bank_id,currency_id,account_number,cci_number')
@@ -96,7 +100,7 @@ class DailyOperationsController extends Controller
             $item->created_operation = Operation::where('id',$item->operation_id)
                 ->select('operations.id','code','class','type','client_id','user_id','amount','currency_id','exchange_rate','comission_spread','comission_amount','igv','spread','operation_status_id','post','operation_date')
                 ->with('status:id,name')
-                ->with('client:id,name,last_name,mothers_name,customer_type')
+                ->with('client:id,name,last_name,mothers_name,customer_type,type')
                 ->with('currency:id,name:sign')
                 ->with('bank_accounts:id,bank_id,currency_id,account_number,cci_number')
                 ->with('bank_accounts.bank:id,name,shortname,image')
@@ -109,7 +113,7 @@ class DailyOperationsController extends Controller
             $item->matched_operation = Operation::where('id',$item->matched_id)
                 ->select('operations.id','code','class','type','client_id','user_id','amount','currency_id','exchange_rate','comission_spread','comission_amount','igv','spread','operation_status_id','post','operation_date')
                 ->with('status:id,name')
-                ->with('client:id,name,last_name,mothers_name,customer_type')
+                ->with('client:id,name,last_name,mothers_name,customer_type,type')
                 ->with('currency:id,name:sign')
                 ->with('bank_accounts:id,bank_id,currency_id,account_number,cci_number')
                 ->with('bank_accounts.currency:id,name,sign')
@@ -124,6 +128,7 @@ class DailyOperationsController extends Controller
         return response()->json([
             'success' => true,
             'data' => [
+                'status' =>  $status,
                 'indicators' => $indicators,
                 'graphs' => $graphs,
                 'pending_operations' => $pending_operations,
@@ -131,5 +136,117 @@ class DailyOperationsController extends Controller
             ]
         ]);
 
+    }
+
+
+    public function vendor_list(Request $request) {
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'vendors' => Client::select('id','name','last_name','type')->where('type', 'PL')->get()
+            ]
+        ]);
+    }
+
+    public function match_operation(Request $request, Operation $operation) {
+        $val = Validator::make($request->all(), [
+            'client_id' => 'required|exists:clients,id'
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+        ####### Validating operation is not previusly matched ##########
+        $operation_match = DB::table('operation_matches')
+            ->where("operation_id", $operation->id)
+            ->get();
+
+        if($operation_match->count() > 0) {
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'La operación ya se encuentra emparejada'
+                ]
+            ], 404);
+        }
+
+        ######### Creaating vendors operation #############
+
+        $op_code = Carbon::now()->format('YmdHisv') . rand(0,9);
+        $status_id = OperationStatus::where('name', 'Pendiente envio fondos')->first()->id;
+
+        /*$matched_operation = Operation::create([
+            'code' => $op_code,
+            'class' => Enums\OperationClass::Inmediata,
+            'type' => ($operation->type == "Compra") ? 'Venta' : ($operation->type == "Venta" ? 'Compra' : 'Interbancaria'),
+            'client_id' => $request->client_id,
+            'user_id' => auth()->id(),
+            'amount' => $operation->amount,
+            'currency_id' => $operation->currency_id,
+            'exchange_rate' => $operation->exchange_rate,
+            'comission_spread' => 0,
+            'comission_amount' => 0,
+            'igv' => 0,
+            'spread' => 0,
+            'operation_status_id' => $status_id,
+            'operation_date' => Carbon::now(),
+            'post' => false
+        ]);*/
+
+        //if($matched_operation){
+            $matched_bank_accounts = array();
+            $matched_escrow_accounts = array();
+
+            foreach ($operation->bank_accounts as $bank_account_data) {
+                
+                $escrow_account = EscrowAccount::where('bank_id',$bank_account_data->bank_id)
+                    ->where('cci_number', ($operation->type == "Interbancaria") ? $request->currency_id : (($request->currency_id == 1) ? 2 : 1))
+                    ->first();
+
+                if(!is_null($escrow_account)){
+
+                }
+                else{
+                    return response()->json([
+                        'success' => false,
+                        'errors' => [
+                            'Error en cuenta bancaria'
+                        ]
+                    ], 404);
+                }
+
+                return response()->json([
+                    'success' => true,
+                    'data' => [
+                        'banco' => $bank_account_data,
+                        'matched bank' => $escrow_account
+                    ]
+                ]);
+                /*$operation->bank_accounts()->attach($bank_account_data['id'], [
+                    'amount' => $bank_account_data['amount'],
+                    'comission_amount' => $bank_account_data['comission_amount']
+                ]);*/
+            }
+        //}
+
+        /*foreach ($bank_accounts as $bank_account_data) {
+            $operation->bank_accounts()->attach($bank_account_data['id'], [
+                'amount' => $bank_account_data['amount'],
+                'comission_amount' => $bank_account_data['comission_amount']
+            ]);
+        }
+
+        foreach ($escrow_accounts as $escrow_account_data) {
+            $operation->escrow_accounts()->attach($escrow_account_data['id'], [
+                'amount' => $escrow_account_data['amount'],
+                'comission_amount' => $escrow_account_data['comission_amount']
+            ]);
+        }*/
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'vendors' => $matched_operation
+            ]
+        ]);
     }
 }

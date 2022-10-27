@@ -21,7 +21,7 @@ class CouponFactory extends Factory
     {
         return [
             "campaign_id" => Campaign::factory(),
-            "code" => $this->faker->asciify("*****"),
+            "code" => $this->faker->words("6",true),
             "description" => $this->faker->words(3, true),
             "type" => CouponType::getRandomValue(),
             "class" => CouponClass::getRandomValue(),
