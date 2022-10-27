@@ -111,7 +111,7 @@ class TestingSeeder extends Seeder
         $user4 = User::create([
             'name' => 'Paloma',
             'last_name' => 'Martinez',
-            'email' => 'pruebas@billex.pe',
+            'email' => 'caja@billex.pe',
             'document_number' => '44444444',
             'document_type_id' => '2',
             'phone' => '888888888',
@@ -126,7 +126,7 @@ class TestingSeeder extends Seeder
         $user5 = User::create([
             'name' => 'Eugenio',
             'last_name' => 'Chavez',
-            'email' => 'pruebas@billex.pe',
+            'email' => 'coril@billex.pe',
             'document_number' => '55555555',
             'document_type_id' => '2',
             'phone' => '99999999',
