@@ -133,6 +133,8 @@ Route::middleware('encryptresponses')->group(function () {
         Route::prefix('operations')->middleware('role:operaciones')->group(function () {
             Route::get('daily-operations', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'daily_operations']);
             Route::get('detail/{operation}', [\App\Http\Controllers\Clients\MyOperationsController::class, 'operation_detail']);
+            Route::get('vendor-list', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'vendor_list']);
+            Route::post('match/{operation}', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'match_operation']);
         });
 
     });

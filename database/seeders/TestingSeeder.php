@@ -108,6 +108,36 @@ class TestingSeeder extends Seeder
         $user3->assignRole('corfid');
         $user3->assignRole('supervisores');
 
+        $user4 = User::create([
+            'name' => 'Paloma',
+            'last_name' => 'Martinez',
+            'email' => 'pruebas@billex.pe',
+            'document_number' => '44444444',
+            'document_type_id' => '2',
+            'phone' => '888888888',
+            'tries' => 0,
+            'role_id' => 3,
+            'password' => Hash::make('password'),
+            'status' => UserStatus::Activo
+        ]);
+
+        $user4->assignRole('proveedor');
+
+        $user5 = User::create([
+            'name' => 'Eugenio',
+            'last_name' => 'Chavez',
+            'email' => 'pruebas@billex.pe',
+            'document_number' => '55555555',
+            'document_type_id' => '2',
+            'phone' => '99999999',
+            'tries' => 0,
+            'role_id' => 3,
+            'password' => Hash::make('password'),
+            'status' => UserStatus::Activo
+        ]);
+
+        $user5->assignRole('proveedor');
+
         $client = Client::create([
             'name' => 'admin',
             'last_name' => 'admin',
@@ -131,7 +161,7 @@ class TestingSeeder extends Seeder
             'name' => 'Bill Financial Services SA',
             'last_name' => 'Billex',
             'mothers_name' => '',
-            'document_type_id' => DocumentType::all()->random()->id,
+            'document_type_id' => 1,
             'document_number' => '20601788676',
             'phone' => '987654321',
             'email' => 'tenologia@billex.pe',
@@ -146,19 +176,74 @@ class TestingSeeder extends Seeder
             'client_status_id' => ClientStatus::where('name', 'Activo')->first()->id
         ]);
 
+        $client3 = Client::create([
+            'name' => 'CAJA RURAL DE AHORRO Y CREDITO RAIZ S.A.A',
+            'last_name' => 'Caja Raiz',
+            'mothers_name' => '',
+            'document_type_id' => 1,
+            'document_number' => '20231269071',
+            'phone' => '16120600',
+            'email' => 'pruebas@billex.pe',
+            'address' => 'Av Benavides 1944 - Miraflores',
+            'birthdate' => Carbon::now(),
+            'district_id' => District::all()->random()->id,
+            'country_id' => Country::all()->random()->id,
+            'economic_activity_id' => EconomicActivity::all()->random()->id,
+            'profession_id' => Profession::all()->random()->id,
+            'customer_type' => 'PJ',
+            'type' => 'PL',
+            'client_status_id' => ClientStatus::where('name', 'Activo')->first()->id
+        ]);
+
+        $client4 = Client::create([
+            'name' => 'GRUPO CORIL SOCIEDAD AGENTE DE BOLSA S.A',
+            'last_name' => 'Grupo Coril',
+            'mothers_name' => '',
+            'document_type_id' => 1,
+            'document_number' => '20379902996',
+            'phone' => '16120600',
+            'email' => 'pruebas@billex.pe',
+            'address' => 'Av Benavides 1944 - Miraflores',
+            'birthdate' => Carbon::now(),
+            'district_id' => District::all()->random()->id,
+            'country_id' => Country::all()->random()->id,
+            'economic_activity_id' => EconomicActivity::all()->random()->id,
+            'profession_id' => Profession::all()->random()->id,
+            'customer_type' => 'PJ',
+            'type' => 'PL',
+            'client_status_id' => ClientStatus::where('name', 'Activo')->first()->id
+        ]);
+
         $user->clients()->attach($client, ['status' => 'Asignado']);
         $user->clients()->attach($client2, ['status' => 'Activo']);
-        $user1->clients()->attach($client2, ['status' => 'Activo']);
+        $user1->clients()->attach($client2, ['status' => 'Asignado']);
+        $user4->clients()->attach($client3, ['status' => 'Asignado']);
+        $user5->clients()->attach($client4, ['status' => 'Asignado']);
 
         $operations = Operation::factory()->state([
             'client_id' => $client->id,
             'user_id' => $user->id,
-        ])->count(20)
+        ])->count(50)
             ->create();
 
         $bank_accounts = BankAccount::factory()->state([
             'client_id' => $client->id
-        ])->count(10)
+        ])->count(4)
+            ->create();
+
+        $bank_accounts = BankAccount::factory()->state([
+            'client_id' => $client2->id
+        ])->count(4)
+            ->create();
+
+        $bank_accounts = BankAccount::factory()->state([
+            'client_id' => $client3->id
+        ])->count(6)
+            ->create();
+
+        $bank_accounts = BankAccount::factory()->state([
+            'client_id' => $client4->id
+        ])->count(6)
             ->create();
 
         $main_bank_account = $bank_accounts->first();
