@@ -169,12 +169,12 @@ class DailyOperationsController extends Controller
             ], 404);
         }
 
-        ######### Creaating vendors operation #############
+        ######### Creating vendor operation #############
 
         $op_code = Carbon::now()->format('YmdHisv') . rand(0,9);
         $status_id = OperationStatus::where('name', 'Pendiente envio fondos')->first()->id;
 
-        /*$matched_operation = Operation::create([
+        $matched_operation = Operation::create([
             'code' => $op_code,
             'class' => Enums\OperationClass::Inmediata,
             'type' => ($operation->type == "Compra") ? 'Venta' : ($operation->type == "Venta" ? 'Compra' : 'Interbancaria'),
@@ -186,24 +186,49 @@ class DailyOperationsController extends Controller
             'comission_spread' => 0,
             'comission_amount' => 0,
             'igv' => 0,
-            'spread' => 0,
+            'spread' => ($operation->type == "Interbancaria") ? $operation->spread : 0,
             'operation_status_id' => $status_id,
             'operation_date' => Carbon::now(),
             'post' => false
-        ]);*/
+        ]);
 
-        //if($matched_operation){
-            $matched_bank_accounts = array();
-            $matched_escrow_accounts = array();
-
+        if($matched_operation){
             foreach ($operation->bank_accounts as $bank_account_data) {
                 
                 $escrow_account = EscrowAccount::where('bank_id',$bank_account_data->bank_id)
-                    ->where('cci_number', ($operation->type == "Interbancaria") ? $request->currency_id : (($request->currency_id == 1) ? 2 : 1))
+                    ->where('currency_id', $bank_account_data->currency_id)
                     ->first();
 
                 if(!is_null($escrow_account)){
+                    $matched_operation->escrow_accounts()->attach($escrow_account->id, [
+                        'amount' => $bank_account_data->pivot->amount + $bank_account_data->pivot->comission_amount,
+                        'comission_amount' => 0,
+                        'created_at' => Carbon::now()
+                    ]);
+                }
+                else{
+                    return response()->json([
+                        'success' => false,
+                        'errors' => [
+                            'Error en cuenta bancaria'
+                        ]
+                    ], 404);
+                }
+            }
 
+            foreach ($operation->escrow_accounts as $escrow_account_data) {
+                
+                $bank_account = BankAccount::where('bank_id',$escrow_account_data->bank_id)
+                    ->where('client_id', $request->client_id)
+                    ->where('currency_id', $escrow_account_data->currency_id)
+                    ->first();
+
+                if(!is_null($bank_account)){
+                    $matched_operation->bank_accounts()->attach($bank_account->id, [
+                        'amount' => $escrow_account_data->pivot->amount - $escrow_account_data->pivot->comission_amount,
+                        'comission_amount' => 0,
+                        'created_at' => Carbon::now()
+                    ]);
                 }
                 else{
                     return response()->json([
@@ -214,38 +239,18 @@ class DailyOperationsController extends Controller
                     ], 404);
                 }
 
-                return response()->json([
-                    'success' => true,
-                    'data' => [
-                        'banco' => $bank_account_data,
-                        'matched bank' => $escrow_account
-                    ]
-                ]);
-                /*$operation->bank_accounts()->attach($bank_account_data['id'], [
-                    'amount' => $bank_account_data['amount'],
-                    'comission_amount' => $bank_account_data['comission_amount']
-                ]);*/
             }
-        //}
 
-        /*foreach ($bank_accounts as $bank_account_data) {
-            $operation->bank_accounts()->attach($bank_account_data['id'], [
-                'amount' => $bank_account_data['amount'],
-                'comission_amount' => $bank_account_data['comission_amount']
-            ]);
+            $operations_matches = $operation->matches()->attach($matched_operation->id, ['created_at' => Carbon::now()]);
+
+            $operation->operation_status_id = $status_id;
+            $operation->save();
         }
-
-        foreach ($escrow_accounts as $escrow_account_data) {
-            $operation->escrow_accounts()->attach($escrow_account_data['id'], [
-                'amount' => $escrow_account_data['amount'],
-                'comission_amount' => $escrow_account_data['comission_amount']
-            ]);
-        }*/
 
         return response()->json([
             'success' => true,
             'data' => [
-                'vendors' => $matched_operation
+                'vendors' => $operation
             ]
         ]);
     }
