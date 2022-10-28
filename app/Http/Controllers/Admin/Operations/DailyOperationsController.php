@@ -250,7 +250,7 @@ class DailyOperationsController extends Controller
         return response()->json([
             'success' => true,
             'data' => [
-                'vendors' => $operation
+                'Operación emparejada exitosamente'
             ]
         ]);
     }
