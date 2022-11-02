@@ -43,6 +43,10 @@ class Operation extends Model
         return $this->belongsToMany(Operation::class, "operation_matches", "operation_id", "matched_id");
     }
 
+    public function matched_operation() {
+        return $this->belongsToMany(Operation::class, "operation_matches", "matched_id", "operation_id");
+    }
+
     public function status() {
         return $this->belongsTo(OperationStatus::class, 'operation_status_id');
     }

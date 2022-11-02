@@ -136,6 +136,10 @@ Route::middleware('encryptresponses')->group(function () {
             Route::get('vendor-list', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'vendor_list']);
             Route::post('match/{operation}', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'match_operation']);
             Route::put('cancel/{operation}', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'cancel']);
+            Route::put('confirm-funds/{operation}', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'confirm_funds']);
+            Route::put('upload-voucher', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'upload_voucher']);
+
+            Route::get('download-file', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'download_file']);
         });
 
     });
