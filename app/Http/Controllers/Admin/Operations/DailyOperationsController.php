@@ -12,6 +12,7 @@ use App\Models\BankAccount;
 use App\Models\EscrowAccount;
 use App\Models\Operation;
 use App\Models\OperationStatus;
+use App\Models\OperationDocument;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use App\Enums;
@@ -348,29 +349,71 @@ class DailyOperationsController extends Controller
     }
 
     public function upload_voucher(Request $request) {
-        /*$val = Validator::make($request->all(), [
+        $val = Validator::make($request->all(), [
             'operation_id' => 'required|exists:operations,id',
             'file' => 'required|file'
         ]);
         if($val->fails()) return response()->json($val->messages());
 
 
-        logger('Archivo adjunto: DailyOperationsController@upload_voucher', ["operation_id" => $request->client_id]);
-        
-        
-        if (Storage::disk('s3')->exists('test/' . $request->name)) {
-            return Storage::disk('s3')->download('test/' . $request->name);
-        }
-        else{
+        logger('Archivo adjunto: DailyOperationsController@upload_voucher', ["operation_id" => $request->operation_id]);
+
+        if($request->hasFile('file')){
+            $file = $request->file('file');
+            $path = env('AWS_ENV').'/operations/';
+
+            try {
+                $extension = strrpos($file->getClientOriginalName(), ".")? (Str::substr($file->getClientOriginalName(), strrpos($file->getClientOriginalName(), ".") , Str::length($file->getClientOriginalName()) -strrpos($file->getClientOriginalName(), ".") +1)): "";
+                
+                $now = Carbon::now();
+                $filename = md5($now->toDateTimeString().$file->getClientOriginalName()).$extension;
+            } catch (\Exception $e) {
+                $filename = $file->getClientOriginalName();
+            }
+
+
+            try {
+                $s3 = Storage::disk('s3')->putFileAs($path, $file, $filename);
+
+                $insert = OperationDocument::create([
+                    'operation_id' => $request->operation_id,
+                    'type' => Enums\DocumentType::Comprobante,
+                    'document_name' => $filename
+                ]);
+
+            } catch (\Exception $e) {
+                // Registrando el el log los datos ingresados
+                logger('ERROR: archivo adjunto: DailyOperationsController@upload_voucher', ["error" => $e]);
+            }
+
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'Archivo agregado'
+                ]
+            ]);
+
+        } else{
             return response()->json([
                 'success' => false,
-                'errors' => [
-                    'Archivo no encontrado'
-                ]
+                'errors' => 'Error en el archivo adjunto',
             ]);
         }
 
-        return Storage::disk('s3')->download('test/' . $request->name);*/
+    }
+
+    public function to_pending_funds(Request $request, Operation $operation) {
+
+        $operation->operation_status_id = OperationStatus::where('name', 'Pendiente envio fondos')->first()->id;
+        $operation->save();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'operation' => $operation
+            ]
+        ]);
     }
     
     public function download_file(Request $request) {

@@ -17,9 +17,9 @@ class DocumentTypeFactory extends Factory
     public function definition()
     {
         return [
-            "name" => $this->faker->words(2, true),
+            /*"name" => $this->faker->words(2, true),
             "active" => true,
-            "size" => 10,
+            "size" => 10,*/
         ];
     }
 }
