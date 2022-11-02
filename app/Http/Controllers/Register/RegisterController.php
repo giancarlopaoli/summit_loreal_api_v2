@@ -1046,13 +1046,11 @@ class RegisterController extends Controller
         ]);
         if($val->fails()) return response()->json($val->messages());
 
-
-
         logger('Archivo adjunto: RegisterController@uploadFile', ["client_id" => $request->client_id]);
 
         if($request->hasFile('file')){
             $file = $request->file('file');
-            $path = 'test';
+            $path = env('AWS_ENV').'/register';
 
             try {
                 $extension = strrpos($file->getClientOriginalName(), ".")? (Str::substr($file->getClientOriginalName(), strrpos($file->getClientOriginalName(), ".") , Str::length($file->getClientOriginalName()) -strrpos($file->getClientOriginalName(), ".") +1)): "";
@@ -1089,7 +1087,7 @@ class RegisterController extends Controller
         } else{
             return response()->json([
                 'success' => false,
-                'error' => 'Error en el archivo adjunto',
+                'errors' => 'Error en el archivo adjunto',
             ]);
         }
 

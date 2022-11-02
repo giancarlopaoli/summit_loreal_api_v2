@@ -8,4 +8,6 @@ use Illuminate\Database\Eloquent\Model;
 class OperationDocument extends Model
 {
     use HasFactory;
+
+    protected $guarded = [];
 }
