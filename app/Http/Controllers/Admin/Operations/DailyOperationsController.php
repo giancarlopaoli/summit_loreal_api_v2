@@ -15,6 +15,7 @@ use App\Models\OperationStatus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use App\Enums;
+use Illuminate\Support\Facades\Storage;
 
 class DailyOperationsController extends Controller
 {
@@ -87,7 +88,6 @@ class DailyOperationsController extends Controller
             ->with('escrow_accounts:id,bank_id,currency_id,account_number,cci_number')
             ->with('escrow_accounts.currency:id,name,sign')
             ->with('escrow_accounts.bank:id,name,shortname,image')
-
             ->get();
 
         $matched_operations = DB::table('operation_matches')
@@ -270,6 +270,7 @@ class DailyOperationsController extends Controller
     public function cancel(Request $request, Operation $operation) {
 
         $operation->operation_status_id = OperationStatus::where('name', 'Cancelado')->first()->id;
+        $operation->canceled_at = Carbon::now();
         $operation->save();
 
         return response()->json([
@@ -279,4 +280,121 @@ class DailyOperationsController extends Controller
             ]
         ]);
     }
+
+    public function confirm_funds(Request $request, Operation $operation) {
+
+        if( $operation->operation_status_id != OperationStatus::where('name', 'Pendiente envio fondos')->first()->id){
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'La operación no se encuentra en estado Pendiente envio fondos'
+                ]
+            ], 404);
+        }
+
+        if($operation->matches->count() > 0) {
+            if($operation->matches[0]->operation_status_id == OperationStatus::where('name', 'Pendiente envio fondos')->first()->id){
+                $operation->operation_status_id = OperationStatus::where('name', 'Pendiente fondos contraparte')->first()->id;
+                $operation->funds_confirmation_date = Carbon::now();
+                $operation->save();
+            }
+            elseif($operation->matches[0]->operation_status_id == OperationStatus::where('name', 'Pendiente fondos contraparte')->first()->id){
+                $operation->operation_status_id = OperationStatus::where('name', 'Contravalor recaudado')->first()->id;
+                $operation->funds_confirmation_date = Carbon::now();
+                $operation->save();
+
+                $operation->matches[0]->operation_status_id = OperationStatus::where('name', 'Contravalor recaudado')->first()->id;
+                $operation->matches[0]->save();
+            }
+            else{
+                return response()->json([
+                    'success' => false,
+                    'errors' => [
+                        'Error en el estado de la operación emparejadora'
+                    ]
+                ], 404);
+            }
+        }
+        elseif ($operation->matched_operation->count() > 0) {
+            if($operation->matched_operation[0]->operation_status_id == OperationStatus::where('name', 'Pendiente envio fondos')->first()->id){
+                $operation->operation_status_id = OperationStatus::where('name', 'Pendiente fondos contraparte')->first()->id;
+                $operation->funds_confirmation_date = Carbon::now();
+                $operation->save();
+            }
+            elseif($operation->matched_operation[0]->operation_status_id == OperationStatus::where('name', 'Pendiente fondos contraparte')->first()->id){
+                $operation->operation_status_id = OperationStatus::where('name', 'Contravalor recaudado')->first()->id;
+                $operation->funds_confirmation_date = Carbon::now();
+                $operation->save();
+
+                $operation->matched_operation[0]->operation_status_id = OperationStatus::where('name', 'Contravalor recaudado')->first()->id;
+                $operation->matched_operation[0]->save();
+            }
+            else{
+                return response()->json([
+                    'success' => false,
+                    'errors' => [
+                        'Error en el estado de la operación emparejadora'
+                    ]
+                ], 404);
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'operation' => $operation
+            ]
+        ]);
+    }
+
+    public function upload_voucher(Request $request) {
+        /*$val = Validator::make($request->all(), [
+            'operation_id' => 'required|exists:operations,id',
+            'file' => 'required|file'
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+
+        logger('Archivo adjunto: DailyOperationsController@upload_voucher', ["operation_id" => $request->client_id]);
+        
+        
+        if (Storage::disk('s3')->exists('test/' . $request->name)) {
+            return Storage::disk('s3')->download('test/' . $request->name);
+        }
+        else{
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'Archivo no encontrado'
+                ]
+            ]);
+        }
+
+        return Storage::disk('s3')->download('test/' . $request->name);*/
+    }
+    
+    public function download_file(Request $request) {
+
+        /*return response()->json([
+            'success' => true,
+            'data' => [
+                'operation' => Storage::disk('s3')->download('test/' . $request->name)
+            ]
+        ]);*/
+
+        if (Storage::disk('s3')->exists('test/' . $request->name)) {
+            return Storage::disk('s3')->download('test/' . $request->name);
+        }
+        else{
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'Archivo no encontrado'
+                ]
+            ]);
+        }
+
+        return Storage::disk('s3')->download('test/' . $request->name);
+    }
+    
 }
