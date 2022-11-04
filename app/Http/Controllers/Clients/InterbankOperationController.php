@@ -230,11 +230,22 @@ class InterbankOperationController extends Controller
 
             $igv_porcentaje = round((float) Configuration::where('shortname', 'IGV')->first()->value / 100, 2);
 
-            $comision_total = $request->comission + $request->igv;
+            $total_comission = $request->comission + $request->igv;
 
-            $comission_spread = round(10000*$comision_total / $request->amount,2);
+            $comission_spread = round(10000*$total_comission / $request->amount,2);
 
             $spread = round($request->financial_expenses / $request->amount,6)*10000;
+
+            // Calculando detracción
+            $detraction_percentage = Configuration::where('shortname', 'DETRACTION')->first()->value;
+            $detraction_amount = 0;
+
+            if($total_comission >= 700 && $request->currency_id == 1) {
+                $detraction_amount = round( ($total_comission) * ($detraction_percentage / 100), 0);
+            }
+            elseif($request->currency_id == 2 && ($total_comission*round((1 + $spread/10000) * $request->exchange_rate, 4) >= 700)) {
+                $detraction_amount = round( ($total_comission*round((1 + $spread/10000) * $request->exchange_rate, 4)) * ($detraction_percentage / 100), 0);
+            }
 
             $now = Carbon::now();
             $code = $now->format('ymdHisv') . rand(0, 9);
@@ -261,6 +272,8 @@ class InterbankOperationController extends Controller
                 'comission_amount' => $request->comission,
                 'igv' => $request->igv,
                 'spread' => $spread,
+                'detraction_amount' => $detraction_amount,
+                'detraction_percentage' => $detraction_percentage,
                 'operation_status_id' => OperationStatus::where('name', 'Disponible')->first()->id,
                 'operation_date' => $now->toDateTimeString()
             ]);

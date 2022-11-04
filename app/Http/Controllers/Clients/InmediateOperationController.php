@@ -284,6 +284,14 @@ class InmediateOperationController extends Controller
         $total_amount_scrow = 0;
         $total_comission = round($request->comission_amount + $request->igv);
 
+        // Calculando detracción
+        $detraction_percentage = Configuration::where('shortname', 'DETRACTION')->first()->value;
+        $detraction_amount = 0;
+
+        if($total_comission >= 700) {
+            $detraction_amount = round( ($total_comission) * ($detraction_percentage / 100), 0);
+        }
+
         foreach ($request->bank_accounts as $bank_account_data) {
             $bank_account = BankAccount::where('id', $bank_account_data['id'])
                 ->where('client_id',$request->client_id)
@@ -442,6 +450,8 @@ class InmediateOperationController extends Controller
             'comission_amount' => $request->comission_amount,
             'igv' => $request->igv,
             'spread' => $request->spread,
+            'detraction_amount' => $detraction_amount,
+            'detraction_percentage' => $detraction_percentage,
             'operation_status_id' => $status_id,
             'coupon_id' => $request->coupon_id,
             'coupon_code' => $coupon?->code,

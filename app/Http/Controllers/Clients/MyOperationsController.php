@@ -56,7 +56,6 @@ class MyOperationsController extends Controller
         $operation = $client->operations()
             ->select('id','code','class','type','user_id','amount','currency_id','exchange_rate','comission_amount','igv','operation_status_id','transfer_number','invoice_url','coupon_id','coupon_code','coupon_type','coupon_value','operation_date','funds_confirmation_date','deposit_date','spread','comission_spread','canceled_at')
             ->selectRaw("(round(amount * exchange_rate, 2)) as conversion_amount")
-            //->selectRaw("if(type = 'Compra', round(()/amount, 4);, if(type = 'Venta', 2, 3)) as final_exchange_rate")
             ->where('code', $operation_id)
             ->where('client_id', $request->client_id)
             ->first();
@@ -103,7 +102,8 @@ class MyOperationsController extends Controller
             'bank_accounts.bank:id,name,shortname,image',
             'escrow_accounts:id,bank_id,account_number,cci_number,currency_id',
             'escrow_accounts.currency:id,name,sign',
-            'escrow_accounts.bank:id,name,shortname,image'
+            'escrow_accounts.bank:id,name,shortname,image',
+            'documents:id,operation_id,type'
         );
 
         return response()->json([
