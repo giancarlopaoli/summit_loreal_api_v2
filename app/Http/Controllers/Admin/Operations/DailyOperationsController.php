@@ -13,7 +13,9 @@ use App\Models\EscrowAccount;
 use App\Models\Operation;
 use App\Models\OperationStatus;
 use App\Models\OperationDocument;
+use App\Models\Configuration;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use App\Enums;
 use Illuminate\Support\Facades\Storage;
@@ -89,6 +91,7 @@ class DailyOperationsController extends Controller
             ->with('escrow_accounts:id,bank_id,currency_id,account_number,cci_number')
             ->with('escrow_accounts.currency:id,name,sign')
             ->with('escrow_accounts.bank:id,name,shortname,image')
+            ->with('documents:id,operation_id,type')
             ->get();
 
         $matched_operations = DB::table('operation_matches')
@@ -117,6 +120,7 @@ class DailyOperationsController extends Controller
                 ->with('escrow_accounts:id,bank_id,currency_id,account_number,cci_number')
                 ->with('escrow_accounts.currency:id,name,sign')
                 ->with('escrow_accounts.bank:id,name,shortname,image')
+                ->with('documents:id,operation_id,type')
                 ->first();
 
             $item->matched_operation = Operation::where('id',$item->matched_id)
@@ -134,6 +138,7 @@ class DailyOperationsController extends Controller
                 ->with('escrow_accounts:id,bank_id,currency_id,account_number,cci_number')
                 ->with('escrow_accounts.currency:id,name,sign')
                 ->with('escrow_accounts.bank:id,name,shortname,image')
+                ->with('documents:id,operation_id,type')
                 ->first();
         });
 
@@ -187,6 +192,10 @@ class DailyOperationsController extends Controller
         $op_code = Carbon::now()->format('YmdHisv') . rand(0,9);
         $status_id = OperationStatus::where('name', 'Pendiente envio fondos')->first()->id;
 
+        // Calculando detracción
+        $detraction_percentage = Configuration::where('shortname', 'DETRACTION')->first()->value;
+        $detraction_amount = 0;
+
         $matched_operation = Operation::create([
             'code' => $op_code,
             'class' => Enums\OperationClass::Inmediata,
@@ -198,6 +207,8 @@ class DailyOperationsController extends Controller
             'exchange_rate' => $operation->exchange_rate,
             'comission_spread' => 0,
             'comission_amount' => 0,
+            'detraction_amount' => $detraction_amount,
+            'detraction_percentage' => $detraction_percentage,
             'igv' => 0,
             'spread' => ($operation->type == "Interbancaria") ? $operation->spread : 0,
             'operation_status_id' => $status_id,
@@ -412,6 +423,147 @@ class DailyOperationsController extends Controller
             'success' => true,
             'data' => [
                 'operation' => $operation
+            ]
+        ]);
+    }
+
+
+    public function invoice(Request $request, Operation $operation) {
+
+        $configurations = new Configuration();
+
+        if($operation->operation_status_id == OperationStatus::where('name', 'Facturado')->first()->id){
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'La operación ya se encuentra facturada'
+                ]
+            ]);
+        }
+
+        if($operation->client->customer_type == 'PJ'){
+            $client_name = $operation->client->name;
+        }
+        else{
+            $client_name = $operation->client->name . ' ' . $operation->client->last_name . ' ' . $operation->client->mothers_name;
+        }
+
+        try{
+
+            $data = array(
+                "operacion"                         => "generar_comprobante",
+                "tipo_de_comprobante"               => ($operation->client->customer_type == 'PJ') ? 1 : 2,
+                "serie"                             => (($operation->client->customer_type == 'PJ') ? 'F' : 'B') .'001',
+                "numero"                            => "",
+                "sunat_transaction"                 => "1",
+                "cliente_tipo_de_documento"         => ($operation->client->document_type->name == 'RUC') ? 6 : ($operation->client->document_type->name == 'DNI' ? 1 : ($operation->client->document_type->name == 'Carné de extranjería' ? 4 : null)),
+                "cliente_numero_de_documento"       => $operation->client->document_number,
+                "cliente_denominacion"              => ucfirst($client_name),
+                "cliente_direccion"                 => $operation->client->address,
+                "cliente_email"                     => env('MAIL_OPS'),
+                "cliente_email_1"                   => null,
+                "cliente_email_2"                   => null,
+                "fecha_de_emision"                  => Carbon::now()->format('d-m-Y'),
+                "fecha_de_vencimiento"              => Carbon::now()->format('d-m-Y'),
+                "moneda"                            => ($operation->type == 'Interbancaria') ? $operation->currency_id : 1,
+                "tipo_de_cambio"                    => ($operation->type == 'Interbancaria' && $operation->currency_id == 2) ? $operation->exchange_rate : "",
+                "porcentaje_de_igv"                 => $configurations->get_value('IGV'),
+                "descuento_global"                  => "",
+                "descuento_global"                  => "",
+                "total_descuento"                   => "",
+                "total_anticipo"                    => "",
+                "total_gravada"                     => round($operation->comission_amount, 2),
+                "total_inafecta"                    => "",
+                "total_exonerada"                   => "",
+                "total_igv"                         => round($operation->igv, 2),
+                "total_gratuita"                    => "",
+                "total_otros_cargos"                => "",
+                "total"                             => round($operation->comission_amount + $operation->igv, 2),
+                "percepcion_tipo"                   => "",
+                "percepcion_base_imponible"         => "",
+                "total_percepcion"                  => "",
+                "total_incluido_percepcion"         => "",
+                "detraccion"                        => "false",
+                "observaciones"                     => "",
+                "documento_que_se_modifica_tipo"    => "",
+                "documento_que_se_modifica_serie"   => "",
+                "documento_que_se_modifica_numero"  => "",
+                "tipo_de_nota_de_credito"           => "",
+                "tipo_de_nota_de_debito"            => "",
+                "enviar_automaticamente_a_la_sunat" => "true",
+                "enviar_automaticamente_al_cliente" => "true",
+                "codigo_unico"                      => $operation->code,
+                "condiciones_de_pago"               => "CONTADO",
+                "medio_de_pago"                     => "",
+                "placa_vehiculo"                    => "",
+                "orden_compra_servicio"             => "",
+                "tabla_personalizada_codigo"        => "",
+                "formato_de_pdf"                    => "A4",
+                "items" => array(
+                                
+                    array(
+                        "unidad_de_medida"          => "ZZ",
+                        "codigo"                    => "001",
+                        "descripcion"               => "SERVICIOS PLATAFORMA BILLEX (" . date("d-m-Y", strtotime($operation->operation_date)) . " - " . strtoupper($operation->type) . " DE " . strtoupper($operation->currency->name) . " " . $operation->currency->sign . $operation->amount . " - TC " . $operation->exchange_rate . " - " . $operation->code . ")",
+                        "cantidad"                  => "1",
+                        "valor_unitario"            => round($operation->comission_amount, 2),
+                        "precio_unitario"           => round($operation->comission_amount + $operation->igv, 2),
+                        "descuento"                 => "",
+                        "subtotal"                  => round($operation->comission_amount, 2),
+                        "tipo_de_igv"               => "1",
+                        "igv"                       => round($operation->igv, 2),
+                        "total"                     => round($operation->comission_amount + $operation->igv, 2),
+                        "anticipo_regularizacion"   => "false",
+                        "anticipo_serie"            => "",
+                        "anticipo_documento_numero" => ""
+                    )   
+                )
+            );
+
+            // Executing Nubefact API
+            $consulta = Http::withToken(env('NUBEFACT_TOKEN'))->post(env('NUBEFACT_URL'), $data);
+
+            $rpta_json = json_decode($consulta);
+
+            if(is_object($rpta_json)){
+                if(isset($rpta_json->errors)){
+                    logger('ERROR: archivo adjunto: DailyOperationsController@invoice', ["error" => $rpta_json]);
+
+                    $operation->operation_status_id = OperationStatus::where('name', 'Pendiente facturar')->first()->id;
+                    $operation->save();
+                    
+                    return response()->json([
+                        'success' => false,
+                        'errors' => [
+                            $rpta_json->errors
+                        ]
+                    ]);
+                }
+                else{
+                    $operation->invoice_serie = $rpta_json->serie;
+                    $operation->invoice_number = $rpta_json->numero;
+                    $operation->invoice_url = $rpta_json->enlace;
+                    $operation->operation_status_id = OperationStatus::where('name', 'Facturado')->first()->id;
+                    $operation->save();
+
+                    return response()->json([
+                        'success' => true,
+                        'data' => [
+                            'Factura creada exitosamente'
+                        ]
+                    ]);
+                }
+            }
+
+        } catch (\Exception $e) {
+            // Registrando el el log los datos ingresados
+            logger('ERROR: archivo adjunto: DailyOperationsController@invoice', ["error" => $e]);
+        }
+
+        return response()->json([
+            'success' => false,
+            'errors' => [
+                'Ocurrió un error al facturar'
             ]
         ]);
     }

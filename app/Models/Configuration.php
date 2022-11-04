@@ -12,4 +12,10 @@ class Configuration extends Model
     public function updater() {
         return $this->belongsTo(User::class, "updated_by");
     }
+
+    public function get_value ($config) {
+        //return $this->where('shortname', $name)->first()->id;
+        return $this->select('value', 'description')->where('shortname', $config)->first()->value;
+        //return true;
+    }
 }

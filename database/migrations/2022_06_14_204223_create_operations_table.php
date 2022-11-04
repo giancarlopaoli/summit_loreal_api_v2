@@ -32,8 +32,11 @@ return new class extends Migration
             $table->string('transfer_number', 45);
             $table->integer('corfid_id')->nullable();
             $table->string('corfid_mesage', 255)->nullable();
-            $table->string('invoice_number', 45)->nullable();
-            $table->string('invoice_url', 45)->nullable();
+            $table->string('invoice_serie', 4)->nullable();
+            $table->string('invoice_number', 10)->nullable();
+            $table->string('invoice_url', 255)->nullable();
+            $table->decimal('detraction_amount', 7,2 );
+            $table->decimal('detraction_percentage', 5,2 );
             $table->string('backup_status', 45)->nullable();
             $table->decimal('base_exchange_rate', 7, 6);
             $table->foreignIdFor(\App\Models\Coupon::class)->nullable()->constrained();

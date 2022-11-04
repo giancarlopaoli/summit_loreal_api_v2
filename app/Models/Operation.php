@@ -50,4 +50,8 @@ class Operation extends Model
     public function status() {
         return $this->belongsTo(OperationStatus::class, 'operation_status_id');
     }
+
+    public function documents() {
+        return $this->hasMany(OperationDocument::class);
+    }
 }

@@ -214,9 +214,29 @@ class TestingSeeder extends Seeder
             'client_status_id' => ClientStatus::where('name', 'Activo')->first()->id
         ]);
 
+        $client5 = Client::create([
+            'name' => 'T & T Consultores SAC',
+            'last_name' => 'Intelecta',
+            'mothers_name' => '',
+            'document_type_id' => 1,
+            'document_number' => '20553059861',
+            'phone' => '987654321',
+            'email' => 'pruebas@billex.pe',
+            'address' => 'Av Encalada 1010',
+            'birthdate' => Carbon::now(),
+            'district_id' => District::all()->random()->id,
+            'country_id' => Country::all()->random()->id,
+            'economic_activity_id' => EconomicActivity::all()->random()->id,
+            'profession_id' => Profession::all()->random()->id,
+            'customer_type' => 'PJ',
+            'type' => 'Cliente',
+            'client_status_id' => ClientStatus::where('name', 'Activo')->first()->id
+        ]);
+
         $user->clients()->attach($client, ['status' => 'Asignado']);
         $user->clients()->attach($client2, ['status' => 'Activo']);
         $user1->clients()->attach($client2, ['status' => 'Asignado']);
+        $user1->clients()->attach($client5, ['status' => 'Activo']);
         $user4->clients()->attach($client3, ['status' => 'Asignado']);
         $user5->clients()->attach($client4, ['status' => 'Asignado']);
 
@@ -244,6 +264,11 @@ class TestingSeeder extends Seeder
         $bank_accounts = BankAccount::factory()->state([
             'client_id' => $client4->id
         ])->count(6)
+            ->create();
+
+        $bank_accounts = BankAccount::factory()->state([
+            'client_id' => $client5->id
+        ])->count(4)
             ->create();
 
         $main_bank_account = $bank_accounts->first();
