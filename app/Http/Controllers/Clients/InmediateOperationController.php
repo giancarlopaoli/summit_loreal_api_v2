@@ -258,8 +258,7 @@ class InmediateOperationController extends Controller
             'igv' => 'required|numeric',
             'spread' => 'required|numeric',
             'bank_accounts' => 'required|array',
-            'escrow_accounts' => 'required|array',
-            'coupon_id' => 'exists:coupons,id'
+            'escrow_accounts' => 'required|array'
         ]);
 
         if($validator->fails()) {
@@ -271,7 +270,7 @@ class InmediateOperationController extends Controller
         $client = Client::find($request->client_id);
 
         $coupon = null;
-        if($request->has('coupon_id')) {
+        if($request->has('coupon_id') && !is_null($request->coupon_id) && $request->coupon_id != "") {
             $coupon = Coupon::find($request->coupon_id);
         }
 
