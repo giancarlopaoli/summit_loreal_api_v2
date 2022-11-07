@@ -92,5 +92,11 @@ class ConfigurationSeeder extends Seeder
             "description" => "Monto minimo requerido para crear una operacion",
             "value" => 2000,
         ]);
+
+        Configuration::create([
+            "shortname" => "DETRACTION",
+            "description" => "Porcentage Detracción",
+            "value" => 12,
+        ]);
     }
 }
