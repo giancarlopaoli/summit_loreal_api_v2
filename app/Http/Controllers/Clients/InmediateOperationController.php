@@ -272,6 +272,15 @@ class InmediateOperationController extends Controller
         $coupon = null;
         if($request->has('coupon_id') && !is_null($request->coupon_id) && $request->coupon_id != "") {
             $coupon = Coupon::find($request->coupon_id);
+
+            if(is_null($coupon)){
+                return response()->json([
+                    'success' => false,
+                    'errors' => [
+                        'El cupón ingresado es inválido'
+                    ]
+                ]);
+            }
         }
 
         //Validating Bank Accounts
