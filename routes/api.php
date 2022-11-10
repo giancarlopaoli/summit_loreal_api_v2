@@ -140,8 +140,18 @@ Route::middleware('encryptresponses')->group(function () {
             Route::post('upload-voucher', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'upload_voucher']);
             Route::put('to-pending-funds/{operation}', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'to_pending_funds']);
             Route::post('invoice/{operation}', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'invoice']);
+            Route::put('close/{operation}', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'close_operation']);
 
             Route::get('download-file', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'download_file']);
+
+            ########## Operaciones contravalor recaudado  #############
+            Route::prefix('countervalue')->group(function () {
+                Route::get('list', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'countervalue_list']);
+                Route::post('sign/{operation}', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'operation_sign']);
+
+                
+            });
+
         });
 
     });

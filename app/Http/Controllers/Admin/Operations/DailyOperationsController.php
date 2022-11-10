@@ -146,7 +146,7 @@ class DailyOperationsController extends Controller
         return response()->json([
             'success' => true,
             'data' => [
-                'status' =>  $status,
+                //'status' =>  $status,
                 'indicators' => $indicators,
                 'graphs' => $graphs,
                 'pending_operations' => $pending_operations,
@@ -334,7 +334,14 @@ class DailyOperationsController extends Controller
                 $operation->save();
             }
             elseif($operation->matched_operation[0]->operation_status_id == OperationStatus::where('name', 'Pendiente fondos contraparte')->first()->id){
-                $operation->operation_status_id = OperationStatus::where('name', 'Contravalor recaudado')->first()->id;
+                
+                if($operation->client->type == 'PL'){
+                    $operation->operation_status_id = OperationStatus::where('name', 'Fondos enviados')->first()->id;
+                }
+                else{
+                    $operation->operation_status_id = OperationStatus::where('name', 'Contravalor recaudado')->first()->id;
+                }
+                
                 $operation->funds_confirmation_date = Carbon::now();
                 $operation->save();
 
@@ -531,7 +538,7 @@ class DailyOperationsController extends Controller
 
                     $operation->operation_status_id = OperationStatus::where('name', 'Pendiente facturar')->first()->id;
                     $operation->save();
-                    
+
                     return response()->json([
                         'success' => false,
                         'errors' => [
@@ -569,16 +576,25 @@ class DailyOperationsController extends Controller
     }
     
     public function download_file(Request $request) {
+        $val = Validator::make($request->all(), [
+            'operation_id' => 'required|exists:operations,id',
+            'document_id' => 'required|exists:documents,id'
+        ]);
+        if($val->fails()) return response()->json($val->messages());
 
-        /*return response()->json([
-            'success' => true,
-            'data' => [
-                'operation' => Storage::disk('s3')->download('test/' . $request->name)
-            ]
-        ]);*/
+        $document = OperationDocument::find($request->document_id)->where('operation_id', $request->operation_id)->first();
 
-        if (Storage::disk('s3')->exists('test/' . $request->name)) {
-            return Storage::disk('s3')->download('test/' . $request->name);
+        if(is_null($document)){
+            return response()->json([
+                'success' => false,
+                'data' => [
+                    $document->document_name
+                ]
+            ]);
+        }
+
+        if (Storage::disk('s3')->exists(env('AWS_ENV').'/operations/' . $document->document_name)) {
+            return Storage::disk('s3')->download(env('AWS_ENV').'/operations/' . $document->document_name);
         }
         else{
             return response()->json([
@@ -589,7 +605,153 @@ class DailyOperationsController extends Controller
             ]);
         }
 
-        return Storage::disk('s3')->download('test/' . $request->name);
+        return Storage::disk('s3')->download(env('AWS_ENV').'/operations/' . $document->name);
     }
     
+    public function countervalue_list(Request $request) {
+
+        $val = Validator::make($request->all(), [
+            'date' => 'date'
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+        ########### Configuration ##################
+
+        $date = isset($request->date) ? $request->date : Carbon::now()->format('Y-m-d');
+        $month = Carbon::now()->month;
+        $year = Carbon::now()->year;
+
+        $status = substr(OperationStatus::wherein('name', ['Pendiente fondos contraparte', 'Contravalor recaudado'])->get()->pluck('id'), 1, Str::length(OperationStatus::wherein('name', ['Pendiente fondos contraparte', 'Contravalor recaudado'])->get()->pluck('id'))-2);
+
+        $matched_operations = DB::table('operation_matches')
+            ->select('operation_id', 'matched_id')
+            ->join('operations as op1', 'op1.id', "=", "operation_matches.operation_id")
+            ->join('operations as op2', 'op2.id', "=", "operation_matches.matched_id")
+            ->whereRaw("date(operation_matches.created_at) = '$date'")
+            ->whereRaw("(op1.operation_status_id in ($status) or op2.operation_status_id in ($status))")
+            ->get();
+
+        $matched_operations->each(function ($item, $key) {
+
+            $item->created_operation = Operation::where('id',$item->operation_id)
+                ->select('operations.id','code','class','type','client_id','user_id','amount','currency_id','exchange_rate','comission_spread','comission_amount','igv','spread','operation_status_id','post','operation_date')
+                ->selectRaw("if(type = 'Interbancaria', round(amount + round(amount * spread/10000, 2 ), 2), round(amount * exchange_rate, 2)) as conversion_amount")
+                ->selectRaw("if(type = 'Compra', round(exchange_rate + comission_spread/10000, 4), if(type = 'Venta', round(exchange_rate - comission_spread/10000, 4), round(exchange_rate * (1 + spread/10000),4))) as final_exchange_rate")
+                ->selectRaw("if(type = 'Compra', round(round(amount * exchange_rate, 2) + comission_amount + igv, 2), if(type = 'Venta', round(round(amount * exchange_rate, 2) - comission_amount - igv, 2), round(amount + round(amount * spread/10000, 2 ) + comission_amount + igv, 2)) ) as counter_value")
+                ->selectRaw("if(type = 'Interbancaria', round(amount * spread/10000, 2 ) , null ) as financial_expenses")
+                ->with('status:id,name')
+                ->with('client:id,name,last_name,mothers_name,customer_type,type')
+                ->with('currency:id,name:sign')
+                ->with('bank_accounts:id,bank_id,currency_id,account_number,cci_number')
+                ->with('bank_accounts.bank:id,name,shortname,image')
+                ->with('bank_accounts.currency:id,name,sign')
+                ->with('escrow_accounts:id,bank_id,currency_id,account_number,cci_number')
+                ->with('escrow_accounts.currency:id,name,sign')
+                ->with('escrow_accounts.bank:id,name,shortname,image')
+                ->with('documents:id,operation_id,type')
+                ->first();
+
+            $item->matched_operation = Operation::where('id',$item->matched_id)
+                ->select('operations.id','code','class','type','client_id','user_id','amount','currency_id','exchange_rate','comission_spread','comission_amount','igv','spread','operation_status_id','post','operation_date')
+                ->selectRaw("if(type = 'Interbancaria', round(amount + round(amount * spread/10000, 2 ), 2), round(amount * exchange_rate, 2)) as conversion_amount")
+                ->selectRaw("if(type = 'Compra', round(exchange_rate + comission_spread/10000, 4), if(type = 'Venta', round(exchange_rate - comission_spread/10000, 4), round(exchange_rate * (1 + spread/10000),4))) as final_exchange_rate")
+                ->selectRaw("if(type = 'Compra', round(round(amount * exchange_rate, 2) + comission_amount + igv, 2), if(type = 'Venta', round(round(amount * exchange_rate, 2) - comission_amount - igv, 2), round(amount + round(amount * spread/10000, 2 ) + comission_amount + igv, 2)) ) as counter_value")
+                ->selectRaw("if(type = 'Interbancaria', round(amount * spread/10000, 2 ) , null ) as financial_expenses")
+                ->with('status:id,name')
+                ->with('client:id,name,last_name,mothers_name,customer_type,type')
+                ->with('currency:id,name:sign')
+                ->with('bank_accounts:id,bank_id,currency_id,account_number,cci_number')
+                ->with('bank_accounts.currency:id,name,sign')
+                ->with('bank_accounts.bank:id,name,shortname,image')
+                ->with('escrow_accounts:id,bank_id,currency_id,account_number,cci_number')
+                ->with('escrow_accounts.currency:id,name,sign')
+                ->with('escrow_accounts.bank:id,name,shortname,image')
+                ->with('documents:id,operation_id,type')
+                ->first();
+        });
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'operation' => $matched_operations
+            ]
+        ]);
+    }
+
+    public function operation_sign(Request $request, Operation $operation) {
+        $val = Validator::make($request->all(), [
+            'sign' => 'required|in:1,2'
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+        /*$operation->operation_status_id = OperationStatus::where('name', 'Pendiente envio fondos')->first()->id;
+        $operation->save();*/
+
+
+        if($request->sign ==1 && $operation->operation_status_id != OperationStatus::wherein('name', ['Pendiente envio fondos'])->first()->id){
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'La operación debe encontrarse en estado Pendiente envio fondos.'
+                ]
+            ]); 
+        }
+        else{
+            
+            // Enviar Correo()
+
+            $operation->sign_date = Carbon::now();
+            $operation->save();
+        }
+
+        if($request->sign == 2 && $operation->operation_status_id != OperationStatus::wherein('name', ['Contravalor recaudado'])->first()->id){
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'La operación debe encontrarse en estado Contravalor recaudado.'
+                ]
+            ]);
+        }
+        else{
+            
+            // Enviar Correo()
+
+            $operation->sign_date = Carbon::now();
+            $operation->save();
+        }
+
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'Correo de firma enviado',
+            ]
+        ]);
+    }
+
+    public function close_operation(Request $request, Operation $operation) {
+
+        if($operation->operation_status_id != OperationStatus::wherein('name', ['Fondos enviados'])->first()->id){
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'La operación debe encontrarse en estado Fondos enviados.'
+                ]
+            ]); 
+        }
+        else{
+            
+            // Enviar Correo()
+
+            $operation->operation_status_id = OperationStatus::where('name', 'Finalizado sin factura')->first()->id;
+            $operation->save();
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'operation' => $operation
+            ]
+        ]);
+    }
 }
