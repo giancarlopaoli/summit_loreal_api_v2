@@ -106,7 +106,7 @@ class DailyOperationsController extends Controller
         $matched_operations->each(function ($item, $key) {
 
             $item->created_operation = Operation::where('id',$item->operation_id)
-                ->select('operations.id','code','class','type','client_id','user_id','amount','currency_id','exchange_rate','comission_spread','comission_amount','igv','spread','operation_status_id','post','operation_date','funds_confirmation_date', 'sign_date', 'mail_instructions')
+                ->select('operations.id','code','class','type','client_id','user_id','amount','currency_id','exchange_rate','comission_spread','comission_amount','igv','spread','operation_status_id','post','operation_date','funds_confirmation_date', 'sign_date', 'mail_instructions', 'invoice_url')
                 ->selectRaw("if(type = 'Interbancaria', round(amount + round(amount * spread/10000, 2 ), 2), round(amount * exchange_rate, 2)) as conversion_amount")
                 ->selectRaw("if(type = 'Compra', round(exchange_rate + comission_spread/10000, 4), if(type = 'Venta', round(exchange_rate - comission_spread/10000, 4), round(exchange_rate * (1 + spread/10000),4))) as final_exchange_rate")
                 ->selectRaw("if(type = 'Compra', round(round(amount * exchange_rate, 2) + comission_amount + igv, 2), if(type = 'Venta', round(round(amount * exchange_rate, 2) - comission_amount - igv, 2), round(amount + round(amount * spread/10000, 2 ) + comission_amount + igv, 2)) ) as counter_value")
@@ -124,7 +124,7 @@ class DailyOperationsController extends Controller
                 ->first();
 
             $item->matched_operation = Operation::where('id',$item->matched_id)
-                ->select('operations.id','code','class','type','client_id','user_id','amount','currency_id','exchange_rate','comission_spread','comission_amount','igv','spread','operation_status_id','post','operation_date','funds_confirmation_date', 'sign_date', 'mail_instructions')
+                ->select('operations.id','code','class','type','client_id','user_id','amount','currency_id','exchange_rate','comission_spread','comission_amount','igv','spread','operation_status_id','post','operation_date','funds_confirmation_date', 'sign_date', 'mail_instructions', 'invoice_url')
                 ->selectRaw("if(type = 'Interbancaria', round(amount + round(amount * spread/10000, 2 ), 2), round(amount * exchange_rate, 2)) as conversion_amount")
                 ->selectRaw("if(type = 'Compra', round(exchange_rate + comission_spread/10000, 4), if(type = 'Venta', round(exchange_rate - comission_spread/10000, 4), round(exchange_rate * (1 + spread/10000),4))) as final_exchange_rate")
                 ->selectRaw("if(type = 'Compra', round(round(amount * exchange_rate, 2) + comission_amount + igv, 2), if(type = 'Venta', round(round(amount * exchange_rate, 2) - comission_amount - igv, 2), round(amount + round(amount * spread/10000, 2 ) + comission_amount + igv, 2)) ) as counter_value")
@@ -304,7 +304,7 @@ class DailyOperationsController extends Controller
             ], 404);
         }
 
-        if($operation->matches->count() > 0) {
+        if($operation->matches->count() > 0) { // Si es operación creadora
             if($operation->matches[0]->operation_status_id == OperationStatus::where('name', 'Pendiente envio fondos')->first()->id){
                 $operation->operation_status_id = OperationStatus::where('name', 'Pendiente fondos contraparte')->first()->id;
                 $operation->funds_confirmation_date = Carbon::now();
@@ -327,7 +327,7 @@ class DailyOperationsController extends Controller
                 ], 404);
             }
         }
-        elseif ($operation->matched_operation->count() > 0) {
+        elseif ($operation->matched_operation->count() > 0) { // Si es operación emparejadora
             if($operation->matched_operation[0]->operation_status_id == OperationStatus::where('name', 'Pendiente envio fondos')->first()->id){
                 $operation->operation_status_id = OperationStatus::where('name', 'Pendiente fondos contraparte')->first()->id;
                 $operation->funds_confirmation_date = Carbon::now();
@@ -337,12 +337,14 @@ class DailyOperationsController extends Controller
                 
                 if($operation->client->type == 'PL'){
                     $operation->operation_status_id = OperationStatus::where('name', 'Fondos enviados')->first()->id;
+                    $operation->deposit_date = Carbon::now();
                 }
                 else{
                     $operation->operation_status_id = OperationStatus::where('name', 'Contravalor recaudado')->first()->id;
+                    $operation->funds_confirmation_date = Carbon::now();
                 }
                 
-                $operation->funds_confirmation_date = Carbon::now();
+                
                 $operation->save();
 
                 $operation->matched_operation[0]->operation_status_id = OperationStatus::where('name', 'Contravalor recaudado')->first()->id;
@@ -748,6 +750,7 @@ class DailyOperationsController extends Controller
             // Enviar Correo()
 
             $operation->operation_status_id = OperationStatus::where('name', 'Finalizado sin factura')->first()->id;
+            $operation->funds_confirmation_date = Carbon::now();
             $operation->save();
         }
 
@@ -755,6 +758,35 @@ class DailyOperationsController extends Controller
             'success' => true,
             'data' => [
                 'operation' => $operation
+            ]
+        ]);
+    }
+
+    public function vendor_instruction(Request $request, Operation $operation) {
+
+        /**/
+
+        if($operation->client->type == 'Cliente'){
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'El cliente de la operación no es un Proveedor de Liquidez'
+                ]
+            ]);
+        }
+
+
+        // Enviar Correo()
+
+        if(is_null($operation->mail_instructions)){
+            $operation->mail_instructions = Carbon::now();
+            $operation->save();
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'Correo de instrucciones enviado exitosamente',
             ]
         ]);
     }
