@@ -74,6 +74,10 @@ class User extends Authenticatable
         return $this->hasMany(Operation::class);
     }
 
+    public function operation_histories() {
+        return $this->hasMany(OperationHistory::class);
+    }
+
     public function executive() {
         return $this->hasOne(Executive::class);
     }

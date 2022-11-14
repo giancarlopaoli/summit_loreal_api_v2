@@ -54,4 +54,8 @@ class Operation extends Model
     public function documents() {
         return $this->hasMany(OperationDocument::class);
     }
+
+    public function history() {
+        return $this->hasMany(OperationHistory::class);
+    }
 }
