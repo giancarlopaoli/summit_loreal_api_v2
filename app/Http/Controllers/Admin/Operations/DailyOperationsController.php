@@ -584,7 +584,7 @@ class DailyOperationsController extends Controller
     public function download_file(Request $request) {
         $val = Validator::make($request->all(), [
             'operation_id' => 'required|exists:operations,id',
-            'document_id' => 'required|exists:documents,id'
+            'document_id' => 'required|exists:operation_documents,id'
         ]);
         if($val->fails()) return response()->json($val->messages());
 
