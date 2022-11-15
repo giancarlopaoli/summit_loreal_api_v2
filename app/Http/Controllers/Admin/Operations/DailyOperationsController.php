@@ -14,6 +14,8 @@ use App\Models\Operation;
 use App\Models\OperationStatus;
 use App\Models\OperationDocument;
 use App\Models\Configuration;
+use App\Models\Currency;
+use App\Enums\BankAccountStatus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
@@ -787,6 +789,269 @@ class DailyOperationsController extends Controller
             'success' => true,
             'data' => [
                 'Correo de instrucciones enviado exitosamente',
+            ]
+        ]);
+    }
+
+    // Actualización de parámetros de operación
+    public function update(Request $request, Operation $operation) {
+        $val = Validator::make($request->all(), [
+            'field' => 'required|in:amount,comission_spread,exchange_rate',
+            'value' => 'required|numeric'
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+        if(OperationStatus::wherein('name', ['Facturado', 'Finalizado sin factura','Pendiente facturar'])->pluck('id')->contains($operation->operation_status_id)){
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'La operación no puede estar finalizada para ser editada',
+                ]
+            ]);
+        }
+        else{
+            if($request->field == 'amount'){
+                $total_comission = round($request->value * ($operation->comission_spread/10000), 2);
+
+                $igv_percetage = Configuration::where('shortname', 'IGV')->first()->value / 100;
+                $comission_amount = round($total_comission / (1+$igv_percetage), 2);
+
+                $igv = round($total_comission - $comission_amount,2);
+
+                $operation->amount = $request->value;
+                $operation->comission_amount = $comission_amount;
+                $operation->igv = $igv;
+                $operation->save();
+            }
+            elseif($request->field == 'comission_spread'){
+                $total_comission = round($operation->amount * $request->value/10000, 2);
+
+                $igv_percetage = Configuration::where('shortname', 'IGV')->first()->value / 100;
+                $comission_amount = round($total_comission / (1+$igv_percetage), 2);
+
+                $igv = round($total_comission - $comission_amount,2);
+
+                $operation->comission_spread = $request->value;
+                $operation->comission_amount = $comission_amount;
+                $operation->igv = $igv;
+                $operation->save();
+            }
+            else{
+                $operation->exchange_rate = $request->value;
+                $operation->save();
+            }   
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'operation' => $operation
+            ]
+        ]);
+    }
+
+    public function update_escrow_accounts(Request $request, Operation $operation) {
+        $val = Validator::make($request->all(), [
+            'escrow_accounts' => 'required|array'
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+
+        $soles_id = Currency::where('name', 'Soles')->first()->id;
+        $dolares_id = Currency::where('name', 'Dolares')->first()->id;
+        $total_amount_escrow = 0;
+        $total_comission = round($operation->comission_amount + $operation->igv);
+
+        //Validating Escrow Accounts
+        $escrow_accounts = [];
+        foreach ($request->escrow_accounts as $escrow_account_data) {
+            $escrow_account = EscrowAccount::where('id', $escrow_account_data['id'])
+                ->where('active', true)
+                ->first();
+
+            if(is_null($escrow_account)) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => [
+                        'La cuenta fideicomiso ' . $escrow_account_data['id'] . ' no es valida'
+                    ]
+                ]);
+            }
+
+            if($operation->type == 'Compra') {
+                if($escrow_account->currency_id != $soles_id) {
+                    return response()->json([
+                        'success' => false,
+                        'errors' => [
+                            'La cuenta fideicomiso ' . $escrow_account->id . ' no tiene la divisa valida'
+                        ]
+                    ]);
+                }
+
+                if($escrow_account_data['amount'] >= $total_comission){
+                    $escrow_account->comission_amount = $total_comission;
+                    $total_comission = 0;
+                }
+                else{
+                    $escrow_account->comission_amount = $escrow_account_data['amount'];
+                    $total_comission = $total_comission -  $escrow_account_data['amount'];
+                }
+
+            } else {
+                if($escrow_account->currency_id != $dolares_id) {
+                    return response()->json([
+                        'success' => false,
+                        'errors' => [
+                            'La cuenta fideicomiso ' . $escrow_account->id . ' no tiene la divisa valida'
+                        ]
+                    ]);
+                }
+
+                $escrow_account->comission_amount = 0;
+            }
+
+            $escrow_account->amount = $escrow_account_data['amount'];
+            $total_amount_escrow += $escrow_account_data['amount'];
+            $escrow_accounts[] = $escrow_account;
+        }
+
+        //Validating amounts in accounts
+        if($operation->type == 'Compra') {
+            $envia = round($operation->amount * $operation->exchange_rate + $operation->comission_amount + $operation->igv,2);
+            $recibe = $operation->amount;
+        } else {
+            $envia = $operation->amount;
+            $recibe = round($operation->amount * $operation->exchange_rate - $operation->comission_amount - $operation->igv,2);
+        }
+
+        if( $envia != $total_amount_escrow){
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'La suma de montos enviados en las cuentas de fideicomiso es incorrecto = ' . $total_amount_escrow . '. Debería ser ' . $envia 
+                ]
+            ]);
+        }   
+
+        // Detaching old escrow accounts from operation
+        $operation->escrow_accounts()->detach();
+
+        // attaching new escrow accounts
+        foreach ($escrow_accounts as $escrow_account_data) {
+            $operation->escrow_accounts()->attach($escrow_account_data['id'], [
+                'amount' => $escrow_account_data['amount'],
+                'comission_amount' => $escrow_account_data['comission_amount']
+            ]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'operation' => $operation
+            ]
+        ]);
+    }
+
+    public function update_client_accounts(Request $request, Operation $operation) {
+        $val = Validator::make($request->all(), [
+            'bank_accounts' => 'required|array'
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+
+        //Validating Bank Accounts
+        $soles_id = Currency::where('name', 'Soles')->first()->id;
+        $dolares_id = Currency::where('name', 'Dolares')->first()->id;
+
+        $bank_accounts = [];
+        $total_amount_bank = 0;
+        $total_comission = round($operation->comission_amount + $operation->igv);
+
+        foreach ($request->bank_accounts as $bank_account_data) {
+            $bank_account = BankAccount::where('id', $bank_account_data['id'])
+                ->where('client_id', $operation->client_id)
+                ->where('bank_account_status_id', BankAccountStatus::Activo)
+                ->first();
+
+            // Validating that the bank account is valid.
+            if(is_null($bank_account)) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => [
+                        'Error en la cuenta bancaria id = ' . $bank_account_data['id']
+                    ]
+                ]);
+            }
+
+            if($operation->type == 'Compra') {
+                if($bank_account->currency_id != $dolares_id) {
+                    return response()->json([
+                        'success' => false,
+                        'errors' => [
+                            'La cuenta bancaria ' . $bank_account->id . ' no tiene la divisa valida'
+                        ]
+                    ]);
+                }
+
+                $bank_account->comission_amount = 0 ;
+            } else {
+                if($bank_account->currency_id != $soles_id) {
+                    return response()->json([
+                        'success' => false,
+                        'errors' => [
+                            'La cuenta bancaria ' . $bank_account->id . ' no tiene la divisa valida'
+                        ]
+                    ]);
+                }
+
+                if($bank_account_data['amount'] >= $total_comission){
+                    $bank_account->comission_amount = $total_comission;
+                    $total_comission = 0;
+                }
+                else{
+                    $bank_account->comission_amount = $bank_account_data['amount'];
+                    $total_comission = $total_comission -  $bank_account_data['amount'];
+                }
+            }
+
+            $bank_account->amount = $bank_account_data['amount'];
+            $total_amount_bank += $bank_account_data['amount'];
+            $bank_accounts[] = $bank_account;
+        }
+
+        //Validating amounts in accounts
+        if($operation->type == 'Compra') {
+            $envia = round($operation->amount * $operation->exchange_rate + $operation->comission_amount + $operation->igv,2);
+            $recibe = $operation->amount;
+        } else {
+            $envia = $operation->amount;
+            $recibe = round($operation->amount * $operation->exchange_rate - $operation->comission_amount - $operation->igv,2);
+        }
+
+        if( $recibe != $total_amount_bank){
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'La suma de montos enviados en las cuentas bancarias del cliente es incorrecto = ' . $total_amount_bank . '. Debería ser ' . $recibe 
+                ]
+            ]);
+        }
+
+        // Detaching old client accounts from operation
+        $operation->bank_accounts()->detach();
+
+        // attaching new escrow accounts
+        foreach ($bank_accounts as $bank_account_data) {
+            $operation->bank_accounts()->attach($bank_account_data['id'], [
+                'amount' => $bank_account_data['amount'],
+                'comission_amount' => $bank_account_data['comission_amount']
+            ]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'operation' => $operation
             ]
         ]);
     }
