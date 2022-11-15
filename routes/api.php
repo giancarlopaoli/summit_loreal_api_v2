@@ -143,6 +143,13 @@ Route::middleware('encryptresponses')->group(function () {
             Route::post('invoice/{operation}', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'invoice']);
             Route::put('close/{operation}', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'close_operation']);
 
+            Route::put('update/{operation}', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'update']);
+            Route::put('update-escrow-accounts/{operation}', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'update_escrow_accounts']);
+            Route::put('update-client-accounts/{operation}', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'update_client_accounts']);
+            Route::get('escrow-accounts', [\App\Http\Controllers\Clients\InterbankOperationController::class, 'get_escrow_accounts']);
+            Route::get('bank-accounts', [\App\Http\Controllers\Clients\InterbankOperationController::class, 'get_client_bank_accounts']);
+            
+
             Route::get('download-file', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'download_file']);
 
             ########## Operaciones contravalor recaudado  #############
