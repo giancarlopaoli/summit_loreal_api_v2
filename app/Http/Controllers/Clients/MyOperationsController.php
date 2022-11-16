@@ -23,6 +23,7 @@ class MyOperationsController extends Controller
         $ops = $client->operations()->where('operation_status_id', $request->status)->get();
 
         $ops->load(
+            'client:id,name,last_name,mothers_name,customer_type,type',
             'currency:id,name,sign',
             'status:id,name',
             'bank_accounts:id,bank_id,currency_id,account_number,cci_number',
@@ -54,7 +55,7 @@ class MyOperationsController extends Controller
         }
 
         $operation = $client->operations()
-            ->select('id','code','class','type','user_id','amount','currency_id','exchange_rate','comission_amount','igv','operation_status_id','transfer_number','invoice_url','coupon_id','coupon_code','coupon_type','coupon_value','operation_date','funds_confirmation_date','deposit_date','spread','comission_spread','canceled_at')
+            ->select('id','client_id','code','class','type','user_id','amount','currency_id','exchange_rate','comission_amount','igv','operation_status_id','transfer_number','invoice_url','coupon_id','coupon_code','coupon_type','coupon_value','operation_date','funds_confirmation_date','deposit_date','spread','comission_spread','canceled_at')
             ->selectRaw("(round(amount * exchange_rate, 2)) as conversion_amount")
             ->where('code', $operation_id)
             ->where('client_id', $request->client_id)
@@ -95,6 +96,7 @@ class MyOperationsController extends Controller
         }
 
         $operation->load(
+            'client:id,name,last_name,mothers_name,customer_type,type',
             'currency:id,name,sign',
             'status:id,name',
             'bank_accounts:id,bank_id,currency_id,account_number,cci_number',
