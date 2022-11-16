@@ -13,6 +13,7 @@ use App\Models\EscrowAccount;
 use App\Models\Operation;
 use App\Models\OperationStatus;
 use App\Models\OperationDocument;
+use App\Models\OperationHistory;
 use App\Models\Configuration;
 use App\Models\Currency;
 use App\Enums\BankAccountStatus;
@@ -158,7 +159,6 @@ class DailyOperationsController extends Controller
 
     }
 
-
     public function vendor_list(Request $request) {
 
         return response()->json([
@@ -273,6 +273,8 @@ class DailyOperationsController extends Controller
             $operation->save();
         }
 
+        OperationHistory::create(["operation_id" => $operation->id,"user_id" => auth()->id(),"action" => "Operación emparejada"]);
+
         return response()->json([
             'success' => true,
             'data' => [
@@ -287,10 +289,12 @@ class DailyOperationsController extends Controller
         $operation->canceled_at = Carbon::now();
         $operation->save();
 
+        OperationHistory::create(["operation_id" => $operation->id,"user_id" => auth()->id(),"action" => "Operación cancelada"]);
+
         return response()->json([
             'success' => true,
             'data' => [
-                'operation' => $operation
+                'Operación cancelada'
             ]
         ]);
     }
@@ -362,6 +366,8 @@ class DailyOperationsController extends Controller
             }
         }
 
+        OperationHistory::create(["operation_id" => $operation->id,"user_id" => auth()->id(),"action" => "Fondos confirmados"]);
+
         return response()->json([
             'success' => true,
             'data' => [
@@ -393,7 +399,6 @@ class DailyOperationsController extends Controller
                 $filename = $file->getClientOriginalName();
             }
 
-
             try {
                 $s3 = Storage::disk('s3')->putFileAs($path, $file, $filename);
 
@@ -412,6 +417,7 @@ class DailyOperationsController extends Controller
                 logger('ERROR: archivo adjunto: DailyOperationsController@upload_voucher', ["error" => $e]);
             }
 
+            OperationHistory::create(["operation_id" => $operation->id,"user_id" => auth()->id(),"action" => "Comprobante cargado", "detail" => 'filename: ' . $filename]);
 
             return response()->json([
                 'success' => true,
@@ -433,6 +439,8 @@ class DailyOperationsController extends Controller
 
         $operation->operation_status_id = OperationStatus::where('name', 'Pendiente envio fondos')->first()->id;
         $operation->save();
+
+        OperationHistory::create(["operation_id" => $operation->id,"user_id" => auth()->id(),"action" => "A pendiente envío de fondos"]);
 
         return response()->json([
             'success' => true,
@@ -560,6 +568,8 @@ class DailyOperationsController extends Controller
                     $operation->invoice_url = $rpta_json->enlace;
                     $operation->operation_status_id = OperationStatus::where('name', 'Facturado')->first()->id;
                     $operation->save();
+
+                    OperationHistory::create(["operation_id" => $operation->id,"user_id" => auth()->id(),"action" => "Operación facturada"]);
 
                     return response()->json([
                         'success' => true,
@@ -695,7 +705,6 @@ class DailyOperationsController extends Controller
         /*$operation->operation_status_id = OperationStatus::where('name', 'Pendiente envio fondos')->first()->id;
         $operation->save();*/
 
-
         if($request->sign ==1 && $operation->operation_status_id != OperationStatus::wherein('name', ['Pendiente envio fondos'])->first()->id){
             return response()->json([
                 'success' => false,
@@ -728,6 +737,7 @@ class DailyOperationsController extends Controller
             $operation->save();
         }
 
+        OperationHistory::create(["operation_id" => $operation->id,"user_id" => auth()->id(),"action" => "Firma enviada", "detail" => 'firma: ' . $request->sign]);
 
         return response()->json([
             'success' => true,
@@ -755,6 +765,8 @@ class DailyOperationsController extends Controller
             $operation->funds_confirmation_date = Carbon::now();
             $operation->save();
         }
+
+        OperationHistory::create(["operation_id" => $operation->id,"user_id" => auth()->id(),"action" => "Operación Finalizada"]);
 
         return response()->json([
             'success' => true,
@@ -784,6 +796,8 @@ class DailyOperationsController extends Controller
             $operation->mail_instructions = Carbon::now();
             $operation->save();
         }
+
+        OperationHistory::create(["operation_id" => $operation->id,"user_id" => auth()->id(),"action" => "Correo de instrucciones PL enviado"]);
 
         return response()->json([
             'success' => true,
@@ -842,6 +856,8 @@ class DailyOperationsController extends Controller
             }   
         }
 
+        OperationHistory::create(["operation_id" => $operation->id,"user_id" => auth()->id(),"action" => "Operación actualizada", "detail" => $request->field . ":" . $request->value]);
+
         return response()->json([
             'success' => true,
             'data' => [
@@ -855,7 +871,6 @@ class DailyOperationsController extends Controller
             'escrow_accounts' => 'required|array'
         ]);
         if($val->fails()) return response()->json($val->messages());
-
 
         $soles_id = Currency::where('name', 'Soles')->first()->id;
         $dolares_id = Currency::where('name', 'Dolares')->first()->id;
@@ -943,6 +958,8 @@ class DailyOperationsController extends Controller
                 'comission_amount' => $escrow_account_data['comission_amount']
             ]);
         }
+
+        OperationHistory::create(["operation_id" => $operation->id,"user_id" => auth()->id(),"action" => "Cuentas fideicomiso actualizadas"]);
 
         return response()->json([
             'success' => true,
@@ -1047,6 +1064,8 @@ class DailyOperationsController extends Controller
                 'comission_amount' => $bank_account_data['comission_amount']
             ]);
         }
+
+        OperationHistory::create(["operation_id" => $operation->id,"user_id" => auth()->id(),"action" => "Cuentas cliente actualizadas"]);
 
         return response()->json([
             'success' => true,
