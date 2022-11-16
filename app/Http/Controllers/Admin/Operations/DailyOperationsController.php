@@ -815,6 +815,15 @@ class DailyOperationsController extends Controller
         ]);
         if($val->fails()) return response()->json($val->messages());
 
+        /*return response()->json([
+            'success' => false,
+            'errors' => [
+                'bank_accounts' => $operation->bank_accounts,
+                'escrow-accounts' => $operation->escrow_accounts[0]->pivot->amount
+
+            ]
+        ]);*/
+
         if(OperationStatus::wherein('name', ['Facturado', 'Finalizado sin factura','Pendiente facturar'])->pluck('id')->contains($operation->operation_status_id)){
             return response()->json([
                 'success' => false,
@@ -856,12 +865,54 @@ class DailyOperationsController extends Controller
             }   
         }
 
+        // Actualizando cuentas bancarias
+        $mensaje = "";
+        if($operation->bank_accounts()->count() > 1){
+            $operation->bank_accounts()->detach();
+
+            $mensaje .= "Debe configurar las cuentas bancarias de destino. ";
+        }
+        else{
+            if($operation->type == 'Compra'){
+                $operation->bank_accounts[0]->pivot->amount = $operation->amount;
+                $operation->bank_accounts[0]->pivot->updated_at = Carbon::now();
+                $operation->bank_accounts[0]->pivot->save();
+            }
+            elseif($operation->type == 'Venta'){
+                $operation->bank_accounts[0]->pivot->amount = round($operation->amount * $operation->exchange_rate, 2) - $operation->comission_amount - $operation->igv;
+                $operation->bank_accounts[0]->pivot->comission_amount = $operation->comission_amount + $operation->igv;
+                $operation->bank_accounts[0]->pivot->updated_at = Carbon::now();
+                $operation->bank_accounts[0]->pivot->save();
+            }
+        }
+
+        // Actualizando cuentas de fideicomiso
+        if($operation->escrow_accounts()->count() > 1){
+            $operation->escrow_accounts()->detach();
+
+            $mensaje .= "Debe configurar las cuentas de fideicomiso. ";
+        }
+        else{
+            if($operation->type == 'Venta'){
+                $operation->escrow_accounts[0]->pivot->amount = $operation->amount;
+                $operation->escrow_accounts[0]->pivot->updated_at = Carbon::now();
+                $operation->escrow_accounts[0]->pivot->save();
+            }
+            elseif($operation->type == 'Compra'){
+                $operation->escrow_accounts[0]->pivot->amount = round($operation->amount * $operation->exchange_rate, 2) + $operation->comission_amount + $operation->igv;
+                $operation->escrow_accounts[0]->pivot->comission_amount = $operation->comission_amount + $operation->igv;
+                $operation->escrow_accounts[0]->pivot->updated_at = Carbon::now();
+                $operation->escrow_accounts[0]->pivot->save();
+            }
+        }
+
         OperationHistory::create(["operation_id" => $operation->id,"user_id" => auth()->id(),"action" => "Operación actualizada", "detail" => $request->field . ":" . $request->value]);
 
         return response()->json([
             'success' => true,
             'data' => [
-                'operation' => $operation
+                'operation' => $operation,
+                'mensaje' => $mensaje
             ]
         ]);
     }
@@ -870,6 +921,7 @@ class DailyOperationsController extends Controller
         $val = Validator::make($request->all(), [
             'escrow_accounts' => 'required|array'
         ]);
+
         if($val->fails()) return response()->json($val->messages());
 
         $soles_id = Currency::where('name', 'Soles')->first()->id;
@@ -955,7 +1007,8 @@ class DailyOperationsController extends Controller
         foreach ($escrow_accounts as $escrow_account_data) {
             $operation->escrow_accounts()->attach($escrow_account_data['id'], [
                 'amount' => $escrow_account_data['amount'],
-                'comission_amount' => $escrow_account_data['comission_amount']
+                'comission_amount' => $escrow_account_data['comission_amount'],
+                'created_at' => Carbon::now()
             ]);
         }
 
@@ -1061,7 +1114,8 @@ class DailyOperationsController extends Controller
         foreach ($bank_accounts as $bank_account_data) {
             $operation->bank_accounts()->attach($bank_account_data['id'], [
                 'amount' => $bank_account_data['amount'],
-                'comission_amount' => $bank_account_data['comission_amount']
+                'comission_amount' => $bank_account_data['comission_amount'],
+                'created_at' => Carbon::now()
             ]);
         }
 
