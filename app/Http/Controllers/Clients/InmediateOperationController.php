@@ -22,6 +22,7 @@ use App\Models\Client;
 use App\Models\SpecialExchangeRate;
 use App\Models\VendorRange;
 use App\Models\VendorSpread;
+use App\Models\OperationHistory;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -482,6 +483,8 @@ class InmediateOperationController extends Controller
                 'comission_amount' => $escrow_account_data['comission_amount']
             ]);
         }
+
+        OperationHistory::create(["operation_id" => $operation->id,"user_id" => auth()->id(),"action" => "Operación creada"]);
 
         return response()->json([
             'success' => true,

@@ -16,7 +16,7 @@ return new class extends Migration
         Schema::create('operation_histories', function (Blueprint $table) {
             $table->id();
             $table->foreignIdFor(\App\Models\Operation::class)->constrained();
-            $table->foreignIdFor(\App\Models\Currency::class)->constrained();
+            $table->foreignIdFor(\App\Models\User::class)->constrained();
             $table->string("action", 150);
             $table->string("detail", 300);
             $table->timestamps();
