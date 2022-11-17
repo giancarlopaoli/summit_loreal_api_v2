@@ -156,7 +156,23 @@ Route::middleware('encryptresponses')->group(function () {
             Route::prefix('countervalue')->group(function () {
                 Route::get('list', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'countervalue_list']);
                 Route::post('sign/{operation}', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'operation_sign']);
+                
+            });
 
+
+            ########## Administración de usuarios  #############
+            Route::prefix('users')->group(function () {
+                Route::get('list', [\App\Http\Controllers\Admin\Operations\UsersController::class, 'list']);
+                Route::get('detail/{user}', [\App\Http\Controllers\Admin\Operations\UsersController::class, 'detail']);
+                Route::PUT('edit/{user}', [\App\Http\Controllers\Admin\Operations\UsersController::class, 'edit']);
+                Route::PUT('deactivate/{user}', [\App\Http\Controllers\Admin\Operations\UsersController::class, 'deactivate']);
+                Route::PUT('activate/{user}', [\App\Http\Controllers\Admin\Operations\UsersController::class, 'activate']);
+                Route::POST('reset-password/{user}', [\App\Http\Controllers\Admin\Operations\UsersController::class, 'reset_password']);
+                Route::GET('client-list/{user}', [\App\Http\Controllers\Admin\Operations\UsersController::class, 'client_list']);
+                Route::GET('clients/{user}', [\App\Http\Controllers\Admin\Operations\UsersController::class, 'clients']);
+                Route::POST('attach-client/{user}', [\App\Http\Controllers\Admin\Operations\UsersController::class, 'attach_client']);
+                Route::DELETE('detach-client/{user}', [\App\Http\Controllers\Admin\Operations\UsersController::class, 'detach_client']);
+                Route::PUT('active-client/{user}', [\App\Http\Controllers\Admin\Operations\UsersController::class, 'active_client']);
                 
             });
 

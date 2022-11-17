@@ -51,7 +51,7 @@ class User extends Authenticatable
     ];
 
     public function clients() {
-        return $this->belongsToMany(Client::class)->using(ClientUser::class);
+        return $this->belongsToMany(Client::class)->using(ClientUser::class)->select(['id', 'name', 'last_name', 'mothers_name','document_type_id','document_number','phone','email','customer_type','type']);
     }
 
     public function assigned_client() {

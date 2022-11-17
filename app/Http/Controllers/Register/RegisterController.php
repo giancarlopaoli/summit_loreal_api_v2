@@ -567,7 +567,7 @@ class RegisterController extends Controller
         $client_id = null;
     
 
-        //try {
+        try {
             // Creating Client
 
             $executive_id = User::where('email', env('PERSONS_EXECUTIVE'))->first()->id;
@@ -737,7 +737,7 @@ class RegisterController extends Controller
             }
             
 
-        /*} catch (\Exception $e) {
+        } catch (\Exception $e) {
             // Registrando el el log los datos ingresados
             logger('ERROR: Register Person: RegisterController@register_person', ["error" => $e]);
             
@@ -753,7 +753,7 @@ class RegisterController extends Controller
                     $mensaje
                 ]
             ]);
-        }*/
+        }
 
         return response()->json([
             'success' => true,
