@@ -186,7 +186,7 @@ class DailyOperationsController extends Controller
                 'errors' => [
                     'La operación ya se encuentra emparejada'
                 ]
-            ], 404);
+            ]);
         }
 
         ######### Creating vendor operation #############
@@ -758,8 +758,6 @@ class DailyOperationsController extends Controller
             ]); 
         }
         else{
-            
-            // Enviar Correo()
 
             $operation->operation_status_id = OperationStatus::where('name', 'Finalizado sin factura')->first()->id;
             $operation->funds_confirmation_date = Carbon::now();
@@ -788,7 +786,6 @@ class DailyOperationsController extends Controller
                 ]
             ]);
         }
-
 
         // Enviar Correo()
 
