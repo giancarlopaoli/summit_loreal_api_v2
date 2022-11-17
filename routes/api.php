@@ -172,7 +172,7 @@ Route::middleware('encryptresponses')->group(function () {
                 Route::GET('clients/{user}', [\App\Http\Controllers\Admin\Operations\UsersController::class, 'clients']);
                 Route::POST('attach-client/{user}', [\App\Http\Controllers\Admin\Operations\UsersController::class, 'attach_client']);
                 Route::DELETE('detach-client/{user}', [\App\Http\Controllers\Admin\Operations\UsersController::class, 'detach_client']);
-                Route::PUT('active-client/{user}', [\App\Http\Controllers\Admin\Operations\UsersController::class, 'active_client']);
+                Route::PUT('assign-client/{user}', [\App\Http\Controllers\Admin\Operations\UsersController::class, 'assign_client']);
                 
             });
 
