@@ -5,11 +5,14 @@ namespace App\Http\Controllers\Admin\Operations;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Auth;
 use App\Models\Client;
 use App\Models\User;
 use App\Enums;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class UsersController extends Controller
 {
@@ -43,6 +46,15 @@ class UsersController extends Controller
 
     //Edit user
     public function edit(Request $request, User $user) {
+        $val = Validator::make($request->all(), [
+            'email' => 'required|email',
+            'phone' => 'required|string',
+            'name' => 'required|string',
+            'last_name' => 'required|string',
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+        $user->update($request->only(["email","phone","name", "last_name"]));
 
         return response()->json([
             'success' => true,
@@ -148,7 +160,16 @@ class UsersController extends Controller
         ]);
         if($val->fails()) return response()->json($val->messages());
 
+        if($user->clients->pluck('id')->contains($request->client_id)){
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'El cliente ya se encuentra asignado'
+                ]
+            ]);
+        }
 
+        $user->clients()->attach($request->client_id, ['status' => Enums\ClientUserStatus::Activo, 'created_at' => Carbon::now(),'updated_by' => auth()->id()]);
         
         return response()->json([
             'success' => true,
@@ -158,5 +179,58 @@ class UsersController extends Controller
         ]);
     }
 
+    //Detach client from user
+    public function detach_client(Request $request, User $user) {
+        $val = Validator::make($request->all(), [
+            'client_id' => 'required|exists:clients,id',
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+        if(is_null($user->clients->find($request->client_id))){
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'El cliente no se encuentra asignado'
+                ]
+            ]);
+        }
+
+        $user->clients()->syncWithoutDetaching([$request->client_id => [ 'status' => Enums\ClientUserStatus::Inactivo, 'updated_at' => Carbon::now(), 'updated_by' => auth()->id()]]);
+        
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'Cliente desasignado.'
+            ]
+        ]);
+    }
+
+    //Attach client to user
+    public function assign_client(Request $request, User $user) {
+        $val = Validator::make($request->all(), [
+            'client_id' => 'required|exists:clients,id',
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+        /*if($user->clients->pluck('id')->contains($request->client_id)){
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'El cliente ya se encuentra asignado'
+                ]
+            ]);
+        }*/
+
+        DB::table('client_user')->where('user_id', $user->id)->where('status', Enums\ClientUserStatus::Asignado)->update(['status' => Enums\ClientUserStatus::Activo, 'updated_at' => Carbon::now(),'updated_by' => auth()->id()]);
+
+        $user->clients()->syncWithoutDetaching([$request->client_id => [ 'status' => Enums\ClientUserStatus::Asignado, 'updated_at' => Carbon::now(), 'updated_by' => auth()->id()]]);
+        
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'Cliente asignado exitosamente.'
+            ]
+        ]);
+    }
 
 }
