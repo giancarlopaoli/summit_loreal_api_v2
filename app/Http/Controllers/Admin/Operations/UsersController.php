@@ -19,7 +19,7 @@ class UsersController extends Controller
     //Users list
     public function list(Request $request) {
 
-        $users = User::select('id','name','last_name','email','phone','tries','last_active','status');
+        $users = User::select('id','name','last_name','email','phone','tries','last_active','status','role_id')->with('role:id,name');
 
         if(isset($request->email) && $request->email != '') $users->where('email', 'like', '%'.$request->email.'%');
         if(isset($request->name) && $request->name != '') $users->where('name', 'like', '%'.$request->name.'%');
