@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Client;
 use App\Models\User;
+use App\Models\Role;
 use App\Enums;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -229,6 +230,46 @@ class UsersController extends Controller
             'success' => true,
             'data' => [
                 'Cliente asignado exitosamente.'
+            ]
+        ]);
+    }
+
+    //List of roles for user
+    public function roles(Request $request, User $user) {
+        $roles = ($user->role->name == 'cliente') ? Role::select('id','name')->where('name', 'Cliente')->get() : Role::select('id','name')->where('name', '<>', 'Cliente')->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'roles' => $roles
+            ]
+        ]);
+    }
+
+    //Save Roles
+    public function save_roles(Request $request, User $user) {
+        $val = Validator::make($request->all(), [
+            'roles' => 'array',
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+        if($user->role->name == 'cliente') {
+            return response()->json([
+                'success' => false,
+                'data' => [
+                    'No es posible actualizar los roles de un usuario con rol de Cliente.'
+                ]
+            ]);
+        }
+
+        $user->roles()->detach();
+
+        $user->roles()->attach($request->roles);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'Roles actualizados'
             ]
         ]);
     }

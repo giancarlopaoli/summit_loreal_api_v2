@@ -173,6 +173,8 @@ Route::middleware('encryptresponses')->group(function () {
                 Route::POST('attach-client/{user}', [\App\Http\Controllers\Admin\Operations\UsersController::class, 'attach_client']);
                 Route::DELETE('detach-client/{user}', [\App\Http\Controllers\Admin\Operations\UsersController::class, 'detach_client']);
                 Route::PUT('assign-client/{user}', [\App\Http\Controllers\Admin\Operations\UsersController::class, 'assign_client']);
+                Route::GET('roles/{user}', [\App\Http\Controllers\Admin\Operations\UsersController::class, 'roles']);
+                Route::POST('roles/{user}', [\App\Http\Controllers\Admin\Operations\UsersController::class, 'save_roles']);
                 
             });
 
