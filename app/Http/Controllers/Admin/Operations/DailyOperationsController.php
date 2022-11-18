@@ -417,7 +417,7 @@ class DailyOperationsController extends Controller
                 logger('ERROR: archivo adjunto: DailyOperationsController@upload_voucher', ["error" => $e]);
             }
 
-            OperationHistory::create(["operation_id" => $operation->id,"user_id" => auth()->id(),"action" => "Comprobante cargado", "detail" => 'filename: ' . $filename]);
+            OperationHistory::create(["operation_id" => $request->operation_id,"user_id" => auth()->id(),"action" => "Comprobante cargado", "detail" => 'filename: ' . $filename]);
 
             return response()->json([
                 'success' => true,
