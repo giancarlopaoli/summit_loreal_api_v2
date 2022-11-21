@@ -28,7 +28,8 @@ class User extends Authenticatable
         'password',
         'status',
         'document_type_id',
-        'document_number'
+        'document_number',
+        'role_id'
     ];
 
     /**
@@ -51,7 +52,7 @@ class User extends Authenticatable
     ];
 
     public function clients() {
-        return $this->belongsToMany(Client::class)->using(ClientUser::class)->select(['id', 'name', 'last_name', 'mothers_name','document_type_id','document_number','phone','email','customer_type','type']);
+        return $this->belongsToMany(Client::class)->using(ClientUser::class)->select(['id', 'name', 'last_name', 'mothers_name','document_type_id','document_number','phone','email','customer_type','type','role_id']);
     }
 
     public function assigned_client() {

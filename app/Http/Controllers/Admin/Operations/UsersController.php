@@ -40,7 +40,7 @@ class UsersController extends Controller
         return response()->json([
             'success' => true,
             'data' => [
-                'users' => $user->only(['id','name','last_name','email','document_type_id','document_number','phone','tries','last_active','status','created_at','role_id'])
+                'users' => $user->only(['id','name','last_name','email','document_type_id','document_number','phone','tries','last_active','status','created_at','role_id','role.id','roles'])
             ]
         ]);
     }
@@ -52,10 +52,11 @@ class UsersController extends Controller
             'phone' => 'required|string',
             'name' => 'required|string',
             'last_name' => 'required|string',
+            'role_id' => 'required|numeric'
         ]);
         if($val->fails()) return response()->json($val->messages());
 
-        $user->update($request->only(["email","phone","name", "last_name"]));
+        $user->update($request->only(["email","phone","name", "last_name", "role_id"]));
 
         return response()->json([
             'success' => true,
