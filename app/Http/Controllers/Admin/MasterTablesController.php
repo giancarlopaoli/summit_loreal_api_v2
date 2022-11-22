@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\AccountType;
 use App\Models\Bank;
 use App\Models\EscrowAccount;
+use App\Models\DocumentType;
+use App\Models\Role;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -41,6 +43,20 @@ class MasterTablesController extends Controller
         return response()->json([
             'success' => true,
             'data' => $escrow_accounts
+        ]);
+    }
+
+    public function person_document_types() {
+        return response()->json([
+            'success' => true,
+            'data' => DocumentType::select('id','name','size')->where('active', true)->wherein('name', ['DNI', 'Carné de extranjería','Pasaporte'])->get()
+        ]);
+    }
+
+    public function roles() {
+        return response()->json([
+            'success' => true,
+            'data' => Role::select('id','name')->get()
         ]);
     }
 }
