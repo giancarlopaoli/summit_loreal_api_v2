@@ -179,7 +179,7 @@ Route::middleware('encryptresponses')->group(function () {
                 Route::GET('roles/{user}', [\App\Http\Controllers\Admin\Operations\UsersController::class, 'roles']);
                 Route::PUT('roles/{user}', [\App\Http\Controllers\Admin\Operations\UsersController::class, 'save_roles']);
                 
-                Route::get('mail-exists', [\App\Http\Controllers\Admin\Operations\UsersController::class, 'mails_exists']);
+                Route::GET('mail-exists', [\App\Http\Controllers\Admin\Operations\UsersController::class, 'mails_exists']);
                 Route::POST('new', [\App\Http\Controllers\Admin\Operations\UsersController::class, 'new']);
 
             });
