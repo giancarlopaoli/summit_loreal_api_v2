@@ -305,16 +305,64 @@ class UsersController extends Controller
         ]);
     }
 
-    //List of roles for user
-    /*public function roles(Request $request, User $user) {
-        $roles = ($user->role->name == 'cliente') ? Role::select('id','name')->where('name', 'Cliente')->get() : Role::select('id','name')->where('name', '<>', 'Cliente')->get();
+    // Validating if email for new user is previusly used
+    public function mails_exists(Request $request, User $user) {
+        $val = Validator::make($request->all(), [
+            'email' => 'required|email',
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+        $user = User::where('email', $request->email)->first();
+
+        if(!is_null($user)){
+            return response()->json([
+                'success' => false,
+                'data' => [
+                    'El email ingresado ya se encuentra registrado'
+                ]
+            ]);
+        }
 
         return response()->json([
             'success' => true,
             'data' => [
-                'roles' => $roles
+                'El Email ingresado es válido'
             ]
         ]);
-    }*/
+    }
+
+    // Validating if email for new user is previusly used
+    public function new(Request $request) {
+        $val = Validator::make($request->all(), [
+            'name' => 'required|string',
+            'last_name' => 'required|string',
+            'email' => 'required|email|unique:users,email',
+            'phone' => 'required|string',
+            'document_type_id' => 'required|exists:document_types,id',
+            'document_number' => 'required|string',
+            'password' => 'required|min:6|regex:/^.*(?=.{3,})(?=.*[a-zA-Z])(?=.*[0-9])(?=.*[\d\x]).*$/|confirmed',
+            'password_confirmation' => 'required|same:password',
+            'role_id' => 'required|numeric'
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+        $user = User::create([
+            'name' => $request->name,
+            'last_name' => $request->last_name,
+            'email' => $request->email,
+            'phone' => $request->phone,
+            'document_type_id' => $request->document_type_id,
+            'document_number' => $request->document_number,
+            'password' => Hash::make($request->password),
+            'role_id' => $request->role_id
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'user' => $user
+            ]
+        ]);
+    }
 
 }
