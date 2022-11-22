@@ -20,7 +20,7 @@ class UsersController extends Controller
     //Users list
     public function list(Request $request) {
 
-        $users = User::select('id','name','last_name','email','phone','tries','last_active','status','role_id')->with('role:id,name');
+        $users = User::select('id','name','last_name','email','phone','tries','last_active','status','role_id')->with('role:id,name')->with('roles:id,name');
 
         if(isset($request->email) && $request->email != '') $users->where('email', 'like', '%'.$request->email.'%');
         if(isset($request->name) && $request->name != '') $users->where('name', 'like', '%'.$request->name.'%');
@@ -214,15 +214,6 @@ class UsersController extends Controller
         ]);
         if($val->fails()) return response()->json($val->messages());
 
-        /*if($user->clients->pluck('id')->contains($request->client_id)){
-            return response()->json([
-                'success' => false,
-                'errors' => [
-                    'El cliente ya se encuentra asignado'
-                ]
-            ]);
-        }*/
-
         DB::table('client_user')->where('user_id', $user->id)->where('status', Enums\ClientUserStatus::Asignado)->update(['status' => Enums\ClientUserStatus::Activo, 'updated_at' => Carbon::now(),'updated_by' => auth()->id()]);
 
         $user->clients()->syncWithoutDetaching([$request->client_id => [ 'status' => Enums\ClientUserStatus::Asignado, 'updated_at' => Carbon::now(), 'updated_by' => auth()->id()]]);
@@ -231,6 +222,45 @@ class UsersController extends Controller
             'success' => true,
             'data' => [
                 'Cliente asignado exitosamente.'
+            ]
+        ]);
+    }
+
+
+    //Attach client to user
+    public function activate_client(Request $request, User $user) {
+        $val = Validator::make($request->all(), [
+            'client_id' => 'required|exists:clients,id',
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+        if(is_null($user->clients->find($request->client_id))){
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'El cliente no se encuentra asignado'
+                ]
+            ]);
+        }
+        else{
+            if($user->clients->find($request->client_id)->pivot->status != Enums\ClientUserStatus::Inactivo){
+                return response()->json([
+                    'success' => false,
+                    'errors' => [
+                        'El cliente debe encontrarse en estado Inactivo para poder Activarlo'
+                    ]
+                ]);
+            }
+        }
+
+        DB::table('client_user')->where('user_id', $user->id)->where('status', Enums\ClientUserStatus::Asignado)->update(['status' => Enums\ClientUserStatus::Activo, 'updated_at' => Carbon::now(),'updated_by' => auth()->id()]);
+
+        $user->clients()->syncWithoutDetaching([$request->client_id => [ 'status' => Enums\ClientUserStatus::Activo, 'updated_at' => Carbon::now(), 'updated_by' => auth()->id()]]);
+        
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'Cliente activado exitosamente.'
             ]
         ]);
     }
@@ -274,5 +304,17 @@ class UsersController extends Controller
             ]
         ]);
     }
+
+    //List of roles for user
+    /*public function roles(Request $request, User $user) {
+        $roles = ($user->role->name == 'cliente') ? Role::select('id','name')->where('name', 'Cliente')->get() : Role::select('id','name')->where('name', '<>', 'Cliente')->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'roles' => $roles
+            ]
+        ]);
+    }*/
 
 }

@@ -128,6 +128,8 @@ Route::middleware('encryptresponses')->group(function () {
         Route::get('has-permission', [\App\Http\Controllers\Admin\AdminController::class, 'has_permission']);
         Route::get('has-role', [\App\Http\Controllers\Admin\AdminController::class, 'has_role']);
 
+        Route::get('person-document-types', [\App\Http\Controllers\Admin\MasterTablesController::class, 'person_document_types']);
+        Route::get('roles', [\App\Http\Controllers\Admin\MasterTablesController::class, 'roles']);
 
         ########## Módulo de Operaciones  #############
         Route::prefix('operations')->middleware('role:operaciones')->group(function () {
@@ -173,9 +175,13 @@ Route::middleware('encryptresponses')->group(function () {
                 Route::POST('attach-client/{user}', [\App\Http\Controllers\Admin\Operations\UsersController::class, 'attach_client']);
                 Route::DELETE('detach-client/{user}', [\App\Http\Controllers\Admin\Operations\UsersController::class, 'detach_client']);
                 Route::PUT('assign-client/{user}', [\App\Http\Controllers\Admin\Operations\UsersController::class, 'assign_client']);
+                Route::PUT('activate-client/{user}', [\App\Http\Controllers\Admin\Operations\UsersController::class, 'activate_client']);
                 Route::GET('roles/{user}', [\App\Http\Controllers\Admin\Operations\UsersController::class, 'roles']);
-                Route::POST('roles/{user}', [\App\Http\Controllers\Admin\Operations\UsersController::class, 'save_roles']);
+                Route::PUT('roles/{user}', [\App\Http\Controllers\Admin\Operations\UsersController::class, 'save_roles']);
                 
+                Route::get('mail-exists', [\App\Http\Controllers\Admin\Operations\UsersController::class, 'mails_exists']);
+                Route::POST('new', [\App\Http\Controllers\Admin\Operations\UsersController::class, 'new']);
+
             });
 
         });
