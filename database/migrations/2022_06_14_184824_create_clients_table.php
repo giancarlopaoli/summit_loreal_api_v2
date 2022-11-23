@@ -42,6 +42,7 @@ return new class extends Migration
             $table->integer('corfid_id')->nullable();
             $table->string('corfid_message', 255)->nullable();
             $table->foreignIdFor(\App\Models\Association::class)->nullable()->constrained();
+            $table->timestamp('registered_at')->nullable();
             $table->timestamp('billex_approved_at')->nullable();
             $table->timestamp('corfid_approved_at')->nullable();
             $table->foreignId('updated_by')->nullable()->constrained('users');
