@@ -129,6 +129,28 @@ class UsersController extends Controller
         ]);
     }
 
+    //Reset Password
+    public function change_password(Request $request, User $user) {
+        $val = Validator::make($request->all(), [
+            'password' => 'required|min:6|regex:/^.*(?=.{3,})(?=.*[a-zA-Z])(?=.*[0-9])(?=.*[\d\x]).*$/|confirmed',
+            'password_confirmation' => 'required|same:password',
+            'send_email' => 'required|boolean'
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+        $user->password = Hash::make($request->password);
+        $user->save();
+
+        // enviar correo()
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'Password modificado exitosamente.',
+            ]
+        ]);
+    }
+
     //Current User Clients list
     public function client_list(Request $request, User $user) {
 
@@ -342,7 +364,8 @@ class UsersController extends Controller
             'document_number' => 'required|string',
             'password' => 'required|min:6|regex:/^.*(?=.{3,})(?=.*[a-zA-Z])(?=.*[0-9])(?=.*[\d\x]).*$/|confirmed',
             'password_confirmation' => 'required|same:password',
-            'role_id' => 'required|numeric'
+            'role_id' => 'required|numeric',
+            'send_email' => 'required|boolean'
         ]);
         if($val->fails()) return response()->json($val->messages());
 
