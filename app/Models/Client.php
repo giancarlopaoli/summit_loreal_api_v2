@@ -76,7 +76,7 @@ class Client extends Model
     }
 
     public function users() {
-        return $this->belongsToMany(User::class)->using(ClientUser::class);
+        return $this->belongsToMany(User::class)->using(ClientUser::class)->withPivot("status");
     }
 
     public function ibops_client_comissions() {

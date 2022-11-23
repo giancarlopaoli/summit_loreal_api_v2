@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\Client;
 use App\Models\ClientStatus;
 use App\Models\BankAccount;
+use App\Models\BankAccountStatus;
 
 class ClientsController extends Controller
 {
@@ -72,6 +73,60 @@ class ClientsController extends Controller
             'success' => true,
             'data' => [
                 'bank_account' => $bank_account
+            ]
+        ]);
+    }
+
+
+    //Approve Bank Account
+    public function approve_bank_account(Request $request, BankAccount $bank_account) {
+        if($bank_account->status->name != 'Pendiente'){
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'Solo puede aprobar una cuenta bancaria que se encuentre en estado Pendiente de Aprobación'
+                ]
+            ]);
+        }
+
+        $bank_account->bank_account_status_id = BankAccountStatus::where('name','Activo')->first()->id;
+        $bank_account->save();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'Cuenta bancaria activada exitosamente'
+            ]
+        ]);
+    }
+
+    //Reject Bank Account
+    public function reject_bank_account(Request $request, BankAccount $bank_account) {
+
+        $bank_account->bank_account_status_id = BankAccountStatus::where('name','Inactivo')->first()->id;
+        $bank_account->save();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'Cuenta bancaria rechazada'
+            ]
+        ]);
+    }
+
+
+
+
+
+
+
+    //User detail
+    public function detail(Request $request, Client $client) {
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'client' => $client->load('representatives','bank_accounts','users')
             ]
         ]);
     }
