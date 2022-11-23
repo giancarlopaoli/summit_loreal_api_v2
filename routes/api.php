@@ -161,7 +161,6 @@ Route::middleware('encryptresponses')->group(function () {
                 
             });
 
-
             ########## Administración de usuarios  #############
             Route::prefix('users')->group(function () {
                 Route::get('list', [\App\Http\Controllers\Admin\Operations\UsersController::class, 'list']);
@@ -178,10 +177,17 @@ Route::middleware('encryptresponses')->group(function () {
                 Route::PUT('activate-client/{user}', [\App\Http\Controllers\Admin\Operations\UsersController::class, 'activate_client']);
                 Route::GET('roles/{user}', [\App\Http\Controllers\Admin\Operations\UsersController::class, 'roles']);
                 Route::PUT('roles/{user}', [\App\Http\Controllers\Admin\Operations\UsersController::class, 'save_roles']);
-                
+                Route::POST('change-password/{user}', [\App\Http\Controllers\Admin\Operations\UsersController::class, 'change_password']);
+
                 Route::GET('mail-exists', [\App\Http\Controllers\Admin\Operations\UsersController::class, 'mails_exists']);
                 Route::POST('new', [\App\Http\Controllers\Admin\Operations\UsersController::class, 'new']);
 
+            });
+
+
+            ########## Administración de clientes  #############
+            Route::prefix('clients')->group(function () {
+                Route::get('list', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'list']);
             });
 
         });
