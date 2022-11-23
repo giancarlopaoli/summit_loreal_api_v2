@@ -100,7 +100,7 @@ class Client extends Model
     }
 
     public function status() {
-        return $this->belongsTo(ClientStatus::class);
+        return $this->belongsTo(ClientStatus::class, "client_status_id");
     }
 
     public function documents() {

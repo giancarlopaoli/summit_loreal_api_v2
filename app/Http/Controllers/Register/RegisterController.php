@@ -612,11 +612,12 @@ class RegisterController extends Controller
                 'pep' => $request->client['pep'],
                 'pep_company' => isset($request->client['pep_company']) ? $request->client['pep_company'] : null,
                 'pep_position' => isset($request->client['pep_position']) ? $request->client['pep_position'] : null,
+                'registered_at' => $now,
                 'accepted_tyc_at' => $now,
                 'accepts_publicity' => isset($request->client['accepts_publicity']) ? $request->client['accepts_publicity'] : 'false',
                 'executive_id' => $executive_id,
                 'tracking_phase_id' => null,
-                'tracking_date' => Carbon::now(),
+                'tracking_date' => $now,
                 'comission' => $comission
             ]);
 

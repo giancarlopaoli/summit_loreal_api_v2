@@ -15,21 +15,25 @@ class ClientStatusSeeder extends Seeder
      */
     public function run()
     {
-        ClientStatus::create([
-            'name' => 'Activo'
-        ]);
-
-        ClientStatus::create([
-            'name' => 'Inactivo'
-        ]);
 
         ClientStatus::create([
             'name' => 'Registrado'
         ]);
 
         ClientStatus::create([
-            'name' => 'Pendiente Activacion'
+            'name' => 'Aprobado Billex'
         ]);
 
+        ClientStatus::create([
+            'name' => 'Activo'
+        ]);
+
+        ClientStatus::create([
+            'name' => 'Rechazo parcial'
+        ]);
+
+        ClientStatus::create([
+            'name' => 'Rechazado'
+        ]);
     }
 }
