@@ -6,10 +6,15 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use App\Models\Client;
 use App\Models\ClientStatus;
 use App\Models\BankAccount;
 use App\Models\BankAccountStatus;
+use App\Models\BankAccountReceipt;
+use Illuminate\Support\Str;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Storage;
 
 class ClientsController extends Controller
 {
@@ -115,9 +120,58 @@ class ClientsController extends Controller
         ]);
     }
 
+    //Reject Bank Account
+    public function upload_bank_account_receipt(Request $request, BankAccount $bank_account) {
+        $val = Validator::make($request->all(), [
+            'file' => 'required|file'
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+        logger('Archivo adjunto: ClientsController@upload_bank_account_receipt', ["client_id" => $request->client_id]);
+
+        if($request->hasFile('file')){
+            $file = $request->file('file');
+            $path = env('AWS_ENV').'/bank_accounts';
+
+            try {
+                $extension = strrpos($file->getClientOriginalName(), ".")? (Str::substr($file->getClientOriginalName(), strrpos($file->getClientOriginalName(), ".") , Str::length($file->getClientOriginalName()) -strrpos($file->getClientOriginalName(), ".") +1)): "";
+                
+                $now = Carbon::now();
+                $filename = md5($now->toDateTimeString().$file->getClientOriginalName()).$extension;
+            } catch (\Exception $e) {
+                $filename = $file->getClientOriginalName();
+            }
 
 
+            try {
+                $s3 = Storage::disk('s3')->putFileAs($path, $file, $filename);
 
+                $insert = BankAccountReceipt::create([
+                    'bank_account_id' => $bank_account->id,
+                    'name' => $filename
+                ]);
+
+            } catch (\Exception $e) {
+                // Registrando el el log los datos ingresados
+                logger('ERROR: archivo adjunto: ClientsController@upload_bank_account_receipt', ["error" => $e]);
+            }
+
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'Archivo agregado'
+                ]
+            ]);
+
+        } else{
+            return response()->json([
+                'success' => false,
+                'errors' => 'Error en el archivo adjunto',
+            ]);
+        }
+
+    }
 
 
 
