@@ -21,9 +21,10 @@ class ClientsController extends Controller
         if($val->fails()) return response()->json($val->messages());
 
 
-        $client = Client::select('id','name','last_name','mothers_name','document_type_id','phone','email','address','birthdate','customer_type','type','client_status_id','billex_approved_at','corfid_approved_at','registered_at','updated_at as last_update')
+        $client = Client::select('id','name','last_name','mothers_name','document_type_id','document_number','phone','email','address','birthdate','customer_type','type','client_status_id','billex_approved_at','corfid_approved_at','registered_at','updated_at as last_update')
             ->with('document_type:id,name','status:id,name')
-            ->with('bank_accounts:id,client_id,bank_id,account_number,cci_number,bank_account_status_id,currency_id','bank_accounts.bank:id,shortname,image','bank_accounts.currency:id,name,sign','bank_accounts.status:id,name');
+            ->with('bank_accounts:id,client_id,bank_id,account_number,cci_number,bank_account_status_id,currency_id','bank_accounts.bank:id,shortname,image','bank_accounts.currency:id,name,sign','bank_accounts.status:id,name')
+            ->with('users:id,name,last_name,phone,status');
         
         if($request->type == 'pending'){
             $client = $client->whereIn('client_status_id', ClientStatus::whereIn('name', ['Registrado','Aprobado Billex','Rechazo parcial'])->get()->pluck('id'));
@@ -48,11 +49,11 @@ class ClientsController extends Controller
 
     //Bank Account list
     public function bank_account_list(Request $request, Client $client) {
-
+        //$client->bank_accounts->load('bank:id,name,shortname,main','status:id,name','currency:id,name,sign')
         return response()->json([
             'success' => true,
             'data' => [
-                'bank_accounts' => $client->bank_accounts->load('bank:id,name,shortname,main','status:id,name','currency:id,name,sign')
+                'bank_accounts' => $client->load('document_type:id,name','bank_accounts','bank_accounts.bank:id,name,shortname,main','bank_accounts.status:id,name','bank_accounts.currency:id,name,sign')->only('id','name','last_name','mothers_name','document_type','document_number','phone','email','type','customer_type','bank_accounts')
             ]
         ]);
     }

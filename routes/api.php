@@ -131,6 +131,10 @@ Route::middleware('encryptresponses')->group(function () {
         Route::GET('person-document-types', [\App\Http\Controllers\Admin\MasterTablesController::class, 'person_document_types']);
         Route::GET('roles', [\App\Http\Controllers\Admin\MasterTablesController::class, 'roles']);
 
+        Route::GET('account-types', [\App\Http\Controllers\Admin\MasterTablesController::class, 'account_types']);
+        Route::GET('currencies', [\App\Http\Controllers\Admin\MasterTablesController::class, 'currencies']);
+
+
         ########## Módulo de Operaciones  #############
         Route::prefix('operations')->middleware('role:operaciones')->group(function () {
             Route::GET('daily-operations', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'daily_operations']);
