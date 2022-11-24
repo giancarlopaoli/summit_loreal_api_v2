@@ -5,8 +5,9 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\AccountType;
 use App\Models\Bank;
-use App\Models\EscrowAccount;
+use App\Models\Currency;
 use App\Models\DocumentType;
+use App\Models\EscrowAccount;
 use App\Models\Role;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -23,7 +24,14 @@ class MasterTablesController extends Controller
     public function account_types() {
         return response()->json([
             'success' => true,
-            'data' => AccountType::where('active', true)->get()
+            'data' => AccountType::select('id','name','shortname','size','active')->where('active', true)->get()
+        ]);
+    }
+
+    public function currencies() {
+        return response()->json([
+            'success' => true,
+            'data' => Currency::select('id','name','iso_code','sign','active')->where('active', true)->get()
         ]);
     }
 
