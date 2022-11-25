@@ -181,10 +181,11 @@ class ClientsController extends Controller
         return response()->json([
             'success' => true,
             'data' => [
-                'client' => $client->load('representatives:id,client_id,representative_type,document_type_id,document_number,names,last_name,mothers_name','business_associates:id,client_id,representative_type,document_type_id,document_number,names,last_name,mothers_name,share','bank_accounts','bank_accounts.bank:id,name,shortname','bank_accounts.currency:id,name','bank_accounts.account_type:id,name,shortname','users','document_type:id,name','documents')
+                'client' => $client->load('representatives:id,client_id,representative_type,document_type_id,document_number,names,last_name,mothers_name','business_associates:id,client_id,representative_type,document_type_id,document_number,names,last_name,mothers_name,share','bank_accounts','bank_accounts.bank:id,name,shortname','bank_accounts.currency:id,name','bank_accounts.account_type:id,name,shortname','users','document_type:id,name','documents:id,client_id,name','status:id,name')
                 ->load('district:id,name,province_id,ubigeo','district.province:id,name,department_id','district.province.department:id,name')
                 ->load('economic_activity:id,name,code')
                 ->load('profession:id,name')
+                ->load('country:id,name')
             ]
         ]);
     }
