@@ -87,6 +87,10 @@ class User extends Authenticatable
         return $this->hasMany(AccessLog::class);
     }
 
+    public function document_type() {
+        return $this->belongsTo(DocumentType::class);
+    }
+
     public function role() {
         return $this->belongsTo(Role::class);
     }

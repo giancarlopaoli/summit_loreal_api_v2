@@ -24,4 +24,8 @@ class DocumentType extends Model
     public function escrow_accounts() {
         return $this->hasMany(EscrowAccount::class);
     }
+
+    public function users() {
+        return $this->hasMany(User::class);
+    }
 }
