@@ -203,6 +203,7 @@ Route::middleware('encryptresponses')->group(function () {
 
                 Route::DELETE('document/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'delete_document']);
                 Route::POST('document/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'upload_document']);
+                Route::GET('document/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'download_document']);
                 
                 Route::DELETE('associate/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'delete_associate']);
                 Route::POST('associate/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'add_associate']);
