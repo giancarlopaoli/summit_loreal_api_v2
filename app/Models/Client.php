@@ -16,7 +16,11 @@ class Client extends Model
     protected $guarded = [];
 
     public function representatives() {
-        return $this->hasMany(Representative::class);
+        return $this->hasMany(Representative::class)->where('representatives.representative_type', '=', 'Representante Legal');
+    }
+
+    public function business_associates() {
+        return $this->hasMany(Representative::class)->where('representatives.representative_type', '=', 'Socio');
     }
 
     public function economic_activity() {
@@ -51,7 +55,7 @@ class Client extends Model
         return $this->belongsTo(Executive::class);
     }
 
-    public function invoicee() {
+    public function invoice() {
         return $this->hasOne(Client::class, "invoice_to");
     }
 
