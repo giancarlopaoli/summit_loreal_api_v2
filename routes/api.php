@@ -207,11 +207,11 @@ Route::middleware('encryptresponses')->group(function () {
                 
                 Route::DELETE('associate/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'delete_associate']);
                 Route::POST('associate/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'add_associate']);
-                Route::PUT('associate/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'edit_associate']);
+                Route::PUT('associate/{representative}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'edit_associate']);
 
                 Route::DELETE('representative/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'delete_representative']);
                 Route::POST('representative/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'add_representative']);
-                Route::PUT('representative/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'edit_representative']);
+                Route::PUT('representative/{representative}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'edit_representative']);
 
                 Route::DELETE('approve/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'approve_client']);
                 Route::DELETE('reject/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'reject_client']);

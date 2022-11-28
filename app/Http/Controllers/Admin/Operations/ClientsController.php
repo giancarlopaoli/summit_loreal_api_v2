@@ -7,12 +7,14 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use App\Enums;
 use App\Models\Client;
 use App\Models\ClientStatus;
 use App\Models\BankAccount;
 use App\Models\BankAccountStatus;
 use App\Models\BankAccountReceipt;
 use App\Models\Document;
+use App\Models\Representative;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Storage;
@@ -199,7 +201,7 @@ class ClientsController extends Controller
         ]);
         if($val->fails()) return response()->json($val->messages());
 
-        $document = Document::find($request->document_id)->where('client_id', $client->id)->first();
+        $document = Document::where('id', $request->document_id)->where('client_id', $client->id)->first();
 
         if(is_null($document)){
             return response()->json([
@@ -232,7 +234,7 @@ class ClientsController extends Controller
         ]);
         if($val->fails()) return response()->json($val->messages());
 
-        $document = Document::find($request->document_id)->where('client_id', $client->id)->first();
+        $document = Document::where('id', $request->document_id)->where('client_id', $client->id)->first();
 
         if(is_null($document)){
             return response()->json([
@@ -336,6 +338,191 @@ class ClientsController extends Controller
             'success' => true,
             'data' => [
                 'Cliente actualizado exitosamente'
+            ]
+        ]);
+    }
+
+
+    ############ Gestión de Socios ############
+
+    //Add associate
+    public function add_associate(Request $request, Client $client) {
+        $val = Validator::make($request->all(), [
+            'document_type_id' => 'required|exists:document_types,id',
+            'document_number' => 'required|string',
+            'names' => 'required|string',
+            'last_name' => 'nullable|string',
+            'mothers_name' => 'nullable|string',
+            'pep' => 'required|boolean',
+            'pep_company' => 'nullable|string',
+            'pep_position' => 'nullable|string',
+            'share' => 'required|numeric',
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+        $representatives = Representative::create([
+            'client_id' => $client->id,
+            'representative_type' => Enums\RepresentativeType::Socio,
+            'document_type_id' => $request->document_type_id,
+            'document_number' => $request->document_number,
+            'names' => $request->names,
+            'last_name' => $request->last_name,
+            'mothers_name' => $request->mothers_name,
+            'PEP' => $request->pep,
+            'pep_company' => isset($request->pep_company) ? $request->pep_company : null,
+            'pep_position' => isset($request->pep_position) ? $request->pep_position : null,
+            'share' => $request->share
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'Socio agregado exitosamente'
+            ]
+        ]);
+    }
+
+    // delete associate
+    public function delete_associate(Request $request, Client $client) {
+        $val = Validator::make($request->all(), [
+            'associate_id' => 'required|exists:representatives,id'
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+        $associate = Representative::where('id', $request->associate_id)->where('client_id', $client->id)->where('representative_type', Enums\RepresentativeType::Socio)->first();
+
+        if(is_null($associate)){
+            return response()->json([
+                'success' => false,
+                'data' => [
+                    'Socio no encontrado'
+                ]
+            ]);
+        }
+
+        $associate->delete();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'Socio eliminado exitosamente'
+            ]
+        ]);
+
+    }
+
+    //Edit Associate
+    public function edit_associate(Request $request, Representative $representative) {
+        $val = Validator::make($request->all(), [
+            'document_type_id' => 'required|exists:document_types,id',
+            'document_number' => 'required|string',
+            'names' => 'required|string',
+            'last_name' => 'nullable|string',
+            'mothers_name' => 'nullable|string',
+            'pep' => 'required|boolean',
+            'pep_company' => 'nullable|string',
+            'pep_position' => 'nullable|string',
+            'share' => 'required|numeric'
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+        $representative->update($request->only(["document_type_id","document_number","names", "last_name","mothers_name","pep","pep_company","pep_position","share"]));
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'Datos de socio actualizados'
+            ]
+        ]);
+    }
+
+
+    ############ Gestión de Representantes ############
+
+    //Add representative
+    public function add_representative(Request $request, Client $client) {
+        $val = Validator::make($request->all(), [
+            'document_type_id' => 'required|exists:document_types,id',
+            'document_number' => 'required|string',
+            'names' => 'required|string',
+            'last_name' => 'nullable|string',
+            'mothers_name' => 'nullable|string',
+            'pep' => 'required|boolean',
+            'pep_company' => 'nullable|string',
+            'pep_position' => 'nullable|string'
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+        $representatives = Representative::create([
+            'client_id' => $client->id,
+            'representative_type' => Enums\RepresentativeType::RepresentanteLegal,
+            'document_type_id' => $request->document_type_id,
+            'document_number' => $request->document_number,
+            'names' => $request->names,
+            'last_name' => $request->last_name,
+            'mothers_name' => $request->mothers_name,
+            'PEP' => $request->pep,
+            'pep_company' => isset($request->pep_company) ? $request->pep_company : null,
+            'pep_position' => isset($request->pep_position) ? $request->pep_position : null
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'Representante agregado exitosamente'
+            ]
+        ]);
+    }
+
+    // delete representative
+    public function delete_representative(Request $request, Client $client) {
+        $val = Validator::make($request->all(), [
+            'representative_id' => 'required|exists:representatives,id'
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+        $representative = Representative::where('id', $request->representative_id)->where('client_id', $client->id)->where('representative_type', Enums\RepresentativeType::RepresentanteLegal)->first();
+
+        if(is_null($representative)){
+            return response()->json([
+                'success' => false,
+                'data' => [
+                    'Socio no encontrado'
+                ]
+            ]);
+        }
+
+        $representative->delete();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'Representante eliminado exitosamente'
+            ]
+        ]);
+
+    }
+
+    //Edit representative
+    public function edit_representative(Request $request, Representative $representative) {
+        $val = Validator::make($request->all(), [
+            'document_type_id' => 'required|exists:document_types,id',
+            'document_number' => 'required|string',
+            'names' => 'required|string',
+            'last_name' => 'nullable|string',
+            'mothers_name' => 'nullable|string',
+            'pep' => 'required|boolean',
+            'pep_company' => 'nullable|string',
+            'pep_position' => 'nullable|string'
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+        $representative->update($request->only(["document_type_id","document_number","names", "last_name","mothers_name","pep","pep_company","pep_position"]));
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'Datos de representante actualizados'
             ]
         ]);
     }
