@@ -10,11 +10,15 @@ use Illuminate\Support\Facades\Log;
 use App\Enums;
 use App\Models\Client;
 use App\Models\ClientStatus;
+use App\Models\Bank;
 use App\Models\BankAccount;
 use App\Models\BankAccountStatus;
 use App\Models\BankAccountReceipt;
+use App\Models\Currency;
 use App\Models\Document;
 use App\Models\Representative;
+use App\Models\Role;
+use App\Models\User;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Storage;
@@ -66,6 +70,38 @@ class ClientsController extends Controller
         ]);
     }
 
+    //Add Bank Account
+    public function add_bank_account(Request $request, Client $client) {
+        $val = Validator::make($request->all(), [
+            'bank_id' => 'required|exists:banks,id',
+            'account_number' => 'required|string|min:5',
+            'cci_number' => 'required|string|min:20|max:20',
+            'currency_id' => 'required|exists:currencies,id',
+            'account_type_id' => 'required|exists:account_types,id'
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+        $alias = Bank::where('id', $request->bank_id)->first()->shortname . " " . Currency::where('id', $request->currency_id)->first()->name;
+
+        $insert = BankAccount::create([
+            'client_id' => $client->id,
+            'alias' => $alias,
+            'bank_id' => $request->bank_id,
+            'account_number' => $request->account_number,
+            'cci_number' => $request->cci_number,
+            'account_type_id' => $request->account_type_id,
+            'currency_id' => $request->currency_id,
+            'bank_account_status_id' => BankAccountStatus::where('name','Pendiente')->first()->id
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'Cuenta bancaria creada exitosamente'
+            ]
+        ]);
+    }
+
     //Edit Bank Account
     public function edit_bank_account(Request $request, BankAccount $bank_account) {
         $val = Validator::make($request->all(), [
@@ -81,7 +117,7 @@ class ClientsController extends Controller
         return response()->json([
             'success' => true,
             'data' => [
-                'bank_account' => $bank_account
+                'Cuenta bancaria editada exitosamente'
             ]
         ]);
     }
@@ -112,7 +148,7 @@ class ClientsController extends Controller
     //Reject Bank Account
     public function reject_bank_account(Request $request, BankAccount $bank_account) {
 
-        $bank_account->bank_account_status_id = BankAccountStatus::where('name','Inactivo')->first()->id;
+        $bank_account->bank_account_status_id = BankAccountStatus::where('name','Rechazado')->first()->id;
         $bank_account->save();
 
         return response()->json([
@@ -124,6 +160,20 @@ class ClientsController extends Controller
     }
 
     //Reject Bank Account
+    public function delete_bank_account(Request $request, BankAccount $bank_account) {
+
+        $bank_account->bank_account_status_id = BankAccountStatus::where('name','Inactivo')->first()->id;
+        $bank_account->save();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'Cuenta bancaria desactivada'
+            ]
+        ]);
+    }
+
+    //Upload bank account receipt
     public function upload_bank_account_receipt(Request $request, BankAccount $bank_account) {
         $val = Validator::make($request->all(), [
             'file' => 'required|file'
@@ -523,6 +573,77 @@ class ClientsController extends Controller
             'success' => true,
             'data' => [
                 'Datos de representante actualizados'
+            ]
+        ]);
+    }
+
+
+    ############# Gestión de Usuarios  ##################333
+
+
+    //Avaliable clients to attach
+    public function users(Request $request, Client $client) {
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'users' => User::select('id', 'name', 'last_name')
+                    ->where('status', Enums\UserStatus::Activo)
+                    ->where('role_id', Role::where('name', 'Cliente')->first()->id)
+                    ->whereNotIn('id', $client->users->pluck('id'))
+                    ->get()
+            ]
+        ]);
+    }
+
+    //Attach client to user
+    public function attach_user(Request $request, Client $client) {
+        $val = Validator::make($request->all(), [
+            'user_id' => 'required|exists:users,id'
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+        if($client->users->pluck('id')->contains($request->user_id)){
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'El usuario ya se encuentra asignado'
+                ]
+            ]);
+        }
+
+        $client->users()->attach($request->user_id, ['status' => Enums\ClientUserStatus::Activo, 'created_at' => Carbon::now(),'updated_by' => auth()->id()]);
+        
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'Usuario asignado.'
+            ]
+        ]);
+    }
+
+    //Detach client from user
+    public function detach_user(Request $request, Client $client) {
+        $val = Validator::make($request->all(), [
+            'user_id' => 'required|exists:users,id'
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+        if(is_null($client->users->find($request->user_id))){
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'El usuario no se encuentra asignado'
+                ]
+            ]);
+        }
+
+        $client->users()->syncWithoutDetaching([$request->user_id => [ 'status' => Enums\ClientUserStatus::Inactivo, 'updated_at' => Carbon::now(), 'updated_by' => auth()->id()]]);
+        
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'Usuario desasignado.'
             ]
         ]);
     }

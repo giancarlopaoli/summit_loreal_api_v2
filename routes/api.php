@@ -194,7 +194,9 @@ Route::middleware('encryptresponses')->group(function () {
                 Route::GET('list', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'list']);
                 Route::GET('bank-accounts/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'bank_account_list']);
                 Route::PUT('bank-account/{bank_account}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'edit_bank_account']);
-                Route::POST('bank-account/{bank_account}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'upload_bank_account_receipt']);
+                Route::POST('bank-account/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'add_bank_account']);
+                Route::DELETE('bank-account/{bank_account}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'delete_bank_account']);
+                Route::POST('bank-account/receipt/{bank_account}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'upload_bank_account_receipt']);
                 Route::PUT('bank-account/approve/{bank_account}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'approve_bank_account']);
                 Route::PUT('bank-account/reject/{bank_account}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'reject_bank_account']);
                 
@@ -216,6 +218,10 @@ Route::middleware('encryptresponses')->group(function () {
                 Route::DELETE('approve/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'approve_client']);
                 Route::DELETE('reject/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'reject_client']);
 
+                Route::GET('user/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'users']);
+                Route::POST('user/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'attach_user']);
+                Route::DELETE('user/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'detach_user']);
+                
             });
 
         });
