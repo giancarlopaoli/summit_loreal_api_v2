@@ -873,7 +873,7 @@ class RegisterController extends Controller
                             'names' => ($representative['names'] != "") ? $representative['names'] : (isset($representative['company_name']) ? $representative['company_name'] : " " ),
                             'last_name' => $representative['last_name'],
                             'mothers_name' => $representative['mothers_name'],
-                            'PEP' => $representative['pep'],
+                            'pep' => $representative['pep'],
                             'pep_company' => isset($representative['pep_company']) ? $representative['pep_company'] : null,
                             'pep_position' => isset($representative['pep_position']) ? $representative['pep_position'] : null
                         ]);
@@ -895,7 +895,7 @@ class RegisterController extends Controller
                                 'names' => ($socio['names'] != "") ? $socio['names'] : (isset($socio['company_name']) ? $socio['company_name'] : " " ),
                                 'last_name' => isset($socio['last_name']) ? $socio['last_name'] : null,
                                 'mothers_name' => isset($socio['mothers_name']) ? $socio['mothers_name'] : null,
-                                'PEP' => $socio['pep'],
+                                'pep' => $socio['pep'],
                                 'pep_company' => isset($socio['pep_company']) ? $socio['pep_company'] : null,
                                 'pep_position' => isset($socio['pep_position']) ? $socio['pep_position'] : null,
                                 'share' => $socio['share']
