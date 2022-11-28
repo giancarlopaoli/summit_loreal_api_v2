@@ -175,7 +175,6 @@ class ClientsController extends Controller
     }
 
 
-
     //Client detail
     public function detail(Request $request, Client $client) {
 
@@ -193,6 +192,7 @@ class ClientsController extends Controller
         ]);
     }
 
+    // Downloading client document
     public function download_document(Request $request, Client $client) {
         $val = Validator::make($request->all(), [
             'document_id' => 'required|exists:documents,id'
@@ -205,7 +205,7 @@ class ClientsController extends Controller
             return response()->json([
                 'success' => false,
                 'data' => [
-                    $document->name
+                    'Archivo no encontrado'
                 ]
             ]);
         }
@@ -223,5 +223,120 @@ class ClientsController extends Controller
         }
 
         return Storage::disk('s3')->download(env('AWS_ENV').'/register/' . $document->name);
+    }
+
+    // Deleting client document
+    public function delete_document(Request $request, Client $client) {
+        $val = Validator::make($request->all(), [
+            'document_id' => 'required|exists:documents,id'
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+        $document = Document::find($request->document_id)->where('client_id', $client->id)->first();
+
+        if(is_null($document)){
+            return response()->json([
+                'success' => false,
+                'data' => [
+                    'Archivo no encontrado'
+                ]
+            ]);
+        }
+
+        if (Storage::disk('s3')->exists(env('AWS_ENV').'/register/' . $document->name)) {
+            Storage::disk('s3')->delete(env('AWS_ENV').'/register/' . $document->name);
+
+            $document->delete();
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'Archivo eliminado exitosamente'
+                ]
+            ]);
+        }
+        else{
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'Error al eliminar archivo'
+                ]
+            ]);
+        }
+
+    }
+
+    public function upload_document(Request $request, Client $client)
+    {
+        $val = Validator::make($request->all(), [
+            'file' => 'required|file'
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+        logger('Archivo adjunto: ClientsController@upload_document', ["client_id" => $client->id]);
+
+        if($request->hasFile('file')){
+            $file = $request->file('file');
+            $path = env('AWS_ENV').'/register';
+
+            try {
+                $extension = strrpos($file->getClientOriginalName(), ".")? (Str::substr($file->getClientOriginalName(), strrpos($file->getClientOriginalName(), ".") , Str::length($file->getClientOriginalName()) -strrpos($file->getClientOriginalName(), ".") +1)): "";
+                
+                $now = Carbon::now();
+                $filename = md5($now->toDateTimeString().$file->getClientOriginalName()).$extension;
+            } catch (\Exception $e) {
+                $filename = $file->getClientOriginalName();
+            }
+
+
+            try {
+                $s3 = Storage::disk('s3')->putFileAs($path, $file, $filename);
+
+                $insert = Document::create([
+                    'client_id' => $client->id,
+                    'name' => $filename
+                ]);
+
+            } catch (\Exception $e) {
+                // Registrando el el log los datos ingresados
+                logger('ERROR: archivo adjunto: ClientsController@upload_document', ["error" => $e]);
+            }
+
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'Archivo agregado'
+                ]
+            ]);
+
+        } else{
+            return response()->json([
+                'success' => false,
+                'errors' => 'Error en el archivo adjunto',
+            ]);
+        }
+
+    }
+
+    //Edit client
+    public function edit(Request $request, Client $client) {
+        $val = Validator::make($request->all(), [
+            'email' => 'required|email',
+            'phone' => 'required|string',
+            'address' => 'required|string',
+            'district_id' => 'required|exists:districts,id',
+            'comments' => 'required|string',
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+        $client->update($request->only(["email","phone","address", "district_id", "accountable_email","comments"]));
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'Cliente actualizado exitosamente'
+            ]
+        ]);
     }
 }
