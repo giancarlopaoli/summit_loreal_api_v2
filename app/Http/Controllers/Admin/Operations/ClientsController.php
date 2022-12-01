@@ -65,7 +65,7 @@ class ClientsController extends Controller
         return response()->json([
             'success' => true,
             'data' => [
-                'bank_accounts' => $client->load('document_type:id,name','bank_accounts','bank_accounts.bank:id,name,shortname,main','bank_accounts.status:id,name','bank_accounts.currency:id,name,sign')->only('id','name','last_name','mothers_name','document_type','document_number','phone','email','type','customer_type','bank_accounts')
+                'bank_accounts' => $client->load('document_type:id,name','bank_accounts','bank_accounts.bank:id,name,shortname,main','bank_accounts.status:id,name','bank_accounts.currency:id,name,sign','bank_accounts.receipts:id,bank_account_id,name')->only('id','name','last_name','mothers_name','document_type','document_number','phone','email','type','customer_type','bank_accounts')
             ]
         ]);
     }
@@ -198,6 +198,8 @@ class ClientsController extends Controller
 
             try {
                 $s3 = Storage::disk('s3')->putFileAs($path, $file, $filename);
+
+                $bank_account->receipts()->delete();
 
                 $insert = BankAccountReceipt::create([
                     'bank_account_id' => $bank_account->id,
@@ -668,10 +670,15 @@ class ClientsController extends Controller
         if($request->agent == 'billex'){
             if($request->action == 'approve'){
                 if($client->status->name == 'Registrado' || $client->status->name == 'Rechazo parcial'){
+
+                    // Validating if bank accounts were already approved
+
                     $client->client_status_id = ClientStatus::where('name', 'Aprobado Billex')->first()->id;
                     $client->comments .= " - ".(!is_null($request->comments) ? $request->comments : null);
                     $client->save();
 
+
+                    // Envío de correo()
                     return response()->json([
                         'success' => true,
                         'data' => [
