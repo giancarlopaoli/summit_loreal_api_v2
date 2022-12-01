@@ -129,6 +129,7 @@ Route::middleware('encryptresponses')->group(function () {
         Route::GET('has-role', [\App\Http\Controllers\Admin\AdminController::class, 'has_role']);
 
         Route::GET('person-document-types', [\App\Http\Controllers\Admin\MasterTablesController::class, 'person_document_types']);
+        Route::GET('associate-document-types', [\App\Http\Controllers\Admin\MasterTablesController::class, 'associate_document_types']);
         Route::GET('roles', [\App\Http\Controllers\Admin\MasterTablesController::class, 'roles']);
 
         Route::GET('account-types', [\App\Http\Controllers\Admin\MasterTablesController::class, 'account_types']);
@@ -222,6 +223,8 @@ Route::middleware('encryptresponses')->group(function () {
                 Route::POST('user/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'attach_user']);
                 Route::DELETE('user/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'detach_user']);
                 
+                Route::PUT('evaluation/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'evaluation']);
+
             });
 
         });

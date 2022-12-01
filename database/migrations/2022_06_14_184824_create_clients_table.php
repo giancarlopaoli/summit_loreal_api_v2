@@ -32,7 +32,7 @@ return new class extends Migration
             $table->enum('type', ['Cliente', 'PL']);
             $table->foreignIdFor(\App\Models\ClientStatus::class);
             $table->string('accountable_email', 255)->nullable();
-            $table->string('comments', 200)->nullable();
+            $table->string('comments', 500)->nullable();
             $table->string('funds_source', 255)->nullable();
             $table->string('funds_comments', 255)->nullable();
             $table->string('other_funds_comments', 255)->nullable();
