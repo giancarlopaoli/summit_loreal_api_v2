@@ -647,4 +647,77 @@ class ClientsController extends Controller
             ]
         ]);
     }
+
+    //Evaluation
+    public function evaluation(Request $request, Client $client) {
+        $val = Validator::make($request->all(), [
+            'action' => 'required|in:approve,reject',
+            'agent' => 'required|in:billex,corfid',
+            'comments' => 'nullable|string'
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+
+        /*return response()->json([
+            'success' => false,
+            'errors' => [
+                $client->status->name
+            ]
+        ]);*/
+
+        if($request->agent == 'billex'){
+            if($request->action == 'approve'){
+                if($client->status->name == 'Registrado' || $client->status->name == 'Rechazo parcial'){
+                    $client->client_status_id = ClientStatus::where('name', 'Aprobado Billex')->first()->id;
+                    $client->comments .= " - ".(!is_null($request->comments) ? $request->comments : null);
+                    $client->save();
+
+                    return response()->json([
+                        'success' => true,
+                        'data' => [
+                            'Cliente aprobado exitosamente.'
+                        ]
+                    ]);
+                }
+                else{
+                    return response()->json([
+                        'success' => false,
+                        'errors' => [
+                            'El cliente debe encontrarse en estado Registrado o Rechazo parcial para ser aprobado'
+                        ]
+                    ]);
+                }
+
+            }
+            elseif($request->action == 'reject'){
+                if($client->status->name == 'Registrado' || $client->status->name == 'Rechazo parcial'){
+                    $client->client_status_id = ClientStatus::where('name', 'Rechazado')->first()->id;
+                    $client->comments .= " - ".(!is_null($request->comments) ? $request->comments : null);
+                    $client->save();
+
+                    return response()->json([
+                        'success' => true,
+                        'data' => [
+                            'Cliente rechazado exitosamente.'
+                        ]
+                    ]);
+                }
+                else{
+                    return response()->json([
+                        'success' => false,
+                        'errors' => [
+                            'El cliente debe encontrarse en estado Registrado o Rechazo parcial para ser rechazado'
+                        ]
+                    ]);
+                }
+            }
+        }
+
+        return response()->json([
+            'success' => false,
+            'errors' => [
+                'Hubo un error en la evaluación del cliente'
+            ]
+        ]);
+    }
 }
