@@ -44,7 +44,7 @@ class BankAccount extends Model
         return $this->belongsTo(AccountType::class);
     }
 
-    public function bank_account_receipts() {
+    public function receipts() {
         return $this->hasMany(BankAccountReceipt::class);
     }
 }
