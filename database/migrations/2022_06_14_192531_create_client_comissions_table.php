@@ -16,8 +16,8 @@ return new class extends Migration
         Schema::create('client_comissions', function (Blueprint $table) {
             $table->id();
             $table->foreignIdFor(\App\Models\Client::class)->constrained();
-            $table->decimal('comission_open', 7, 2);
-            $table->decimal('comission_close', 7, 2);
+            $table->decimal('comission_open', 7, 2)->nullable();
+            $table->decimal('comission_close', 7, 2)->nullable();
             $table->boolean('active');
             $table->string('comments', 400);
             $table->foreignId('updated_by')->constrained('users');
