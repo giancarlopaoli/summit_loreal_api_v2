@@ -9,6 +9,14 @@ class ClientComission extends Model
 {
     use HasFactory;
 
+    protected $fillable = [
+        'comission_open',
+        'comission_close',
+        'active',
+        'comments',
+        'updated_by'
+    ];
+
     public function client() {
         return $this->belongsTo(Client::class);
     }

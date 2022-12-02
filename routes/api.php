@@ -225,6 +225,10 @@ Route::middleware('encryptresponses')->group(function () {
                 
                 Route::PUT('evaluation/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'evaluation']);
 
+                Route::GET('comission/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'comission_list']);
+                Route::POST('comission/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'create_comission']);
+                Route::DELETE('comission/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'delete_comission']);
+                
             });
 
         });
