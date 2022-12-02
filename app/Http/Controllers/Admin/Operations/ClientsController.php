@@ -659,19 +659,29 @@ class ClientsController extends Controller
         ]);
         if($val->fails()) return response()->json($val->messages());
 
-
-        /*return response()->json([
-            'success' => false,
-            'errors' => [
-                $client->status->name
-            ]
-        ]);*/
-
         if($request->agent == 'billex'){
             if($request->action == 'approve'){
                 if($client->status->name == 'Registrado' || $client->status->name == 'Rechazo parcial'){
 
                     // Validating if bank accounts were already approved
+
+                    if($client->bank_accounts->where('bank_account_status_id', BankAccountStatus::where('name','Pendiente')->first()->id)->count() > 0){
+                        return response()->json([
+                            'success' => false,
+                            'errors' => [
+                                'El cliente tiene cuentas bancarias pendientes de activación.'
+                            ]
+                        ]);
+                    }
+
+                    if($client->bank_accounts->where('bank_account_status_id', BankAccountStatus::where('name','Activo')->first()->id)->count() == 0){
+                        return response()->json([
+                            'success' => false,
+                            'errors' => [
+                                'El cliente no tiene ninguna cuenta bancaria activada'
+                            ]
+                        ]);
+                    }
 
                     $client->client_status_id = ClientStatus::where('name', 'Aprobado Billex')->first()->id;
                     $client->comments .= " - ".(!is_null($request->comments) ? $request->comments : null);
@@ -679,6 +689,7 @@ class ClientsController extends Controller
 
 
                     // Envío de correo()
+
                     return response()->json([
                         'success' => true,
                         'data' => [
@@ -724,6 +735,69 @@ class ClientsController extends Controller
             'success' => false,
             'errors' => [
                 'Hubo un error en la evaluación del cliente'
+            ]
+        ]);
+    }
+    
+    //Client comission list
+    public function comission_list(Request $request, Client $client) {
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'comissions' => $client->load('comissions:id,client_id,comission_open,comission_close,active,comments,updated_by','comissions.updater:id,name,last_name')->comissions
+            ]
+        ]);
+    }
+
+    //Client comission list
+    public function create_comission(Request $request, Client $client) {
+        $val = Validator::make($request->all(), [
+            'comission_open' => 'nullable|numeric',
+            'comission_close' => 'nullable|numeric',
+            'comments' => 'required|string'
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+        $client->comissions()->where("active", true)->update(["active" => false]);
+
+        $client->comissions()->create([
+            'comission_open' => (isset($request->comission_open) ? $request->comission_open : null),
+            'comission_close' => (isset($request->comission_close) ? $request->comission_close : null),
+            'active' => true,
+            'comments' => $request->comments,
+            'updated_by' => auth()->id()
+
+        ]);
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'Comision creada exitosamente'
+            ]
+        ]);
+    }
+
+    //Client comission list
+    public function delete_comission(Request $request, Client $client) {
+        $val = Validator::make($request->all(), [
+            'comission_id' => 'required|exists:client_comissions,id',
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+        if(is_null($client->comissions()->find($request->comission_id))){
+            return response()->json([
+                'success' => false,
+                'data' => [
+                    'Comission no encontrada'
+                ]
+            ]);
+        }
+        $client->comissions()->find($request->comission_id)->update(["active" => false]);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'Comision desactivada exitosamente'
             ]
         ]);
     }
