@@ -231,6 +231,14 @@ Route::middleware('encryptresponses')->group(function () {
                 
             });
 
+             ########## Administración de Tipo de Cambio  #############
+            Route::prefix('exchange-rate')->group(function () {
+                Route::GET('', [\App\Http\Controllers\Admin\Operations\ExchangeRateController::class, 'list']);
+                Route::POST('', [\App\Http\Controllers\Admin\DatatecController::class, 'new_exchange_rate']);
+                Route::DELETE('{exchange_rate}', [\App\Http\Controllers\Admin\Operations\ExchangeRateController::class, 'delete'])->middleware('permission:eliminar_tipocambio');
+                
+            });
+
         });
 
     });
