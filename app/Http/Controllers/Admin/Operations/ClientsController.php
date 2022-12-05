@@ -745,7 +745,7 @@ class ClientsController extends Controller
         return response()->json([
             'success' => true,
             'data' => [
-                'comissions' => $client->load('comissions:id,client_id,comission_open,comission_close,active,comments,updated_by','comissions.updater:id,name,last_name')->comissions
+                'comissions' => $client->load('comissions:id,client_id,comission_open,comission_close,active,comments,updated_by,created_at','comissions.updater:id,name,last_name')->comissions
             ]
         ]);
     }
