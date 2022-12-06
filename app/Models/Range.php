@@ -9,6 +9,8 @@ class Range extends Model
 {
     use HasFactory;
 
+    protected $guarded = [];
+
     public function updater() {
         return $this->belongsTo(User::class, "modified_by");
     }
