@@ -236,7 +236,16 @@ Route::middleware('encryptresponses')->group(function () {
                 Route::GET('', [\App\Http\Controllers\Admin\Operations\ExchangeRateController::class, 'list']);
                 Route::POST('', [\App\Http\Controllers\Admin\DatatecController::class, 'new_exchange_rate']);
                 Route::DELETE('{exchange_rate}', [\App\Http\Controllers\Admin\Operations\ExchangeRateController::class, 'delete'])->middleware('permission:eliminar_tipocambio');
-                
+            });
+
+            ########## Administración de Rangos de operación  #############
+            Route::prefix('ranges')->group(function () {
+                Route::GET('', [\App\Http\Controllers\Admin\Operations\RangesController::class, 'list']);
+                Route::PUT('{range}', [\App\Http\Controllers\Admin\Operations\RangesController::class, 'edit']);
+                Route::PUT('active/{range}', [\App\Http\Controllers\Admin\Operations\RangesController::class, 'active']);
+
+                Route::GET('itbc', [\App\Http\Controllers\Admin\Operations\RangesController::class, 'list_itbc']);
+                Route::PUT('itbc/{itbc_range}', [\App\Http\Controllers\Admin\Operations\RangesController::class, 'edit_itbc']);
             });
 
         });

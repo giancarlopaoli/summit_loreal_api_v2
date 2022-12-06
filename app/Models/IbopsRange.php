@@ -9,8 +9,10 @@ class IbopsRange extends Model
 {
     use HasFactory;
 
-    public function user() {
-        return $this->belongsTo(User::class);
+    protected $guarded = [];
+
+    public function updater() {
+        return $this->belongsTo(User::class, "modified_by");
     }
 
     public function currency() {
