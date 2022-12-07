@@ -9,6 +9,11 @@ class Configuration extends Model
 {
     use HasFactory;
 
+    protected $fillable = [
+        'value',
+        'updated_by'
+    ];
+
     public function updater() {
         return $this->belongsTo(User::class, "updated_by");
     }
