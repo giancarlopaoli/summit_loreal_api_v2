@@ -248,6 +248,12 @@ Route::middleware('encryptresponses')->group(function () {
                 Route::PUT('itbc/{itbc_range}', [\App\Http\Controllers\Admin\Operations\RangesController::class, 'edit_itbc']);
             });
 
+            ########## Administración de Configuraciones  #############
+            Route::prefix('configurations')->group(function () {
+                Route::GET('', [\App\Http\Controllers\Admin\Operations\ConfigurationsController::class, 'list']);
+                Route::PUT('{configuration}', [\App\Http\Controllers\Admin\Operations\ConfigurationsController::class, 'edit']);
+            });
+
         });
 
     });
