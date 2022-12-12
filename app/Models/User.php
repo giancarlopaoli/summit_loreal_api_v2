@@ -55,6 +55,10 @@ class User extends Authenticatable
         return $this->belongsToMany(Client::class)->using(ClientUser::class)->select(['id', 'name', 'last_name', 'mothers_name','document_type_id','document_number','phone','email','customer_type','type'])->withPivot("status");
     }
 
+    public function active_clients() {
+        return $this->belongsToMany(Client::class)->using(ClientUser::class)->select(['id', 'name', 'last_name', 'mothers_name','document_type_id','document_number','phone','email','customer_type','type'])->withPivot("status")->wherePivotIn('status', [ClientUserStatus::Asignado, ClientUserStatus::Activo]);
+    }
+
     public function assigned_client() {
         return $this->belongsToMany(Client::class)->using(ClientUser::class)->wherePivot('status', ClientUserStatus::Asignado)->latest();
     }
