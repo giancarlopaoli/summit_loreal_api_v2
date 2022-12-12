@@ -15,11 +15,11 @@ return new class extends Migration
     {
         Schema::create('vendor_spreads', function (Blueprint $table) {
             $table->id();
-            $table->foreignIdFor(\App\Models\VendorRange::class);
+            $table->foreignIdFor(\App\Models\VendorRange::class)->constrained();
             $table->decimal('buying_spread', 7, 2);
             $table->decimal('selling_spread', 7, 2);
             $table->boolean('active');
-            $table->foreignIdFor(\App\Models\User::class);
+            $table->foreignIdFor(\App\Models\User::class)->constrained();
             $table->timestamps();
         });
     }

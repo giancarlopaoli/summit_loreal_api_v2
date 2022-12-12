@@ -256,6 +256,27 @@ Route::middleware('encryptresponses')->group(function () {
 
         });
 
+        ########## Módulo de Operaciones  #############
+        Route::prefix('vendors')->middleware('role:proveedor')->group(function () {
+
+            ########## Dashboard  #############
+            Route::prefix('dashboard')->group(function () {
+                Route::GET('vendors', [\App\Http\Controllers\Admin\Vendors\DashboardController::class, 'vendors']);
+                Route::GET('indicators', [\App\Http\Controllers\Admin\Vendors\DashboardController::class, 'indicators']);
+                Route::PUT('{configuration}', [\App\Http\Controllers\Admin\Vendors\DashboardController::class, 'edit']);
+
+                Route::GET('spreads', [\App\Http\Controllers\Admin\Vendors\DashboardController::class, 'spreads']);
+                Route::PUT('spreads/{vendor_spread}', [\App\Http\Controllers\Admin\Vendors\DashboardController::class, 'edit_spread']);
+                Route::DELETE('spreads/{vendor_spread}', [\App\Http\Controllers\Admin\Vendors\DashboardController::class, 'delete_spread']);
+
+
+
+                Route::GET('ranges', [\App\Http\Controllers\Admin\Vendors\DashboardController::class, 'ranges']);
+                Route::PUT('ranges/{vendor_range}', [\App\Http\Controllers\Admin\Vendors\DashboardController::class, 'edit_price']);
+
+            });
+        });
+
     });
 
     Route::middleware('auth:sanctum')->get('/user', function (Request $request) {

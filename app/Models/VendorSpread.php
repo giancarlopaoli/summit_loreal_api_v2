@@ -9,7 +9,9 @@ class VendorSpread extends Model
 {
     use HasFactory;
 
-    public function range() {
+    protected $guarded = [];
+
+    public function vendor_range() {
         return $this->belongsTo(VendorRange::class);
     }
 
