@@ -268,6 +268,7 @@ Route::middleware('encryptresponses')->group(function () {
                 Route::GET('spreads', [\App\Http\Controllers\Admin\Vendors\DashboardController::class, 'spreads']);
                 Route::PUT('spreads/{vendor_spread}', [\App\Http\Controllers\Admin\Vendors\DashboardController::class, 'edit_spread']);
                 Route::DELETE('spreads/{vendor_spread}', [\App\Http\Controllers\Admin\Vendors\DashboardController::class, 'delete_spread']);
+                Route::POST('spreads', [\App\Http\Controllers\Admin\Vendors\DashboardController::class, 'register_spreads']);
 
 
 
