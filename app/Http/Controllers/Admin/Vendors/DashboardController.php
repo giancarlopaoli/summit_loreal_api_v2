@@ -100,6 +100,36 @@ class DashboardController extends Controller
         ]);
     }
 
+    //Register Vendor Spread
+    public function register_spreads(Request $request) {
+        $val = Validator::make($request->all(), [
+            'client_id' => 'required|exists:clients,id,type,PL',
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+        VendorSpread::join('vendor_ranges', 'vendor_ranges.id', '=', 'vendor_spreads.vendor_range_id')
+            ->whereRaw("vendor_ranges.vendor_id =  $request->client_id ")
+            ->where("vendor_spreads.active", true)
+            ->update(["vendor_spreads.active" => false]);
+
+        foreach($request->ranges as $range) {
+            VendorSpread::create([
+                "vendor_range_id" => $range['vendor_range_id'],
+                "buying_spread" => $range['buying_spread'],
+                "selling_spread" => $range['selling_spread'],
+                "active" => true,
+                "user_id" => auth()->id()
+            ]);
+        };
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'Spreads registrados exitosamente',
+            ]
+        ]);
+    }
+
     //Ranges list
     public function ranges(Request $request) {
         $val = Validator::make($request->all(), [
