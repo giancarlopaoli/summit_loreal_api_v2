@@ -14,6 +14,8 @@ use App\Models\VendorRange;
 use App\Models\VendorSpread;
 use App\Models\Operation;
 use App\Models\OperationStatus;
+use App\Models\EscrowAccount;
+use App\Models\BankAccount;
 use App\Events\AvailableOperations;
 
 class DashboardController extends Controller
@@ -176,10 +178,13 @@ class DashboardController extends Controller
         ]);
         if($val->fails()) return response()->json($val->messages());*/
 
+        $date = Carbon::now()->format('Y-m-d');
+
         $operations = Operation::select('id','code','class','type','client_id','user_id','amount','currency_id','exchange_rate','operation_status_id','operation_date')
             ->where('operation_status_id',  OperationStatus::where('name', 'Disponible')->first()->id)
             ->where('post', true)
             ->where('class', Enums\OperationClass::Inmediata)
+            ->whereRaw("date(operation_date) = '$date'")
             ->with('currency:id,name,sign')
             ->with('bank_accounts:id,bank_id,currency_id','bank_accounts.bank:id,shortname','bank_accounts.currency:id,name,sign')
             ->with('escrow_accounts:id,bank_id,currency_id','escrow_accounts.bank:id,shortname','escrow_accounts.currency:id,name,sign')
@@ -197,11 +202,87 @@ class DashboardController extends Controller
     public function test(Request $request) {
 
         AvailableOperations::dispatch();
-        
+
         return response()->json([
             'success' => true,
             'data' => [
                 'operations'
+            ]
+        ]);
+    }
+
+    //Ranges list
+    public function operation_detail(Request $request, Operation $operation) {
+        $val = Validator::make($request->all(), [
+            'client_id' => 'required|exists:clients,id,type,PL',
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+        $operation = $operation
+            ->load('currency:id,name,sign')
+            ->load('bank_accounts:id,bank_id,currency_id','bank_accounts.bank:id,shortname','bank_accounts.currency:id,name,sign')
+            ->load('escrow_accounts:id,bank_id,currency_id','escrow_accounts.bank:id,shortname','escrow_accounts.currency:id,name,sign')
+            ->only('id','code','class','type','client_id','user_id','amount','currency_id','exchange_rate','operation_status_id','operation_date','currency','bank_accounts','escrow_accounts');
+
+        $vendor = Client::select('id','name')
+            ->where('id', $request->client_id)
+            ->get();
+
+        $escrow_account_list = array();
+        $bank_account_list = array();
+
+        foreach ($operation['bank_accounts'] as $bank_account_data) {
+
+            $escrow_account = EscrowAccount::select('id','bank_id','account_number','cci_number','currency_id')
+                ->where('bank_id',$bank_account_data->bank_id)
+                ->where('currency_id', $bank_account_data->currency_id)
+                ->with('currency:id,name,sign')
+                ->with('bank:id,shortname')
+                ->first();
+
+            if(!is_null($escrow_account)){
+                array_push($escrow_account_list, $escrow_account);
+            }
+            else{
+                return response()->json([
+                    'success' => false,
+                    'errors' => [
+                        'Error en cuenta fideicomiso'
+                    ]
+                ], 404);
+            }
+        }
+
+        foreach ($operation['escrow_accounts'] as $escrow_account_data) {
+            
+            $bank_account = BankAccount::select('id','client_id','bank_id','account_number','cci_number','currency_id')
+                ->where('bank_id', $escrow_account_data->bank_id)
+                ->where('client_id', $request->client_id)
+                ->where('currency_id', $escrow_account_data->currency_id)
+                ->with('currency:id,name,sign')
+                ->with('bank:id,shortname')
+                ->first();
+
+            if(!is_null($bank_account)){
+                array_push($bank_account_list, $bank_account);
+            }
+            else{
+                return response()->json([
+                    'success' => false,
+                    'errors' => [
+                        'Error en cuenta bancaria'
+                    ]
+                ], 404);
+            }
+
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'operation' => $operation,
+                'vendor_escrow_accounts' => $escrow_account_list,
+                'vendor_bank_accounts' => $bank_account_list
             ]
         ]);
     }
