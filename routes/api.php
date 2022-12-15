@@ -277,6 +277,7 @@ Route::middleware('encryptresponses')->group(function () {
                 Route::PUT('ranges/{vendor_range}', [\App\Http\Controllers\Admin\Vendors\DashboardController::class, 'edit_price']);
 
                 Route::GET('avaliable-operations', [\App\Http\Controllers\Admin\Vendors\DashboardController::class, 'avaliable_operations']);
+                Route::GET('operation/{operation}', [\App\Http\Controllers\Admin\Vendors\DashboardController::class, 'operation_detail']);
                 Route::GET('test', [\App\Http\Controllers\Admin\Vendors\DashboardController::class, 'test']);
 
             });
