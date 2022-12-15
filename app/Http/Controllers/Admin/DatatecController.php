@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Events\NewExchangeRate;
 use App\Http\Controllers\Controller;
 use App\Models\ExchangeRate;
+use App\Models\Range;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -35,5 +36,17 @@ class DatatecController extends Controller
         }
 
         return $exchange_rate;
+    }
+
+    public function exchange_rate(Request $request) {
+        $min_amount = Range::minimun_amount();
+        $exchange_rate = ExchangeRate::latest()->first();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'exchange_rate' => $exchange_rate
+            ]
+        ]);
     }
 }

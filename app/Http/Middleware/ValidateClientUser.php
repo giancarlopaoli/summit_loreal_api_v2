@@ -6,6 +6,7 @@ use App\Enums\ClientUserStatus;
 use Closure;
 use Illuminate\Http\Request;
 use App\Models\Client;
+use Carbon\Carbon;
 
 class ValidateClientUser
 {
@@ -18,6 +19,10 @@ class ValidateClientUser
      */
     public function handle(Request $request, Closure $next)
     {
+        $user = auth()->user();
+        $user->last_active = Carbon::now();
+        $user->save();
+                
         if($request->has('client_id') && auth()->check()) {
             $user = auth()->user();
 

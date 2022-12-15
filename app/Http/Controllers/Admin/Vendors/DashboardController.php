@@ -7,10 +7,13 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
+use App\Enums;
 use App\Models\User;
 use App\Models\Client;
 use App\Models\VendorRange;
 use App\Models\VendorSpread;
+use App\Models\Operation;
+use App\Models\OperationStatus;
 
 class DashboardController extends Controller
 {
@@ -161,6 +164,30 @@ class DashboardController extends Controller
             'success' => true,
             'data' => [
                 'users' => $user->only(['id','name','last_name','email','document_type_id','document_number','phone','tries','last_active','status','created_at','role_id'])
+            ]
+        ]);
+    }
+    
+    //Ranges list
+    public function avaliable_operations(Request $request) {
+        /*$val = Validator::make($request->all(), [
+            'client_id' => 'required|exists:clients,id,type,PL',
+        ]);
+        if($val->fails()) return response()->json($val->messages());*/
+
+        $operations = Operation::select('id','code','class','type','client_id','user_id','amount','currency_id','exchange_rate','operation_status_id','operation_date')
+            ->where('operation_status_id',  OperationStatus::where('name', 'Disponible')->first()->id)
+            ->where('post', true)
+            ->where('class', Enums\OperationClass::Inmediata)
+            ->with('currency:id,name,sign')
+            ->with('bank_accounts:id,bank_id,currency_id','bank_accounts.bank:id,shortname','bank_accounts.currency:id,name,sign')
+            ->with('escrow_accounts:id,bank_id,currency_id','escrow_accounts.bank:id,shortname','escrow_accounts.currency:id,name,sign')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'operations' => $operations
             ]
         ]);
     }
