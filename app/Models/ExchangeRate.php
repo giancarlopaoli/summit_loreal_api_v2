@@ -24,6 +24,8 @@ class ExchangeRate extends Model
     public function for_user(User $user, float $amount) : ExchangeRate {
         $client = $user->assigned_client()->first();
 
+        $client_id = is_null($client) ? null : $client->id;
+
         $market_close_time = Configuration::where('shortname', 'MARKETCLOSE')->first()->value;
         $market_closed = Carbon::now() >= Carbon::create($market_close_time);
 
@@ -56,7 +58,7 @@ class ExchangeRate extends Model
         $buy_spread = min($buy_spreads) / 10000.0;
         $sell_spread = min($sell_spreads) / 10000.0;
 
-        $special_exchange_rate = SpecialExchangeRate::where('client_id', $client->id)
+        $special_exchange_rate = SpecialExchangeRate::where('client_id', $client_id)
             ->where('active', true)
             ->latest()
             ->first();

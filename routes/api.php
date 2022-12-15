@@ -135,6 +135,8 @@ Route::middleware('encryptresponses')->group(function () {
         Route::GET('account-types', [\App\Http\Controllers\Admin\MasterTablesController::class, 'account_types']);
         Route::GET('currencies', [\App\Http\Controllers\Admin\MasterTablesController::class, 'currencies']);
 
+        Route::GET('exchange-rate', [\App\Http\Controllers\Admin\DatatecController::class, 'exchange_rate']);
+
 
         ########## Módulo de Operaciones  #############
         Route::prefix('operations')->middleware('role:operaciones')->group(function () {
@@ -265,15 +267,16 @@ Route::middleware('encryptresponses')->group(function () {
                 Route::GET('indicators', [\App\Http\Controllers\Admin\Vendors\DashboardController::class, 'indicators']);
                 Route::PUT('{configuration}', [\App\Http\Controllers\Admin\Vendors\DashboardController::class, 'edit']);
 
+
                 Route::GET('spreads', [\App\Http\Controllers\Admin\Vendors\DashboardController::class, 'spreads']);
                 Route::PUT('spreads/{vendor_spread}', [\App\Http\Controllers\Admin\Vendors\DashboardController::class, 'edit_spread']);
                 Route::DELETE('spreads/{vendor_spread}', [\App\Http\Controllers\Admin\Vendors\DashboardController::class, 'delete_spread']);
                 Route::POST('spreads', [\App\Http\Controllers\Admin\Vendors\DashboardController::class, 'register_spreads']);
 
-
-
                 Route::GET('ranges', [\App\Http\Controllers\Admin\Vendors\DashboardController::class, 'ranges']);
                 Route::PUT('ranges/{vendor_range}', [\App\Http\Controllers\Admin\Vendors\DashboardController::class, 'edit_price']);
+
+                Route::GET('avaliable-operations', [\App\Http\Controllers\Admin\Vendors\DashboardController::class, 'avaliable_operations']);
 
             });
         });
