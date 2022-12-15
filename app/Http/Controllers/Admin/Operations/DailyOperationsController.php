@@ -22,6 +22,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use App\Enums;
 use Illuminate\Support\Facades\Storage;
+use App\Events\AvailableOperations;
 
 class DailyOperationsController extends Controller
 {
@@ -274,6 +275,8 @@ class DailyOperationsController extends Controller
         }
 
         OperationHistory::create(["operation_id" => $operation->id,"user_id" => auth()->id(),"action" => "Operación emparejada"]);
+
+        AvailableOperations::dispatch();
 
         return response()->json([
             'success' => true,

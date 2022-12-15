@@ -26,6 +26,7 @@ use App\Models\OperationHistory;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use App\Events\AvailableOperations;
 
 class InmediateOperationController extends Controller
 {
@@ -485,6 +486,8 @@ class InmediateOperationController extends Controller
         }
 
         OperationHistory::create(["operation_id" => $operation->id,"user_id" => auth()->id(),"action" => "Operación creada"]);
+
+        AvailableOperations::dispatch();
 
         // Enviar Correo()
 
