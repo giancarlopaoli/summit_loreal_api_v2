@@ -14,6 +14,7 @@ use App\Models\VendorRange;
 use App\Models\VendorSpread;
 use App\Models\Operation;
 use App\Models\OperationStatus;
+use App\Events\AvailableOperations;
 
 class DashboardController extends Controller
 {
@@ -188,6 +189,19 @@ class DashboardController extends Controller
             'success' => true,
             'data' => [
                 'operations' => $operations
+            ]
+        ]);
+    }
+
+    //Ranges list
+    public function test(Request $request) {
+
+        AvailableOperations::dispatch();
+        
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'operations'
             ]
         ]);
     }

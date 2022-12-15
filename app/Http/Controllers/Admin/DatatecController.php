@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Events\NewExchangeRate;
+use App\Events\DatatecExchangeRate;
 use App\Http\Controllers\Controller;
 use App\Models\ExchangeRate;
 use App\Models\Range;
@@ -29,6 +30,10 @@ class DatatecController extends Controller
             'compra' => $request->compra,
             'venta' => $request->venta
         ]);
+
+        // Haciendo broadcast a los proveedores de liquidez
+        DatatecExchangeRate::dispatch();
+
 
         $auth_users = User::get_authenticated_users();
         foreach ($auth_users as $user) {
