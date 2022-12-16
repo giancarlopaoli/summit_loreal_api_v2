@@ -281,6 +281,8 @@ Route::middleware('encryptresponses')->group(function () {
                 Route::POST('operation/{operation}', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'match_operation']);
                 Route::GET('operations-in-progress', [\App\Http\Controllers\Admin\Vendors\DashboardController::class, 'operations_in_progress']);
                 
+                Route::GET('report', [\App\Http\Controllers\Admin\Vendors\DashboardController::class, 'report']);
+
 
                 Route::GET('test', [\App\Http\Controllers\Admin\Vendors\DashboardController::class, 'test']);
 

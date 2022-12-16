@@ -45,12 +45,49 @@ class DashboardController extends Controller
         ]);
         if($val->fails()) return response()->json($val->messages());
 
-/*        $ranges = Range::select('id','min_range','max_range','comission_open','comission_close','spread_open','spread_close','active')->get();
-*/
+        // Tablero de indicadores globales
+        $main_indicators = Operation::selectRaw('sum(amount) as monthly_amount, count(amount) as monthly_num_operations')
+            ->selectRaw('(select sum(amount) from operations op1 where op1.client_id = '. $request->client_id . ' and operation_status_id = ' . OperationStatus::where('name', 'Finalizado sin factura')->first()->id . ' and DATE(operation_date) = DATE(current_timestamp) ) as today_amount')
+            ->selectRaw('(select count(amount) from operations op1 where op1.client_id = '. $request->client_id . ' and operation_status_id = ' . OperationStatus::where('name', 'Finalizado sin factura')->first()->id . ' and DATE(operation_date) = DATE(current_timestamp) ) as today_num_operations')
+            ->where('client_id', $request->client_id)
+            ->where('operation_status_id', OperationStatus::where('name', 'Finalizado sin factura')->first()->id)
+            ->whereIn('type', ['Compra', 'Venta'])
+            ->whereRaw('(MONTH(operation_date) = MONTH(CURRENT_TIMESTAMP))')
+            ->first();
+
+        $month_operations = Operation::selectRaw("day(operation_date) as dia, sum(amount) as amount, count(amount) as num_operations")
+            ->where('operation_status_id', OperationStatus::where('name', 'Finalizado sin factura')->first()->id)
+            ->where('client_id', $request->client_id)
+            ->whereIn('type', ['Compra', 'Venta'])
+            ->whereRaw('(MONTH(operation_date) = MONTH(CURRENT_TIMESTAMP) and YEAR(operation_date) = YEAR(CURRENT_TIMESTAMP))')
+            ->groupByRaw("day(operation_date)")
+            ->orderByRaw('day(operation_date)')
+            ->get();
+
+        $today_operations = Operation::selectRaw("hour(operation_date) as hora, sum(amount) as amount, count(amount) as num_operations")
+            ->where('operation_status_id', OperationStatus::where('name', 'Finalizado sin factura')->first()->id)
+            ->where('client_id', $request->client_id)
+            ->whereIn('type', ['Compra', 'Venta'])
+            ->whereRaw('(date(operation_date) = date(current_timestamp))')
+            ->groupByRaw("hour(operation_date)")
+            ->orderByRaw('hour(operation_date)')
+            ->get();
+
         return response()->json([
             'success' => true,
             'data' => [
-                'ranges' => 'test'
+                'monthly_indicators' => [
+                    "day" => $month_operations->pluck('dia'),
+                    "amount" => $month_operations->pluck('amount'),
+                    "num_operations" => $month_operations->pluck('num_operations')
+
+                ],
+                'today_operations' => [
+                    "hour" => $today_operations->pluck('hora'),
+                    "amount" => $today_operations->pluck('amount'),
+                    "num_operations" => $today_operations->pluck('num_operations')
+                ],
+                "main_indicators" => $main_indicators
             ]
         ]);
     }
@@ -182,6 +219,7 @@ class DashboardController extends Controller
         $date = Carbon::now()->format('Y-m-d');
 
         $operations = Operation::select('id','code','class','type','client_id','user_id','amount','currency_id','exchange_rate','operation_status_id','operation_date')
+            ->selectRaw("if(type = 'Interbancaria', round(amount + round(amount * spread/10000, 2 ), 2), round(amount * exchange_rate, 2)) as conversion_amount")
             ->where('operation_status_id',  OperationStatus::where('name', 'Disponible')->first()->id)
             ->where('post', true)
             ->where('class', Enums\OperationClass::Inmediata)
@@ -300,7 +338,6 @@ class DashboardController extends Controller
         $operations = Operation::select('id','code','class','type','amount','exchange_rate','operation_status_id')
             ->selectRaw("if(type = 'Interbancaria', round(amount + round(amount * spread/10000, 2 ), 2), round(amount * exchange_rate, 2)) as conversion_amount")
             ->where('client_id', $request->client_id)
-            ->whereIn('operation_status_id', $pendientes)
             ->whereRaw("operation_status_id in (" . substr($pendientes, 1, Str::length($pendientes)-2) . ")")
             ->with('status:id,name')
             ->get();
@@ -309,6 +346,35 @@ class DashboardController extends Controller
             'success' => true,
             'data' => [
                 'operations' => $operations
+            ]
+        ]);
+    }
+
+    //Report
+    public function report(Request $request) {
+        $val = Validator::make($request->all(), [
+            'client_id' => 'required|exists:clients,id,type,PL',
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+        $operations = Operation::selectRaw("month(operation_date) as mes, sum(amount) as amount, count(amount) as num_operations")
+            ->where('operation_status_id', OperationStatus::where('name', 'Finalizado sin factura')->first()->id)
+            ->where('client_id', $request->client_id)
+            ->whereIn('type', ['Compra', 'Venta'])
+            ->whereRaw('((year(operation_date)-2000)*12 + MONTH(operation_date)) >= ((year(CURRENT_TIMESTAMP)-2000)*12 + MONTH(CURRENT_TIMESTAMP)-12)')
+            ->groupByRaw("month(operation_date)")
+            ->orderByRaw('month(operation_date)')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'operations' => [
+                    "month" => $operations->pluck('mes'),
+                    "amount" => $operations->pluck('amount'),
+                    "num_operations" => $operations->pluck('num_operations')
+
+                ]
             ]
         ]);
     }
