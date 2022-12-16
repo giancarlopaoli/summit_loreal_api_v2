@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 use Carbon\Carbon;
 use App\Enums;
 use App\Models\User;
@@ -283,6 +284,31 @@ class DashboardController extends Controller
                 'operation' => $operation,
                 'vendor_escrow_accounts' => $escrow_account_list,
                 'vendor_bank_accounts' => $bank_account_list
+            ]
+        ]);
+    }
+
+    //Operations in progress list
+    public function operations_in_progress(Request $request) {
+        $val = Validator::make($request->all(), [
+            'client_id' => 'required|exists:clients,id,type,PL',
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+        $pendientes = OperationStatus::wherein('name', ['Disponible','Pendiente envio fondos','Pendiente fondos contraparte','Contravalor recaudado','Fondos enviados'])->get()->pluck('id');
+
+        $operations = Operation::select('id','code','class','type','amount','exchange_rate','operation_status_id')
+            ->selectRaw("if(type = 'Interbancaria', round(amount + round(amount * spread/10000, 2 ), 2), round(amount * exchange_rate, 2)) as conversion_amount")
+            ->where('client_id', $request->client_id)
+            ->whereIn('operation_status_id', $pendientes)
+            ->whereRaw("operation_status_id in (" . substr($pendientes, 1, Str::length($pendientes)-2) . ")")
+            ->with('status:id,name')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'operations' => $operations
             ]
         ]);
     }

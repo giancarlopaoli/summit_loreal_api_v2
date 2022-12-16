@@ -278,6 +278,10 @@ Route::middleware('encryptresponses')->group(function () {
 
                 Route::GET('avaliable-operations', [\App\Http\Controllers\Admin\Vendors\DashboardController::class, 'avaliable_operations']);
                 Route::GET('operation/{operation}', [\App\Http\Controllers\Admin\Vendors\DashboardController::class, 'operation_detail']);
+                Route::POST('operation/{operation}', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'match_operation']);
+                Route::GET('operations-in-progress', [\App\Http\Controllers\Admin\Vendors\DashboardController::class, 'operations_in_progress']);
+                
+
                 Route::GET('test', [\App\Http\Controllers\Admin\Vendors\DashboardController::class, 'test']);
 
             });
