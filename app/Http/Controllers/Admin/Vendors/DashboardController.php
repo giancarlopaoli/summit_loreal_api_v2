@@ -257,11 +257,12 @@ class DashboardController extends Controller
         ]);
         if($val->fails()) return response()->json($val->messages());
 
+        $operation->conversion_amount = round($operation->amount * $operation->exchange_rate,2);
         $operation = $operation
             ->load('currency:id,name,sign')
             ->load('bank_accounts:id,bank_id,currency_id','bank_accounts.bank:id,shortname','bank_accounts.currency:id,name,sign')
             ->load('escrow_accounts:id,bank_id,currency_id','escrow_accounts.bank:id,shortname','escrow_accounts.currency:id,name,sign')
-            ->only('id','code','class','type','client_id','user_id','amount','currency_id','exchange_rate','operation_status_id','operation_date','currency','bank_accounts','escrow_accounts');
+            ->only('id','code','class','type','client_id','user_id','amount','currency_id','exchange_rate','operation_status_id','operation_date','conversion_amount','currency','bank_accounts','escrow_accounts');
 
         $vendor = Client::select('id','name')
             ->where('id', $request->client_id)
@@ -276,10 +277,11 @@ class DashboardController extends Controller
                 ->where('bank_id',$bank_account_data->bank_id)
                 ->where('currency_id', $bank_account_data->currency_id)
                 ->with('currency:id,name,sign')
-                ->with('bank:id,shortname')
+                ->with('bank:id,shortname,image')
                 ->first();
 
             if(!is_null($escrow_account)){
+                $escrow_account->amount = $bank_account_data->pivot->amount + $bank_account_data->pivot->comission_amount;
                 array_push($escrow_account_list, $escrow_account);
             }
             else{
@@ -299,10 +301,11 @@ class DashboardController extends Controller
                 ->where('client_id', $request->client_id)
                 ->where('currency_id', $escrow_account_data->currency_id)
                 ->with('currency:id,name,sign')
-                ->with('bank:id,shortname')
+                ->with('bank:id,shortname,image')
                 ->first();
 
             if(!is_null($bank_account)){
+                $bank_account->amount = $escrow_account_data->pivot->amount - $escrow_account_data->pivot->comission_amount;
                 array_push($bank_account_list, $bank_account);
             }
             else{
