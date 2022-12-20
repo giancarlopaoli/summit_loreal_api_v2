@@ -9,6 +9,9 @@ class VendorRange extends Model
 {
     use HasFactory;
 
+    protected $guarded = [];
+
+    
     public function spreads() {
         return $this->hasMany(VendorSpread::class);
     }
