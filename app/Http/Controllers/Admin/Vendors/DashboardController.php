@@ -338,11 +338,12 @@ class DashboardController extends Controller
 
         $pendientes = OperationStatus::wherein('name', ['Disponible','Pendiente envio fondos','Pendiente fondos contraparte','Contravalor recaudado','Fondos enviados'])->get()->pluck('id');
 
-        $operations = Operation::select('id','code','class','type','amount','exchange_rate','operation_status_id')
+        $operations = Operation::select('id','code','class','type','amount','exchange_rate','operation_status_id','currency_id')
             ->selectRaw("if(type = 'Interbancaria', round(amount + round(amount * spread/10000, 2 ), 2), round(amount * exchange_rate, 2)) as conversion_amount")
             ->where('client_id', $request->client_id)
             ->whereRaw("operation_status_id in (" . substr($pendientes, 1, Str::length($pendientes)-2) . ")")
             ->with('status:id,name')
+            ->with('currency:id,name,sign')
             ->get();
 
         return response()->json([
