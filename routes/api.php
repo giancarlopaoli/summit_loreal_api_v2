@@ -258,7 +258,7 @@ Route::middleware('encryptresponses')->group(function () {
 
         });
 
-        ########## Módulo de Operaciones  #############
+        ########## Módulo de Proveedores de Liquidez  #############
         Route::prefix('vendors')->middleware('role:proveedor')->group(function () {
 
             ########## Dashboard  #############
@@ -285,6 +285,26 @@ Route::middleware('encryptresponses')->group(function () {
 
 
                 Route::GET('test', [\App\Http\Controllers\Admin\Vendors\DashboardController::class, 'test']);
+
+            });
+
+            ########## Administración de Rangos  #############
+            Route::prefix('ranges')->group(function () {
+                Route::DELETE('{vendor_range}', [\App\Http\Controllers\Admin\Vendors\RangesController::class, 'delete_range']);
+                Route::POST('', [\App\Http\Controllers\Admin\Vendors\RangesController::class, 'register_range']);
+
+            });
+
+            ########## Administración de Cuentas bancarias  #############
+            Route::prefix('bank-accounts')->group(function () {
+                Route::GET('', [\App\Http\Controllers\Admin\Vendors\BankAccountsController::class, 'bank_accounts']);
+                Route::PUT('{bank_account}', [\App\Http\Controllers\Admin\Vendors\BankAccountsController::class, 'update_bank_account']);
+
+            });
+
+            ########## Reportes  #############
+            Route::prefix('reports')->group(function () {
+                Route::GET('operations', [\App\Http\Controllers\Admin\Vendors\ReportsController::class, 'operations']);
 
             });
         });
