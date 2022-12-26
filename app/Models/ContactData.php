@@ -9,6 +9,8 @@ class ContactData extends Model
 {
     use HasFactory;
 
+    protected $guarded = [];
+
     public function lead_contact() {
         return $this->belongsTo(LeadContact::class);
     }

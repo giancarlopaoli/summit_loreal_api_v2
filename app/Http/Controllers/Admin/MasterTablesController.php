@@ -9,6 +9,9 @@ use App\Models\Currency;
 use App\Models\DocumentType;
 use App\Models\EscrowAccount;
 use App\Models\Role;
+use App\Models\LeadContactType;
+use App\Models\Region;
+use App\Models\EconomicActivity;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -72,6 +75,27 @@ class MasterTablesController extends Controller
         return response()->json([
             'success' => true,
             'data' => Role::select('id','name')->get()
+        ]);
+    }
+    
+    public function lead_contact_type() {
+        return response()->json([
+            'success' => true,
+            'data' => LeadContactType::select('id','name')->get()
+        ]);
+    }
+
+    public function regions() {
+        return response()->json([
+            'success' => true,
+            'data' => Region::select('id','name')->get()
+        ]);
+    }
+
+    public function economic_activities() {
+        return response()->json([
+            'success' => true,
+            'data' => EconomicActivity::select('id','name')->get()
         ]);
     }
 }

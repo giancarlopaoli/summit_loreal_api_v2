@@ -131,6 +131,9 @@ Route::middleware('encryptresponses')->group(function () {
         Route::GET('person-document-types', [\App\Http\Controllers\Admin\MasterTablesController::class, 'person_document_types']);
         Route::GET('associate-document-types', [\App\Http\Controllers\Admin\MasterTablesController::class, 'associate_document_types']);
         Route::GET('roles', [\App\Http\Controllers\Admin\MasterTablesController::class, 'roles']);
+        Route::GET('contact-type', [\App\Http\Controllers\Admin\MasterTablesController::class, 'lead_contact_type']);
+        Route::GET('regions', [\App\Http\Controllers\Admin\MasterTablesController::class, 'regions']);
+        Route::GET('economic-activities', [\App\Http\Controllers\Admin\MasterTablesController::class, 'economic_activities']);
 
         Route::GET('account-types', [\App\Http\Controllers\Admin\MasterTablesController::class, 'account_types']);
         Route::GET('currencies', [\App\Http\Controllers\Admin\MasterTablesController::class, 'currencies']);
@@ -256,6 +259,12 @@ Route::middleware('encryptresponses')->group(function () {
                 Route::PUT('{configuration}', [\App\Http\Controllers\Admin\Operations\ConfigurationsController::class, 'edit']);
             });
 
+            ########## Reportes  #############
+            Route::prefix('reports')->group(function () {
+                Route::GET('selling-buying', [\App\Http\Controllers\Admin\Operations\ReportsController::class, 'selling_buying_report']);
+                Route::PUT('interbanking', [\App\Http\Controllers\Admin\Operations\ReportsController::class, 'interbank_report']);
+            });
+
         });
 
         ########## Módulo de Proveedores de Liquidez  #############
@@ -305,6 +314,19 @@ Route::middleware('encryptresponses')->group(function () {
             ########## Reportes  #############
             Route::prefix('reports')->group(function () {
                 Route::GET('operations', [\App\Http\Controllers\Admin\Vendors\ReportsController::class, 'operations']);
+
+            });
+        });
+
+
+        ########## Módulo de Ejecutivos  #############
+        Route::prefix('executives')->middleware('role:ejecutivos')->group(function () {
+
+            ########## Leads  #############
+            Route::prefix('leads')->group(function () {
+                Route::GET('exists-company', [\App\Http\Controllers\Admin\Executives\LeadsController::class, 'exists_company']);
+                Route::GET('exists-person', [\App\Http\Controllers\Admin\Executives\LeadsController::class, 'exists_person']);
+                Route::POST('', [\App\Http\Controllers\Admin\Executives\LeadsController::class, 'register_lead']);
 
             });
         });

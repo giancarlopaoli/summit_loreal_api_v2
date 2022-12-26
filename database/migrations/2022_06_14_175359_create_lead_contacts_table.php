@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('names', 100);
             $table->string('last_names', 100);
             $table->string('area', 30);
-            $table->string('job_tittle', 30);
+            $table->string('job_title', 30);
             $table->boolean('main_contact');
             $table->timestamps();
         });
