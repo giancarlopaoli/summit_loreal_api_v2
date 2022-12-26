@@ -179,18 +179,28 @@ class RegisterController extends Controller
         ]);
     }
 
+    // Registro cliente PJ WS Corfid
     public function validate_dni(Request $request) {
         $validator = Validator::make($request->all(), [
             'dni' => 'required|string|size:8',
         ]);
 
         if($validator->fails()) {return response()->json(['success' => false,'errors' => $validator->errors()->toJson()]);}
-  
-        $consulta = DniData::where('dni', $request->dni)->first();
+
+        $registro = RegisterController::function_validate_dni($request->dni);
+
+        return response()->json(
+            $registro->getData()
+        );
+    }
+
+    public function function_validate_dni($dni_value) {
+    
+        $consulta = DniData::where('dni', $dni_value)->first();
 
         if(!is_null($consulta)){
             $dni = array(
-                "dni" => (string) $request->dni,
+                "dni" => (string) $dni_value,
                 "name" => $consulta->name,
                 "last_name" => $consulta->last_name,
                 "mothers_name" => $consulta->mothers_name,
@@ -207,7 +217,7 @@ class RegisterController extends Controller
         }
 
         // Utilizando apiperu.dev
-        $consulta = Http::withToken(env('APIPERUDEV_TOKEN'))->get(env('APIPERUDEV_URL') . "api/dni/" . $request->dni);
+        $consulta = Http::withToken(env('APIPERUDEV_TOKEN'))->get(env('APIPERUDEV_URL') . "api/dni/" . $dni_value);
 
         $rpta_json = json_decode($consulta);
 
@@ -238,7 +248,7 @@ class RegisterController extends Controller
         }
 
         // Utilizando https://apis.net.pe/
-        $consulta = Http::withToken(env('APISNET_TOKEN'))->get(env('APISNET_URL') . "v1/dni?numero=". $request->dni);
+        $consulta = Http::withToken(env('APISNET_TOKEN'))->get(env('APISNET_URL') . "v1/dni?numero=". $dni_value);
 
         $rpta_json = json_decode($consulta);
 
@@ -293,15 +303,23 @@ class RegisterController extends Controller
         ]);
     }
 
-
+    // Consulta servicio RUC
     public function validate_ruc(Request $request) {
-        $val = Validator::make($request->all(), [
+        $validator = Validator::make($request->all(), [
             'ruc' => 'required|string|size:11',
         ]);
-        if($val->fails()) return response()->json($val->messages());
 
+        if($validator->fails()) {return response()->json(['success' => false,'errors' => $validator->errors()->toJson()]);}
 
-        $tipoempresa = Str::substr($request->ruc, 0, 2);
+        $registro = RegisterController::function_validate_ruc($request->ruc);
+
+        return response()->json(
+            $registro->getData()
+        );
+    }
+
+    public function function_validate_ruc($ruc_value) {
+        $tipoempresa = Str::substr($ruc_value, 0, 2);
 
         if ($tipoempresa != 10 and $tipoempresa != 20 and $tipoempresa != 15) {
             return response()->json([
@@ -309,7 +327,7 @@ class RegisterController extends Controller
             ]);
         }
 
-        $consulta = RucData::where('ruc', $request->ruc)->first();
+        $consulta = RucData::where('ruc', $ruc_value)->first();
 
         if(!is_null($consulta)){
             $ruc = array(
@@ -355,7 +373,7 @@ class RegisterController extends Controller
 
         
         // Utilizando peruapis.net.pe
-        $consulta = Http::withToken(env('PERUAPISTOKEN'))->post(env('PERUAPISURL') . "/ruc", ['document' => $request->ruc]);
+        $consulta = Http::withToken(env('PERUAPISTOKEN'))->post(env('PERUAPISURL') . "/ruc", ['document' => $ruc_value]);
 
         $rpta_json = json_decode($consulta);
 
@@ -387,7 +405,7 @@ class RegisterController extends Controller
 
 
         // Utilizando apiperu.dev
-        $consulta = Http::withToken(env('APIPERUDEV_TOKEN'))->get(env('APIPERUDEV_URL') . "api/ruc/" . $request->ruc);
+        $consulta = Http::withToken(env('APIPERUDEV_TOKEN'))->get(env('APIPERUDEV_URL') . "api/ruc/" . $ruc_value);
 
         $rpta_json = json_decode($consulta);
 
@@ -418,7 +436,7 @@ class RegisterController extends Controller
         }
 
         // Utilizando https://apis.net.pe/
-        $consulta = Http::withToken(env('APISNET_TOKEN'))->get(env('APISNET_URL') . "v1/ruc?numero=". $request->ruc);
+        $consulta = Http::withToken(env('APISNET_TOKEN'))->get(env('APISNET_URL') . "v1/ruc?numero=". $ruc_value);
 
         $rpta_json = json_decode($consulta);
 
