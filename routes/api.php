@@ -327,6 +327,11 @@ Route::middleware('encryptresponses')->group(function () {
                 Route::GET('exists-company', [\App\Http\Controllers\Admin\Executives\LeadsController::class, 'exists_company']);
                 Route::GET('exists-person', [\App\Http\Controllers\Admin\Executives\LeadsController::class, 'exists_person']);
                 Route::POST('', [\App\Http\Controllers\Admin\Executives\LeadsController::class, 'register_lead']);
+                Route::GET('statuses', [\App\Http\Controllers\Admin\Executives\LeadsController::class, 'statuses']);
+                Route::GET('', [\App\Http\Controllers\Admin\Executives\LeadsController::class, 'list']);
+                Route::GET('{lead}', [\App\Http\Controllers\Admin\Executives\LeadsController::class, 'lead_detail']);
+                Route::GET('{lead}/contact', [\App\Http\Controllers\Admin\Executives\LeadsController::class, 'new_contact']);
+                Route::GET('{lead}/follow', [\App\Http\Controllers\Admin\Executives\LeadsController::class, 'new_follow']);
 
             });
         });

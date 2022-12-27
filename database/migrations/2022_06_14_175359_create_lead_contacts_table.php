@@ -18,8 +18,8 @@ return new class extends Migration
             $table->foreignIdFor(\App\Models\Lead::class)->constrained();
             $table->string('names', 100);
             $table->string('last_names', 100);
-            $table->string('area', 30);
-            $table->string('job_title', 30);
+            $table->string('area', 30)->nullable();
+            $table->string('job_title', 30)->nullable();
             $table->boolean('main_contact');
             $table->timestamps();
         });

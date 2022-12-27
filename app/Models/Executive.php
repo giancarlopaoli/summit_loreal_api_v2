@@ -22,7 +22,7 @@ class Executive extends Model
     }
 
     public function user() {
-        return $this->hasOne(User::class);
+        return $this->hasOne(User::class, "id");
     }
 
     public function client_trackins() {
