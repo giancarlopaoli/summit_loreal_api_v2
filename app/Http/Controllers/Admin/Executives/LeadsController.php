@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin\Executives;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 use App\Enums;
 use Carbon\Carbon;
 use App\Models\Client;
@@ -153,4 +154,79 @@ class LeadsController extends Controller
         ]);
     }
 
+    public function statuses(Request $request) {
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                "lead_statuses" => LeadStatus::select("id","name")->get()
+            ]
+        ]);
+    }
+
+    public function list(Request $request) {
+        $val = Validator::make($request->all(), [
+            'contact_type' => 'nullable|in:Natural,Juridica',
+            'lead_contact_type_id' => 'nullable|exists:lead_contact_types,id',
+            'document_type_id' => 'nullable|exists:document_types,id',
+            'region_id' => 'nullable|exists:regions,id',
+            "sector_id" => 'nullable|exists:sectors,id',
+            "lead_status_id" => 'nullable|exists:lead_statuses,id',
+            "company_name" => 'nullable|string'
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+        $leads = Lead::where('executive_id', auth()->id())
+            ->with('document_type:id,name')
+            ->with('lead_contact_type:id,name')
+            ->with('lead_status:id,name')
+            ->with('region:id,name')
+            ->with('sector:id,name')
+            ->with('executive.user:id,name,last_name')
+            ->with('creator:id,name,last_name');
+
+        $data = $request->all();
+
+        foreach ($data as $key => $value) {
+            if($value != ""){
+                if(Str::startsWith($key, ["lead_contact_type_id", "region_id", "contact_type", "lead_status_id", "document_type_id"]) ){
+                    $leads = $leads->where($key, $value);
+                }
+                else{
+                    $leads = $leads->where($key, 'like', '%' .$value.'%');
+                }
+            }
+        }
+
+        $leads = $leads->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'leads' => $leads
+            ]
+        ]);
+    }
+
+
+    public function lead_detail(Request $request, Lead $lead) {
+
+        $lead = Lead::where('id', $lead->id)
+            ->with('document_type:id,name')
+            ->with('lead_contact_type:id,name')
+            ->with('lead_status:id,name')
+            ->with('region:id,name')
+            ->with('sector:id,name')
+            ->with('executive.user:id,name,last_name')
+            ->with('creator:id,name,last_name')
+            ->first();
+
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'lead' => $lead
+            ]
+        ]);
+    }
 }
