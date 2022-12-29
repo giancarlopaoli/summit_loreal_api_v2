@@ -9,6 +9,8 @@ class LeadTracking extends Model
 {
     use HasFactory;
 
+    protected $guarded = [];
+    
     public function lead() {
         return $this->belongsTo(Lead::class);
     }
@@ -21,11 +23,16 @@ class LeadTracking extends Model
         return $this->belongsTo(LeadContact::class);
     }
 
-    public function status() {
-        return $this->belongsTo(LeadStatus::class);
+    public function tracking_status() {
+        return $this->belongsTo(TrackingStatus::class);
     }
 
     public function form() {
         return $this->belongsTo(TrackingForm::class);
     }
+
+    public function creator() {
+        return $this->belongsTo(User::class, "created_by");
+    }
+
 }

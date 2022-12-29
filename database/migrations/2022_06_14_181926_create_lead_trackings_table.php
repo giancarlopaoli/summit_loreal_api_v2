@@ -21,6 +21,7 @@ return new class extends Migration
             $table->foreignIdFor(\App\Models\TrackingPhase::class)->constrained();
             $table->foreignIdFor(\App\Models\LeadContact::class)->constrained();
             $table->string('comments', 45);
+            $table->foreignId('created_by')->constrained('users');
             $table->timestamps();
         });
     }

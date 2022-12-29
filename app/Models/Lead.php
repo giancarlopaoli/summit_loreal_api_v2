@@ -50,4 +50,8 @@ class Lead extends Model
     public function status() {
         return $this->belongsTo(LeadStatus::class);
     }
+
+    public function phase() {
+        return $this->belongsTo(TrackingPhase::class);
+    }
 }

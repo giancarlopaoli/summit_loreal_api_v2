@@ -23,10 +23,11 @@ return new class extends Migration
             $table->string('document_number', 12);
             $table->foreignIdFor(\App\Models\LeadContactType::class)->nullable()->constrained();
             $table->foreignIdFor(\App\Models\LeadStatus::class)->constrained();
+            $table->foreignIdFor(\App\Models\TrackingPhase::class)->constrained();
+            $table->enum('tracking_status', ['Pendiente','Completado','En curso','Seguimiento incumplido']);
             $table->integer('client_id')->nullable();
             $table->text('comments')->nullable();
             $table->foreignIdFor(\App\Models\Executive::class)->nullable()->constrained();
-            $table->enum('tracking_status', ['Pendiente', 'Completado', 'En curso', 'Seguimiento incumplido']);
             $table->timestamp('tracking_date');
             $table->foreignId('created_by')->constrained('users');
             $table->timestamps();

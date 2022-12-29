@@ -29,10 +29,15 @@ class ExecutiveSeeder extends Seeder
         ]);
 
         Executive::create([
+            'id' => 3,
+            'type'=> 'Tiempo Completo',
+            'comission' => 0
+        ]);
+
+        Executive::create([
             'id' => 7,
-            'type'=> 'Freelance',
-            'comission' => 0.25,
-            'years' => 3
+            'type'=> 'Tiempo Completo',
+            'comission' => 0.15
         ]);
 
         Executive::create([

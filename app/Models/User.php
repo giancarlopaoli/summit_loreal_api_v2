@@ -91,6 +91,10 @@ class User extends Authenticatable
         return $this->hasMany(AccessLog::class);
     }
 
+    public function leads() {
+        return $this->hasMany(Lead::class);
+    }
+
     public function document_type() {
         return $this->belongsTo(DocumentType::class);
     }

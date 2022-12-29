@@ -15,6 +15,9 @@ use App\Models\LeadContact;
 use App\Models\LeadStatus;
 use App\Models\LeadContactType;
 use App\Models\ContactData;
+use App\Models\TrackingStatus;
+use App\Models\TrackingPhase;
+use App\Models\TrackingForm;
 use App\Http\Controllers\Register\RegisterController;
 
 class LeadsController extends Controller
@@ -110,6 +113,7 @@ class LeadsController extends Controller
             'lead_status_id' => LeadStatus::where('name', 'Registrado')->first()->id,
             'comments' => $request->comments,
             'executive_id' => auth()->id(),
+            'tracking_phase_id' => TrackingPhase::where('name', 'Primer seguimiento')->first()->id,
             'tracking_status' => Enums\TrackingStatus::Pendiente,
             'tracking_date' => Carbon::now(),
             'created_at' => Carbon::now(),
@@ -123,7 +127,8 @@ class LeadsController extends Controller
               'last_names' => $request->last_name,
               'area' => (isset($request->area) ? $request->area : null),
               'job_title' => (isset($request->job_title) ? $request->job_title : null),
-              'main_contact' => 1
+              'main_contact' => 1,
+              'created_by' => auth()->id()
             ]);
 
             if($lead_contact){
@@ -131,7 +136,8 @@ class LeadsController extends Controller
                     $contact_data = ContactData::create([
                         'lead_contact_id' => $lead_contact->id,
                         'type' => 'Celular',
-                        'contact' => $request->phone
+                        'contact' => $request->phone,
+                        'created_by' => auth()->id()
 
                     ]);
                 }
@@ -140,7 +146,8 @@ class LeadsController extends Controller
                     $contact_data = ContactData::create([
                         'lead_contact_id' => $lead_contact->id,
                         'type' => 'Email',
-                        'contact' => $request->email
+                        'contact' => $request->email,
+                        'created_by' => auth()->id()
                     ]);
                 }
             }
@@ -160,6 +167,36 @@ class LeadsController extends Controller
             'success' => true,
             'data' => [
                 "lead_statuses" => LeadStatus::select("id","name")->get()
+            ]
+        ]);
+    }
+
+    public function tracking_phases(Request $request) {
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                "tracking_phases" => TrackingPhase::select("id","name","min_days","max_days")->get()
+            ]
+        ]);
+    }
+
+    public function tracking_statuses(Request $request) {
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                "tracking_statuses" => TrackingStatus::select("id","name")->get()
+            ]
+        ]);
+    }
+
+    public function tracking_forms(Request $request) {
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                "tracking_forms" => TrackingForm::select("id","name")->get()
             ]
         ]);
     }
@@ -226,6 +263,81 @@ class LeadsController extends Controller
             'success' => true,
             'data' => [
                 'lead' => $lead
+            ]
+        ]);
+    }
+
+    public function new_contact(Request $request, Lead $lead) {
+        $val = Validator::make($request->all(), [
+            'names' => 'required|string',
+            'last_names' => 'required|string',
+            'area' => 'required|string',
+            'job_title' => 'required|string',
+            'contact_data' => 'required|array'
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+        $lead_contact = $lead->contacts()->create([
+          'lead_id' => $request->lead_id,
+          'names' => $request->names,
+          'last_names' => $request->last_names,
+          'area' => $request->area,
+          'job_title' => $request->job_title,
+          'main_contact' => 0,
+          'created_by' => auth()->id()
+        ]);
+
+        if($lead_contact){
+            foreach ($request->contact_data as $key => $value) {
+                if($value['type'] != "" && $value['contact'] != ""){
+                    $lead_contact->data()->create([
+                      'type' => $value['type'] ,
+                      'contact' => $value['contact'],
+                      'created_by' => auth()->id()
+                    ]);
+                }
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $lead_contact 
+        ]);
+    }
+
+    public function new_follow(Request $request, Lead $lead) {
+        $val = Validator::make($request->all(), [
+            'tracking_status_id' => 'required|exists:tracking_statuses,id',
+            'tracking_form_id' => 'required|exists:tracking_forms,id',
+            'lead_contact_id' => 'nullable|exists:lead_contacts,id',
+            'comments' => 'nullable|string'
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+        $tracking = $lead->trackings()->create([
+              'tracking_status_id' => $request->tracking_status_id,
+              'tracking_form_id' => $request->tracking_form_id,
+              'tracking_phase_id' => $lead->tracking_phase_id,
+              'lead_contact_id' => $request->lead_contact_id,
+              'comments' => $request->comments,
+              'created_by' => auth()->id(),
+        ]);
+
+        if($tracking){
+            if(TrackingStatus::where('id', $request->tracking_status_id)->first()->name == 'No contesta') $tracking_status = "En curso";
+            elseif(TrackingStatus::where('id', $request->tracking_status_id)->first()->name == 'Seguimiento incumplido') $tracking_status = 'Seguimiento incumplido';
+            else $tracking_status = 'Completado';
+
+            $lead->lead_status_id = LeadStatus::where('name', TrackingStatus::where('id', $request->tracking_status_id)->first()->name)->first()->id;
+            $lead->tracking_status = $tracking_status;
+            $lead->save();
+
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                "Seguimiento registrado exitosamente"
             ]
         ]);
     }
