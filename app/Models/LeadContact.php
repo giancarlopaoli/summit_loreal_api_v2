@@ -22,4 +22,8 @@ class LeadContact extends Model
     public function lead() {
         return $this->belongsTo(Lead::class);
     }
+
+    public function creator() {
+        return $this->belongsTo(User::class, "created_by");
+    }
 }

@@ -38,8 +38,13 @@ class DatabaseSeeder extends Seeder
             ProfessionSeeder::class,
             RegionSeeder::class,
             RangeSeeder::class,
+            SectorSeeder::class,
+            LeadContactTypeSeeder::class,
             EscrowAccountSeeder::class,
             ExecutiveSeeder::class,
+            TrackingFormSeeder::class,
+            TrackingStatusSeeder::class,
+            TrackingPhaseSeeder::class
         ]);
 
         if(env('APP_DEBUG')) {

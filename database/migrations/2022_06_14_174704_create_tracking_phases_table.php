@@ -16,8 +16,8 @@ return new class extends Migration
         Schema::create('tracking_phases', function (Blueprint $table) {
             $table->id();
             $table->string('name', 45);
-            $table->integer('min_days');
-            $table->integer('max_days');
+            $table->integer('min_days')->nullable();
+            $table->integer('max_days')->nullable();
             $table->timestamps();
         });
     }

@@ -16,6 +16,10 @@ class TrackingStatusSeeder extends Seeder
     public function run()
     {
         TrackingStatus::create([
+            'name' => 'Registrado'
+        ]);
+
+        TrackingStatus::create([
             'name' => 'Interesado'
         ]);
 

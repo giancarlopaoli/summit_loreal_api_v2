@@ -18,4 +18,8 @@ class ContactData extends Model
     public function type() {
         return $this->belongsTo(LeadContactType::class);
     }
+
+    public function creator() {
+        return $this->belongsTo(User::class, "created_by");
+    }
 }

@@ -21,6 +21,7 @@ return new class extends Migration
             $table->string('area', 30)->nullable();
             $table->string('job_title', 30)->nullable();
             $table->boolean('main_contact');
+            $table->foreignId('created_by')->constrained('users');
             $table->timestamps();
         });
     }
