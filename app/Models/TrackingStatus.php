@@ -9,11 +9,11 @@ class TrackingStatus extends Model
 {
     use HasFactory;
 
-    public function lead_trackings() {
+    public function lead_tracking() {
         return $this->hasMany(LeadTracking::class);
     }
 
-    public function client_trackings() {
+    public function client_tracking() {
         return $this->hasMany(ClientTracking::class);
     }
 }

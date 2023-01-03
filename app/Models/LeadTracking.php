@@ -15,7 +15,7 @@ class LeadTracking extends Model
         return $this->belongsTo(Lead::class);
     }
 
-    public function phase() {
+    public function tracking_phase() {
         return $this->belongsTo(TrackingPhase::class);
     }
 
@@ -27,7 +27,7 @@ class LeadTracking extends Model
         return $this->belongsTo(TrackingStatus::class);
     }
 
-    public function form() {
+    public function tracking_form() {
         return $this->belongsTo(TrackingForm::class);
     }
 

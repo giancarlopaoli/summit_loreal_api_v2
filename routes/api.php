@@ -22,7 +22,8 @@ Route::middleware('encryptresponses')->group(function () {
 
     Route::POST('login', [\App\Http\Controllers\Clients\AuthController::class, 'login']);
     Route::POST('logout', [\App\Http\Controllers\Clients\AuthController::class, 'logout']);
-
+    Route::POST('testing', [\App\Http\Controllers\Controller::class, 'envejecimiento']);
+    
     Route::middleware('auth:sanctum','role:cliente','validate_client_user')->group(function () {
         Route::GET('/me', function(Request $request) {
             return auth()->user();
@@ -344,5 +345,7 @@ Route::middleware('encryptresponses')->group(function () {
     Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
         return $request->user();
     });
+
+
 });
 
