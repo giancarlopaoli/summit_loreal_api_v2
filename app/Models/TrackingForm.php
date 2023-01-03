@@ -14,6 +14,6 @@ class TrackingForm extends Model
     }
 
     public function client_tracking() {
-        return $this->hasMany(LeadTracking::class);
+        return $this->hasMany(ClientTracking::class);
     }
 }

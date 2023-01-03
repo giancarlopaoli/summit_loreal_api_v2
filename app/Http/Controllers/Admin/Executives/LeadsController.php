@@ -256,6 +256,10 @@ class LeadsController extends Controller
             ->with('sector:id,name')
             ->with('executive.user:id,name,last_name')
             ->with('creator:id,name,last_name')
+            ->with('contacts:id')
+            ->with('contacts.data:id,lead_contact_id,type,contact,created_by')
+            ->with('trackings','trackings.tracking_status:id,name')
+            ->with('trackings.tracking_form:id,name')
             ->first();
 
 
