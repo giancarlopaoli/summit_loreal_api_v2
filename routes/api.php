@@ -23,7 +23,7 @@ Route::middleware('encryptresponses')->group(function () {
     Route::POST('login', [\App\Http\Controllers\Clients\AuthController::class, 'login']);
     Route::POST('logout', [\App\Http\Controllers\Clients\AuthController::class, 'logout']);
     Route::POST('testing', [\App\Http\Controllers\Controller::class, 'envejecimiento']);
-    
+
     Route::middleware('auth:sanctum','role:cliente','validate_client_user')->group(function () {
         Route::GET('/me', function(Request $request) {
             return auth()->user();
@@ -336,6 +336,10 @@ Route::middleware('encryptresponses')->group(function () {
                 Route::GET('{lead}', [\App\Http\Controllers\Admin\Executives\LeadsController::class, 'lead_detail']);
                 Route::POST('{lead}/contact', [\App\Http\Controllers\Admin\Executives\LeadsController::class, 'new_contact']);
                 Route::POST('{lead}/follow', [\App\Http\Controllers\Admin\Executives\LeadsController::class, 'new_follow']);
+                Route::PUT('contact/{lead_contact}', [\App\Http\Controllers\Admin\Executives\LeadsController::class, 'edit_contact']);
+                Route::DELETE('contact/{lead_contact}', [\App\Http\Controllers\Admin\Executives\LeadsController::class, 'delete_contact']);
+                Route::POST('contact/{lead_contact}/data', [\App\Http\Controllers\Admin\Executives\LeadsController::class, 'new_contact_data']);
+                Route::DELETE('contact-data/{contact_data}', [\App\Http\Controllers\Admin\Executives\LeadsController::class, 'delete_contact_data']);
 
             });
         });

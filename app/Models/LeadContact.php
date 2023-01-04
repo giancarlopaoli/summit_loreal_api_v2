@@ -15,7 +15,7 @@ class LeadContact extends Model
         return $this->hasMany(ContactData::class);
     }
 
-    public function trackins() {
+    public function trackings() {
         return $this->hasMany(LeadTracking::class);
     }
 
