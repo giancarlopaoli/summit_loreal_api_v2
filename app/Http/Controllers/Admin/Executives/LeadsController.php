@@ -305,7 +305,82 @@ class LeadsController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $lead_contact 
+            'data' => [
+                'Contacto creado exitosamente'
+            ]
+        ]);
+    }
+
+    public function edit_contact(Request $request, LeadContact $lead_contact) {
+        $val = Validator::make($request->all(), [
+            'area' => 'required|string',
+            'job_title' => 'required|string'
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+        $lead_contact->area = $request->area;
+        $lead_contact->job_title = $request->job_title;
+        $lead_contact->save();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'lead_contact' => $lead_contact
+            ]
+        ]);
+    }
+
+    public function delete_contact(Request $request, LeadContact $lead_contact) {
+
+
+        if($lead_contact->trackings()->count() > 0){
+            return response()->json([
+            'success' => false,
+                'errors' => [
+                    'El contacto tiene seguimientos registrados y no puede ser eliminado'
+                ]
+            ]);
+        }
+
+        $lead_contact->data()->delete();
+        $lead_contact->delete();
+
+        return response()->json([
+            'success' => true,
+            'data' => $lead_contact
+        ]);
+    }
+
+    public function new_contact_data(Request $request, LeadContact $lead_contact) {
+        $val = Validator::make($request->all(), [
+            'type' => 'required|in:Fijo,Celular,Email',
+            'contact' => 'required|string'
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+        $lead_contact->data()->create([
+            'type' => $request->type,
+            'contact' => $request->contact,
+            'created_by' => auth()->id()
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'lead_contact_data' => $lead_contact->data
+            ]
+        ]);
+    }
+
+    public function delete_contact_data(Request $request, ContactData $contact_data) {
+
+        $contact_data->delete();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'Datos de contacto eliminados exitosamente'
+            ]
         ]);
     }
 
