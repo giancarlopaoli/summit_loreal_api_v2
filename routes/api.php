@@ -336,10 +336,14 @@ Route::middleware('encryptresponses')->group(function () {
                 Route::GET('{lead}', [\App\Http\Controllers\Admin\Executives\LeadsController::class, 'lead_detail']);
                 Route::POST('{lead}/contact', [\App\Http\Controllers\Admin\Executives\LeadsController::class, 'new_contact']);
                 Route::POST('{lead}/follow', [\App\Http\Controllers\Admin\Executives\LeadsController::class, 'new_follow']);
+                Route::GET('contact/{lead_contact}', [\App\Http\Controllers\Admin\Executives\LeadsController::class, 'contact_detail']);
                 Route::PUT('contact/{lead_contact}', [\App\Http\Controllers\Admin\Executives\LeadsController::class, 'edit_contact']);
                 Route::DELETE('contact/{lead_contact}', [\App\Http\Controllers\Admin\Executives\LeadsController::class, 'delete_contact']);
                 Route::POST('contact/{lead_contact}/data', [\App\Http\Controllers\Admin\Executives\LeadsController::class, 'new_contact_data']);
                 Route::DELETE('contact-data/{contact_data}', [\App\Http\Controllers\Admin\Executives\LeadsController::class, 'delete_contact_data']);
+                Route::PUT('{lead}', [\App\Http\Controllers\Admin\Executives\LeadsController::class, 'edit_lead']);
+                Route::GET('{lead}/validate-ruc', [\App\Http\Controllers\Admin\Executives\LeadsController::class, 'validate_ruc']);
+                Route::GET('{lead}/validate-dni', [\App\Http\Controllers\Admin\Executives\LeadsController::class, 'validate_dni']);
 
             });
         });
