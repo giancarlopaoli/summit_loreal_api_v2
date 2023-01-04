@@ -18,6 +18,8 @@ use App\Models\ContactData;
 use App\Models\TrackingStatus;
 use App\Models\TrackingPhase;
 use App\Models\TrackingForm;
+use App\Models\DniData;
+use App\Models\RucData;
 use App\Http\Controllers\Register\RegisterController;
 
 class LeadsController extends Controller
@@ -95,6 +97,7 @@ class LeadsController extends Controller
         $val = Validator::make($request->all(), [
             'contact_type' => 'required|in:Natural,Juridica',
             'document_type_id' => 'required|exists:document_types,id',
+            'document_number' => 'required|string',
             'region_id' => 'nullable|exists:regions,id',
             "sector_id" => 'nullable|exists:sectors,id'
         ]);
@@ -311,6 +314,16 @@ class LeadsController extends Controller
         ]);
     }
 
+    public function contact_detail(Request $request, LeadContact $lead_contact) {
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'lead_contact' => $lead_contact->load('data:id,lead_contact_id,type,contact')->only(['id','lead_id','names','last_names','area','job_title','data'])
+            ]
+        ]);
+    }
+
     public function edit_contact(Request $request, LeadContact $lead_contact) {
         $val = Validator::make($request->all(), [
             'area' => 'required|string',
@@ -417,6 +430,98 @@ class LeadsController extends Controller
             'success' => true,
             'data' => [
                 "Seguimiento registrado exitosamente"
+            ]
+        ]);
+    }
+
+    public function edit_lead(Request $request, Lead $lead) {
+        $val = Validator::make($request->all(), [
+            'company_name' => 'string',
+            'region_id' => 'nullable|exists:regions,id',
+            'sector_id' => 'nullable|exists:sectors,id',
+            'lead_contact_type_id' => 'nullable|exists:lead_contact_types,id',
+            'comments' => 'required|string'
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+        $lead->update([
+              'company_name' => $request->company_name,
+              'region_id' => is_null($request->region_id) ? null: $request->region_id,
+              'sector_id' => is_null($request->sector_id) ? null: $request->sector_id,
+              'lead_contact_type_id' => is_null($request->lead_contact_type_id) ? null: $request->lead_contact_type_id,
+              'comments' => $request->comments
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'lead' => $lead
+            ]
+        ]);
+    }
+
+    public function validate_ruc(Request $request, Lead $lead) {
+
+        if($lead->document_type->name != 'RUC'){
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'El prospecto debe tener tipo de documento RUC'
+                ]
+            ]);
+        }
+
+        RucData::where('ruc', $lead->document_number)->delete();
+
+        $consult = new RegisterController();
+        $result = $consult->function_validate_ruc($lead->document_number)->getData();
+
+        $company_name = null;
+
+        if(is_object($result)){
+            if($result->success){
+                $company_name = $result->data->ruc->business;
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'company_name' => $company_name
+            ]
+        ]);
+    }
+
+    public function validate_dni(Request $request, Lead $lead) {
+        if($lead->document_type->name != 'DNI'){
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'El prospecto debe tener tipo de documento DNI'
+                ]
+            ]);
+        }
+
+        DniData::where('dni', $lead->document_number)->delete();
+
+        $consult = new RegisterController();
+        $result = $consult->function_validate_dni($lead->document_number)->getData();
+
+        $name = null;
+        $last_name = null;
+
+        if(is_object($result)){
+            if($result->success){
+                $name = $result->data->dni->name;
+                $last_name = $result->data->dni->last_name . " " . $result->data->dni->mothers_name;
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'name' => $name,
+                'last_name' => $last_name,
             ]
         ]);
     }
