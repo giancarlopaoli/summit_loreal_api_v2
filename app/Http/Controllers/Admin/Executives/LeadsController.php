@@ -263,6 +263,7 @@ class LeadsController extends Controller
             ->with('contacts.data:id,lead_contact_id,type,contact,created_by')
             ->with('trackings','trackings.tracking_status:id,name')
             ->with('trackings.tracking_form:id,name')
+            ->with('trackings.lead_contact:id,lead_id,names,last_names')
             ->first();
 
 

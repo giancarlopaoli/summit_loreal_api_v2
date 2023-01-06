@@ -19,7 +19,7 @@ class LeadTracking extends Model
         return $this->belongsTo(TrackingPhase::class);
     }
 
-    public function contact() {
+    public function lead_contact() {
         return $this->belongsTo(LeadContact::class);
     }
 
