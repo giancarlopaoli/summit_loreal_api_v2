@@ -11,6 +11,7 @@ use App\Models\EscrowAccount;
 use App\Models\Role;
 use App\Models\LeadContactType;
 use App\Models\Region;
+use App\Models\Sector;
 use App\Models\EconomicActivity;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -89,6 +90,13 @@ class MasterTablesController extends Controller
         return response()->json([
             'success' => true,
             'data' => Region::select('id','name')->get()
+        ]);
+    }
+
+    public function sectors() {
+        return response()->json([
+            'success' => true,
+            'data' => Sector::select('id','name')->get()
         ]);
     }
 
