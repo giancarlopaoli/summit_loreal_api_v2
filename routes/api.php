@@ -134,6 +134,7 @@ Route::middleware('encryptresponses')->group(function () {
         Route::GET('roles', [\App\Http\Controllers\Admin\MasterTablesController::class, 'roles']);
         Route::GET('contact-type', [\App\Http\Controllers\Admin\MasterTablesController::class, 'lead_contact_type']);
         Route::GET('regions', [\App\Http\Controllers\Admin\MasterTablesController::class, 'regions']);
+        Route::GET('sectors', [\App\Http\Controllers\Admin\MasterTablesController::class, 'sectors']);
         Route::GET('economic-activities', [\App\Http\Controllers\Admin\MasterTablesController::class, 'economic_activities']);
 
         Route::GET('account-types', [\App\Http\Controllers\Admin\MasterTablesController::class, 'account_types']);
