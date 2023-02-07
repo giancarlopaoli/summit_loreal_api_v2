@@ -35,7 +35,7 @@ class MasterTablesController extends Controller
     public function currencies() {
         return response()->json([
             'success' => true,
-            'data' => Currency::select('id','name','iso_code','sign','active')->where('active', true)->get()
+            'data' => Currency::select('id','name','iso_code','sign','image','active')->where('active', true)->get()
         ]);
     }
 

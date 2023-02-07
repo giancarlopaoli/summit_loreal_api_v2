@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('iso_code', 45);
             $table->string('sign', 10);
             $table->string('sbs_code', 10);
+            $table->string('image', 100);
             $table->boolean('active');
             $table->timestamps();
         });
