@@ -10,6 +10,7 @@ use App\Models\IbopsRange;
 use App\Models\EscrowAccount;
 use App\Models\Client;
 use App\Models\Configuration;
+use App\Models\Currency;
 use App\Models\ExchangeRate;
 use App\Models\IbopsClientComission;
 use App\Models\Operation;
@@ -95,7 +96,7 @@ class InterbankOperationController extends Controller
     public function quote_operation(Request $request) {
         $val = Validator::make($request->all(), [
             'client_id' => 'required|exists:clients,id',
-            'currency_id' => 'required|numeric',
+            'currency_id' => 'required|exists:currencies,id',
             'amount' => 'required|numeric',
         ]);
         if($val->fails()) return response()->json($val->messages());
@@ -161,7 +162,8 @@ class InterbankOperationController extends Controller
                     'igv' => $igv,
                     'exchange_rate' => $exchange_rate,
                     'receives' => $depositar,
-                    'selling_exchange_rate' => $tcventa
+                    'selling_exchange_rate' => $tcventa,
+                    'currency' => Currency::find($request->currency_id)->only(['id','name','sign'])
                 ]
             ]);
 

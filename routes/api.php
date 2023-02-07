@@ -76,6 +76,7 @@ Route::middleware('encryptresponses')->group(function () {
         });
 
         Route::prefix('tables')->group(function () {
+            Route::GET('currencies', [\App\Http\Controllers\Admin\MasterTablesController::class, 'currencies']);
             Route::GET('banks', [\App\Http\Controllers\Admin\MasterTablesController::class, 'banks']);
             Route::GET('account-types', [\App\Http\Controllers\Admin\MasterTablesController::class, 'account_types']);
             Route::GET('escrow-accounts', [\App\Http\Controllers\Admin\MasterTablesController::class, 'escrow_accounts']);
