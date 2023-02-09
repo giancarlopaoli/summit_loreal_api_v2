@@ -81,33 +81,156 @@ class InmediateOperationController extends Controller
         }
 
         $client = Client::find($request->client_id);
+        $client_id = $client->id;
+        $market_close_time = Configuration::where('shortname', 'MARKETCLOSE')->first()->value;
+        $market_closed = Carbon::now() >= Carbon::create($market_close_time);
 
-
+        // If currency == soles
         if($request->currency_id == 1){
             $type = $request->type == 'compra' ? 'venta' : 'compra';
             $exchange_rate = ExchangeRate::latest()->first();
-
+            $amount = $request->amount;
             //retreiving operation range
 
-            if($type == 'compra'){
-                $exchange_rate = $exchange_rate->compra;
+            $range = InmediateOperationController::calculate_range_pen($amount,$type,$exchange_rate,$market_closed)->getData()->range;
+            $amount = $range->amount;
 
-                $amount = $request->amount;
-                $range = Range::whereRaw("($amount/($exchange_rate+(comission_open)/10000) >= min_range and $amount/($exchange_rate+(comission_open)/10000) <= max_range)")->orderByDesc('id')->first();
+            ################## Calculating final spread  ###########################################
+                $exchange_rate_field = $type == 'compra' ? 'buying' : 'selling';
+                $special_exchange_rate = SpecialExchangeRate::where('client_id', $client_id)
+                ->where('active', true)
+                ->where($exchange_rate_field, '!=', null)
+                ->latest()
+                ->first();
 
+            if(!is_null($special_exchange_rate)) {
+                $exchange_rate = $type == 'compra' ? $special_exchange_rate->buying : $special_exchange_rate->selling;
+            } else {
+
+                // retreiving Vendor spread
+                $spreads =[];
+
+                $spreads[] = $range->spread;
+
+                $vendor_ranges = VendorRange::where('min_range', '<=', $amount)
+                    ->where('max_range', '>=', $amount)
+                    ->where('active', true)
+                    ->get();
+
+                $vendor_spreads = VendorSpread::whereIn('vendor_range_id', $vendor_ranges->pluck("id"))
+                    ->where('active', true)
+                    ->get();
+
+                foreach ($vendor_spreads as $vendor_spread) {
+                    if($type == 'compra') {
+                        $spreads[] = $vendor_spread->buying_spread;
+                    } else {
+                        $spreads[] = $vendor_spread->selling_spread;
+                    }
+                }
+
+                $spread = min($spreads);
+
+                $exchange_rate = $type == 'compra' ? round($exchange_rate->compra + $spread/10000, 4) : round($exchange_rate->venta - $spread/10000, 4);
             }
-            else{
-                $exchange_rate = $exchange_rate->venta;
 
-                $amount = $request->amount;
-                $range = Range::whereRaw("($amount/($exchange_rate-(comission_open)/10000) >= min_range and $amount/($exchange_rate-(comission_open)/10000) <= max_range)")->orderByDesc('id')->first();
+
+            ################## Calculating Comission  ###########################################
+
+            $client_comision = ClientComission::where('client_id', $client_id)
+                ->where('active', true)
+                ->latest()
+                ->first();
+
+            $association = Client::find($client_id)->association;
+            $association_comision = null;
+
+            if($association != null) {
+                $association_comision = AssociationComission::where('association_id', $association->id)
+                    ->where('active', true)
+                    ->latest()
+                    ->first();
             }
+
+            if($client_comision != null) {
+                $comission_spread = $market_closed ? $client_comision->comission_close : $client_comision->comission_open;
+            } else if($association_comision != null) {
+                $comission_spread = $market_closed ? $association_comision->comission_close : $association_comision->comission_open;
+            } else {
+
+                $comission_spread = $range->comission_spread;
+
+                if($coupon != null) {
+                    if($coupon->type == CouponType::Comision) {
+                        if($type == "compra") {
+                            $comission_spread += $coupon->value;
+                        } else {
+                            $comission_spread -= $coupon->value;
+                            $comission_spread = $comission_spread < 0 ? 0 : $comission_spread;
+                        }
+                    } else if($coupon->type == CouponType::Porcentaje) {
+                        $comission_spread = $comission_spread * ($coupon->value / 100.0);
+                    } else {
+                        return response()->json([
+                            'success' => false,
+                            'errors' => [
+                                'El cupon enviado no es valido'
+                            ]
+                        ], 400);
+                    }
+                }
+            }
+
+
+            $final_exchange_rate = $type == 'compra' ? round($exchange_rate + $comission_spread/10000,4) : round($exchange_rate - $comission_spread/10000,4);
+
+            $amount = round($request->amount / $final_exchange_rate,2);
+            $conversion_amount = round($amount * $exchange_rate,2);
+
+            $total_comission = round($request->amount - $conversion_amount, 2);
+
+            $igv_percetage = Configuration::where('shortname', 'IGV')->first()->value / 100;
+            $comission_amount = round($total_comission / (1+$igv_percetage), 2);
+
+            $igv = round($total_comission - $comission_amount,2);
+
+            $final_amount = $type == 'compra' ? $conversion_amount + $total_comission : $conversion_amount - $total_comission;
+            $final_amount = round($final_amount, 2);
+            
+            $data = [
+                'amount' => $amount,
+                'type' => $type,
+                'spread' => $spread,
+                'exchange_rate' => $exchange_rate,
+                'conversion_amount' => $conversion_amount,
+                'comission_spread' => $comission_spread,
+                'comission_amount' => $comission_amount,
+                'igv' => $igv,
+                'final_mount' => $final_amount,
+                'final_exchange_rate' => $final_exchange_rate,
+                'coupon_code' => $coupon?->code,
+                'coupon_value' => $coupon?->value,
+                'special_exchange_rate_id' => !is_null($special_exchange_rate) ? $special_exchange_rate->id : null
+            ];
+
+            Quotation::create([
+                "user_id" => auth()->id(),
+                "client_id" => $client->id,
+                "type" => $type,
+                "amount" => $amount,
+                "exchange_rate" => $exchange_rate,
+                "comission_spread" => $comission_spread,
+                "comission_amount" => $comission_amount,
+                "igv" => $igv,
+                "spread" => $spread,
+                "special_exchange_rate_id" => !is_null($special_exchange_rate) ? $special_exchange_rate->id : null
+            ]);
 
             return response()->json([
-                    'test' => $range
-                ]);
+                'success' => true,
+                'data' => $data
+            ]);
 
-            //$range = Range::whereRaw("")
         }
         else{
             $type = $request->type;
@@ -121,22 +244,15 @@ class InmediateOperationController extends Controller
         $spread = InmediateOperationController::calculate_exchange_rate($amount,$request->client_id,$type)->getData()->spread;
         $special_exchange_rate = InmediateOperationController::calculate_exchange_rate($amount,$request->client_id,$type)->getData()->special_exchange_rate;
         ############### End Calculating Exchange Rate ##################
-        /*return response()->json([
-            'test' => $exchange_rate
-        ]);*/
 
         $conversion_amount = round($amount * $exchange_rate, 2);
-
-        $market_close_time = Configuration::where('shortname', 'MARKETCLOSE')->first()->value;
-        $market_closed = Carbon::now() >= Carbon::create($market_close_time);
 
 
         ################### Calculating Spread Comission
         $comission_spread = InmediateOperationController::calculate_comission_spread($amount,$request->client_id,$type,$coupon)->getData()->comission_spread;
         
-        $total_comission = round($amount * $comission_spread, 2);
+        $total_comission = round($amount * $comission_spread/10000, 2);
         ############# End calculating comission
-
 
         $igv_percetage = Configuration::where('shortname', 'IGV')->first()->value / 100;
         $comission_amount = round($total_comission / (1+$igv_percetage), 2);
@@ -151,10 +267,10 @@ class InmediateOperationController extends Controller
         $data = [
             'amount' => $amount,
             'type' => $type,
-            'spread' => $spread * 10000,
+            'spread' => $spread,
             'exchange_rate' => $exchange_rate,
             'conversion_amount' => $conversion_amount,
-            'comission_spread' => $comission_spread * 10000,
+            'comission_spread' => $comission_spread,
             'comission_amount' => $comission_amount,
             'igv' => $igv,
             'final_mount' => $final_amount,
@@ -218,7 +334,7 @@ class InmediateOperationController extends Controller
                 ->where('active', true)
                 ->get();
 
-            $vendor_spreads = VendorSpread::whereIn('vendor_range_id', $vendor_ranges->only('id')->toArray())
+            $vendor_spreads = VendorSpread::whereIn('vendor_range_id', $vendor_ranges->pluck("id"))
                 ->where('active', true)
                 ->get();
 
@@ -231,10 +347,9 @@ class InmediateOperationController extends Controller
             }
 
             $spread = min($spreads);
-            $spread = $spread / 10000.0;
 
             $exchange_rate = ExchangeRate::latest()->first();
-            $exchange_rate = $type == 'compra' ? $exchange_rate->compra + $spread : $exchange_rate->venta - $spread;
+            $exchange_rate = $type == 'compra' ? $exchange_rate->compra + $spread/ 10000.0 : $exchange_rate->venta - $spread/ 10000.0;
         }
 
         return response()->json([
@@ -278,7 +393,7 @@ class InmediateOperationController extends Controller
             $comission_spread = $market_closed ? $association_comision->comission_close : $association_comision->comission_open;
         } else {
             $general_comission = Range::where('min_range', '<=', $amount)
-                ->where('max_range', '>', $amount)
+                ->where('max_range', '>=', $amount)
                 ->where('active', true)
                 ->first();
 
@@ -305,10 +420,51 @@ class InmediateOperationController extends Controller
             }
         }
 
-        $comission_spread = (float) $comission_spread / 10000.0;
-
         return response()->json([
             'comission_spread' => $comission_spread,
+        ]);
+    }
+
+    public function calculate_range_pen($amount,$type,$exchange_rate,$market_closed) {
+        if($type == 'compra'){
+            $exchange_rate = $exchange_rate->compra;
+
+            if($market_closed){
+                $range = Range::select("id","min_range","max_range","comission_close as comission_spread","spread_close as spread")->selectRaw("($amount/($exchange_rate+(comission_close+spread_close)/10000)) as amount")->whereRaw("($amount/($exchange_rate+(comission_close+spread_close)/10000) >= min_range and $amount/($exchange_rate+(comission_close+spread_close)/10000) <= max_range)")->orderByDesc('id')->first();
+
+                if(is_null($range)){
+                    $range = Range::selectRaw("id,min_range,max_range,comission_close as comission_spread,spread_close as spread, abs($amount - max_range*($exchange_rate+(comission_close+spread_close)/10000)) as maximo, max_range as amount")->orderby("maximo")->first(); 
+                }
+            }
+            else{
+                $range = Range::select("id","min_range","max_range","comission_open as comission_spread","spread_open as spread")->selectRaw("($amount/($exchange_rate+(comission_open+spread_open)/10000)) as amount")->whereRaw("($amount/($exchange_rate+(comission_open+spread_open)/10000) >= min_range and $amount/($exchange_rate+(comission_open+spread_open)/10000) <= max_range)")->orderByDesc('id')->first();
+
+                if(is_null($range)){
+                    $range = Range::selectRaw("id,min_range,max_range,comission_open as comission_spread,spread_open as spread, abs($amount - max_range*($exchange_rate+(comission_open+spread_open)/10000)) as maximo, max_range as amount")->orderby("maximo")->first(); 
+                }
+            }
+        }
+        else{
+            $exchange_rate = $exchange_rate->venta;
+
+            if($market_closed){
+                $range = Range::select("id","min_range","max_range","comission_close as comission_spread","spread_close as spread")->selectRaw("($amount/($exchange_rate-(comission_close+spread_close)/10000)) as amount")->whereRaw("($amount/($exchange_rate-(comission_close+spread_close)/10000) >= min_range and $amount/($exchange_rate-(comission_close+spread_close)/10000) <= max_range)")->orderByDesc('id')->first();
+
+                if(is_null($range)){
+                    $range = Range::selectRaw("id,min_range,max_range,comission_close as comission_spread,spread_close as spread, abs($amount - max_range*($exchange_rate-(comission_close+spread_close)/10000)) as maximo, max_range as amount")->orderby("maximo")->first(); 
+                }
+            }
+            else{
+                $range = Range::select("id","min_range","max_range","comission_open as comission_spread","spread_open as spread")->selectRaw("($amount/($exchange_rate-(comission_open+spread_open)/10000)) as amount")->whereRaw("($amount/($exchange_rate-(comission_open+spread_open)/10000) >= min_range and $amount/($exchange_rate-(comission_open+spread_open)/10000) <= max_range)")->orderByDesc('id')->first();
+
+                if(is_null($range)){
+                    $range = Range::selectRaw("id,min_range,max_range,comission_open as comission_spread,spread_open as spread, abs($amount - max_range*($exchange_rate-(comission_open+spread_open)/10000)) as maximo, max_range as amount")->orderby("maximo")->first(); 
+                }
+            }
+        }
+
+        return response()->json([
+            'range' => $range
         ]);
     }
 
