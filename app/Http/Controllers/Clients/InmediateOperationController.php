@@ -185,7 +185,7 @@ class InmediateOperationController extends Controller
             $final_exchange_rate = $type == 'compra' ? round($exchange_rate + $comission_spread/10000,4) : round($exchange_rate - $comission_spread/10000,4);
 
             $amount = round($request->amount / $final_exchange_rate,2);
-            $conversion_amount = round($amount * $final_exchange_rate,2);
+            $conversion_amount = round($amount * $exchange_rate,2);
 
             $total_comission = round($request->amount - $conversion_amount, 2);
 
@@ -251,7 +251,7 @@ class InmediateOperationController extends Controller
         ################### Calculating Spread Comission
         $comission_spread = InmediateOperationController::calculate_comission_spread($amount,$request->client_id,$type,$coupon)->getData()->comission_spread;
         
-        $total_comission = round($amount * $comission_spread, 2);
+        $total_comission = round($amount * $comission_spread/10000, 2);
         ############# End calculating comission
 
         $igv_percetage = Configuration::where('shortname', 'IGV')->first()->value / 100;
