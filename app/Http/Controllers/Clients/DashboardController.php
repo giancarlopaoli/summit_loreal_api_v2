@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Client;
 use App\Models\ExchangeRate;
 use App\Models\Range;
+use App\Models\OperationStatus;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
@@ -33,13 +34,14 @@ class DashboardController extends Controller
 
         $latest_operations->load(['status:id,name', 'currency:id,name,sign']);
 
-        $total_amount = $client->operations()->whereIn("operation_status_id", [4, 5])->selectRaw('SUM(amount) as total')->get();
+        $total_amount = $client->operations()->whereIn("operation_status_id", OperationStatus::wherein('name', ['Facturado', 'Finalizado sin factura'])->get()->pluck('id'))->selectRaw('SUM(amount) as total, sum(round(amount*250/10000,2)) as save')->first();
 
         return response()->json([
             'success' => true,
             'data' => [
                 'operations' => $latest_operations,
-                'total_operated_amount' => (float) $total_amount[0]->total
+                'total_operated_amount' => (float) $total_amount->total,
+                'total_saved' => (float) $total_amount->save,
             ]
         ]);
     }
