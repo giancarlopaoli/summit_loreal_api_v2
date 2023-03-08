@@ -27,6 +27,7 @@ use App\Models\Lead;
 use App\Models\LeadStatus;
 use App\Models\Executive;
 use App\Models\ExecutiveComission;
+use App\Models\Role;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
@@ -34,6 +35,8 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Hash;
 use App\Enums;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\Welcome;
 
 class RegisterController extends Controller
 {
@@ -575,27 +578,25 @@ class RegisterController extends Controller
 
         try {
             //Enviando mensaje de bienvenida al cliente
-            //$rpta_mail = Mail::send(new MailBienvenida($request->client['nombres'], $request->client['email'], null));
-
+            $rpta_mail = Mail::send(new Welcome($request->client['name'], $request->client['email'], null));
         } catch (\Exception $e) {
             $error = true;
             logger('ERROR: Register Person: RegisterController@register_person', ["mensaje" => "No se pudo enviar el correo de bienvenida", "error" => $e]);  
         }
 
         $client_id = null;
-    
 
         try {
             // Creating Client
 
             $executive_id = User::where('email', env('PERSONS_EXECUTIVE'))->first()->id;
-            $comission = 0.05;
+            $comission = 0;
             
             // Looking for a existing lead       
             $lead = Lead::where('contact_type', 'Natural')->where('document_number', $request->client['document_number'])->get();
 
             // Retrieving executive
-            if($lead->count() > 0){                
+            if($lead->count() > 0){
                 $executive = Executive::where('id', $lead[0]->executive_id)->first();
 
                 // Si es freelance, se agrega ejecutivo en tabla executives_comission
@@ -664,7 +665,7 @@ class RegisterController extends Controller
                 }
                 
                 // Validando que Email no existe, sino no se crea usuario
-                $user = User::where('email', $request->client['email'])->first();
+                $user = User::where('email', $request->client['email'])->first();                
                         
                 if(!is_null($user)){
 
@@ -673,8 +674,9 @@ class RegisterController extends Controller
                     if ($user) {
                         // Creando Cliente/Usuario
                         try {
-                            $client->users()->attach($user->id, ['status' => Enums\ClientUserStatus::Activo,]);
+                            $client->users()->attach($user->id, ['status' => Enums\ClientUserStatus::Activo]);
                         } catch (\Exception $e) {
+                            logger('Error: Register Person - attaching user: RegisterController@register_person', ["error" => $e]);
                             $error = true;
                         }
                     }
@@ -694,6 +696,7 @@ class RegisterController extends Controller
                             'document_number' => $request->client['document_number'],
                             'phone' => $request->client['phone'],
                             'password' => Hash::make($request->client['password']),
+                            'role_id' => Role::where('name', 'cliente')->first()->id,
                             'status' => Enums\UserStatus::Activo,
                         ]);
 
@@ -752,7 +755,6 @@ class RegisterController extends Controller
                         $mensaje
                     ]
                 ]);
-                //}
             }
             
 
@@ -818,11 +820,10 @@ class RegisterController extends Controller
 
         try {
             //Enviando mensaje de bienvenida al cliente
-            //$rpta_mail = Mail::send(new MailBienvenida($request->client['nombres'], $request->client['email'], $request->client['razon_social']));
-
+            $rpta_mail = Mail::send(new Welcome($request->client['name'], $request->client['email'], $request->client['company_name']));
         } catch (\Exception $e) {
             $error = true;
-            logger('ERROR: Registro Persona Natural: RegisterController@register-company', ["mensaje" => "No se pudo enviar el correo de bienvenida", "error" => $e]);  
+            logger('ERROR: Register Company: RegisterController@register_company', ["mensaje" => "No se pudo enviar el correo de bienvenida", "error" => $e]);  
         }
 
         $client_id = null;

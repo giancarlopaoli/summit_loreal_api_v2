@@ -54,6 +54,7 @@ return new class extends Migration
             $table->decimal('comission', 5, 4)->nullable();
             $table->unsignedInteger("invoice_to")->nullable();
             $table->boolean('accepts_publicity')->default(false);
+            $table->boolean('validated')->default(false);
             $table->timestamps();
         });
     }

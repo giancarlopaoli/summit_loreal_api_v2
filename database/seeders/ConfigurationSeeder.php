@@ -34,9 +34,15 @@ class ConfigurationSeeder extends Seeder
         ]);
 
         Configuration::create([
-            "shortname" => "OPSENDTIME",
-            "description" => "Hora fin operaciones",
+            "shortname" => "OPSENDTIMEPJ",
+            "description" => "Hora fin operaciones para PJ",
             "value" => "18:00",
+        ]);
+
+        Configuration::create([
+            "shortname" => "OPSENDTIMEPN",
+            "description" => "Hora fin operaciones para PN",
+            "value" => "17:00",
         ]);
 
         Configuration::create([
@@ -90,13 +96,25 @@ class ConfigurationSeeder extends Seeder
         Configuration::create([
             "shortname" => "MNTMIN",
             "description" => "Monto minimo requerido para crear una operacion",
-            "value" => 2000,
+            "value" => 1000,
         ]);
 
         Configuration::create([
             "shortname" => "DETRACTION",
             "description" => "Porcentage Detracción",
             "value" => 12,
+        ]);
+
+        Configuration::create([
+            "shortname" => "MAXOPPN",
+            "description" => "Monto Máximo PN Sin validación",
+            "value" => 1000,
+        ]);
+
+        Configuration::create([
+            "shortname" => "MAXOPPJ",
+            "description" => "Monto Máximo PJ Sin validación",
+            "value" => 100000,
         ]);
     }
 }
