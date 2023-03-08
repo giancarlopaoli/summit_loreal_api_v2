@@ -48,7 +48,6 @@ class InmediateOperationController extends Controller
                 ]
             ]);
         }
-
     }
 
     public function quote_operation(Request $request) {
@@ -66,6 +65,36 @@ class InmediateOperationController extends Controller
             ]);
         }
 
+        $client = Client::find($request->client_id);
+        $client_id = $client->id;
+
+        // Validating available hours
+        $hours = InmediateOperationController::operation_hours($request->client_id)->getData();
+
+        if(!$hours->available){
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'El horario de atención es de ' . $hours->message
+                ]
+            ]);
+        }
+
+        // Validating minimum amount
+        $min_amount = InmediateOperationController::minimun_amount($request->client_id)->getData()[0];
+
+        // Validating if client is validated
+        $max_amount = $client->customer_type == 'PN' ? Configuration::where('shortname', 'MAXOPPN')->first()->value : Configuration::where('shortname', 'MAXOPPJ')->first()->value;
+
+        if($request->amount > $max_amount && $client->validated == false){
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'Ha excedido el monto máximo de operación. Para poder continuar comuníquese con su ejecutivo.',
+                ]
+            ]);
+        }
+
         $coupon = null;
         if($request->coupon_code != null) {
             $coupon = Coupon::validate($request->coupon_code);
@@ -80,8 +109,7 @@ class InmediateOperationController extends Controller
             }
         }
 
-        $client = Client::find($request->client_id);
-        $client_id = $client->id;
+        
         $market_close_time = Configuration::where('shortname', 'MARKETCLOSE')->first()->value;
         $market_closed = Carbon::now() >= Carbon::create($market_close_time);
 
@@ -90,6 +118,7 @@ class InmediateOperationController extends Controller
             $type = $request->type == 'compra' ? 'venta' : 'compra';
             $exchange_rate = ExchangeRate::latest()->first();
             $amount = $request->amount;
+            $spread = 0;
             //retreiving operation range
 
             $range = InmediateOperationController::calculate_range_pen($amount,$type,$exchange_rate,$market_closed)->getData()->range;
@@ -185,6 +214,16 @@ class InmediateOperationController extends Controller
             $final_exchange_rate = $type == 'compra' ? round($exchange_rate + $comission_spread/10000,4) : round($exchange_rate - $comission_spread/10000,4);
 
             $amount = round($request->amount / $final_exchange_rate,2);
+
+            if($amount < $min_amount){
+                return response()->json([
+                    'success' => false,
+                    'errors' => [
+                        'El monto mínimo de operación es $' . number_format($min_amount,2) . " (S/ " . number_format($min_amount*$final_exchange_rate,2) . ")"
+                    ]
+                ]);
+            }
+
             $conversion_amount = round($amount * $exchange_rate,2);
 
             $total_comission = ($type == 'compra') ? round($request->amount - $conversion_amount, 2) : round($conversion_amount - $request->amount, 2);
@@ -238,6 +277,14 @@ class InmediateOperationController extends Controller
 
         $amount = (float) $request->amount;
 
+        if($amount < $min_amount){
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'El monto mínimo de operación es $' . number_format($min_amount,2)
+                ]
+            ]);
+        }
 
         ############### Calculating Exchange Rate ##################
         $exchange_rate = InmediateOperationController::calculate_exchange_rate($amount,$request->client_id,$type)->getData()->exchange_rate;
@@ -488,6 +535,54 @@ class InmediateOperationController extends Controller
         ]);
     }
 
+    public function operation_hours($client_id) {
+        $client = Client::find($client_id);
+
+        $daysSpanish = [
+            0 => 'lunes',
+            1 => 'martes',
+            2 => 'miércoles',
+            3 => 'jueves',
+            4 => 'viernes',
+            5 => 'sábado',
+            6 => 'domingo',
+        ];
+
+        $dayStart  = Configuration::where('shortname', 'OPSSTARTDATE')->first()->value - 1;
+        $dayEnd    = Configuration::where('shortname', 'OPSENDDATE')->first()->value - 1;
+        $dayStartStr = $daysSpanish[$dayStart];
+        $dayEndStr = $daysSpanish[$dayEnd];
+        $hourStartStr = Configuration::where('shortname', 'OPSSTARTTIME')->first()->value;
+        $hourEndStr   =  $client->customer_type == 'PN' ? Configuration::where('shortname', 'OPSENDTIMEPN')->first()->value : Configuration::where('shortname', 'OPSENDTIMEPJ')->first()->value;
+        $hourStart = Carbon::createFromTimeString($hourStartStr);
+        $hourEnd   = Carbon::createFromTimeString($hourEndStr);
+
+        $now = Carbon::now();
+
+        if($now->dayOfWeek < $dayEnd && $dayStart < $now->dayOfWeek && $now->between($hourStart, $hourEnd)) {
+            $res = true;
+            $msg = "";
+        } else {
+            $res = false;
+            $msg = "$hourStartStr a $hourEndStr de $dayStartStr a $dayEndStr";
+        }
+
+        return response()->json([
+            'available' => $res,
+            'message' => $msg
+        ]);
+    }
+
+    public function minimun_amount($client_id) {
+        $client = Client::find($client_id);
+
+        $min_amount = Range::where('active', true)->min('min_range');
+
+        return response()->json([
+            $min_amount
+        ]);
+    }
+
     public function create_operation(Request $request) {
         $validator = Validator::make($request->all(), [
             'client_id' => 'required|exists:clients,id',
@@ -499,7 +594,8 @@ class InmediateOperationController extends Controller
             'igv' => 'required|numeric',
             'spread' => 'required|numeric',
             'bank_accounts' => 'required|array',
-            'escrow_accounts' => 'required|array'
+            'escrow_accounts' => 'required|array',
+            'special_exchange_rate_id' => 'nullable|exists:special_exchange_rates,id'
         ]);
 
         if($validator->fails()) {
@@ -510,10 +606,47 @@ class InmediateOperationController extends Controller
         }
         $client = Client::find($request->client_id);
 
+        // Validating available hours
+        $hours = InmediateOperationController::operation_hours($request->client_id)->getData();
+
+        if(!$hours->available){
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'El horario de atención es de ' . $hours->message
+                ]
+            ]);
+        }
+
+        // Validating minimum amount
+        $min_amount = InmediateOperationController::minimun_amount($request->client_id)->getData()[0];
+
+        if($request->amount < $min_amount){
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'El monto mínimo de operación es $' . number_format($min_amount,2)
+                ]
+            ]);
+        }
+
+        // Validating if client is validated
+        $max_amount = $client->customer_type == 'PN' ? Configuration::where('shortname', 'MAXOPPN')->first()->value : Configuration::where('shortname', 'MAXOPPJ')->first()->value;
+
+        if($request->amount > $max_amount && $client->validated == false){
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'Ha excedido el monto máximo de operación. Para poder continuar comuníquese con su ejecutivo.',
+                ]
+            ]);
+        }
+
         $coupon = null;
         if($request->has('coupon_id') && !is_null($request->coupon_id) && $request->coupon_id != "") {
             $coupon = Coupon::find($request->coupon_id);
 
+            
             if(is_null($coupon)){
                 return response()->json([
                     'success' => false,
@@ -674,14 +807,6 @@ class InmediateOperationController extends Controller
             ]);
         }
 
-        /*return response()->json([
-            'success' => true,
-            'data' => [
-                'bank_accounts' => $bank_accounts,
-                'escrow_accounts' => $escrow_accounts
-            ]
-        ]);*/
-
 
         $op_code = Carbon::now()->format('YmdHisv') . rand(0,9);
         $status_id = OperationStatus::where('name', 'Disponible')->first()->id;
@@ -726,6 +851,16 @@ class InmediateOperationController extends Controller
 
         OperationHistory::create(["operation_id" => $operation->id,"user_id" => auth()->id(),"action" => "Operación creada"]);
 
+        // Matching with vendor
+        if(!is_null($request->special_exchange_rate_id)){
+            $vendor_operation = InmediateOperationController::match_operation_vendor($operation->id,$request->special_exchange_rate_id)->getData();
+
+            return response()->json([
+                'success' => true,
+                'vendor_op' => $vendor_operation
+            ]);
+        }
+
         AvailableOperations::dispatch();
 
         // Enviar Correo()
@@ -735,4 +870,16 @@ class InmediateOperationController extends Controller
             'data' => $operation
         ]);
     }
+
+    public function match_operation_vendor($operation_id,$special_exchange_rate_id) {
+        $operation = Operation::find($operation_id);
+
+        $vendor_id = SpecialExchangeRate::find($special_exchange_rate_id)->vendor_id;
+
+        return response()->json([
+            "vendor_id" => $vendor_id,
+            "operacion" => $operation
+        ]);
+    }
+
 }

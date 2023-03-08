@@ -4,12 +4,36 @@ namespace App\Http\Controllers\Clients;
 
 use App\Http\Controllers\Controller;
 use App\Models\Client;
+use App\Models\OperationStatus;
 use Illuminate\Http\Request;
 use App\Enums;
+use Illuminate\Support\Facades\Validator;
 
 class MyOperationsController extends Controller
 {
     public function list_my_operations(Request $request) {
+        $validator = Validator::make($request->all(), [
+            'client_id' => 'required|integer',
+            'status' => 'required|in:inprogress,finished,expired,canceled'
+        ]);
+
+        if ($validator->fails()) return $validator->errors()->toJson();
+
+        if($request->status == 'inprogress'){
+            $status = OperationStatus::wherein('name', ['Disponible','Pendiente envio fondos','Pendiente fondos contraparte','Contravalor recaudado','Fondos enviados'])->get()->pluck('id');
+        }
+        elseif ($request->status == 'finished') {
+            $status = OperationStatus::wherein('name', ['Facturado','Finalizado sin factura', 'Pendiente facturar'])->get()->pluck('id');
+        }
+        elseif ($request->status == 'expired') {
+            $status = OperationStatus::wherein('name', ['Expirado'])->get()->pluck('id');
+        }
+        elseif ($request->status == 'canceled') {
+            $status = OperationStatus::wherein('name', ['Cancelado'])->get()->pluck('id');
+        }
+        else {
+            $status = OperationStatus::get()->pluck('id');
+        }
 
         $client = Client::find($request->client_id);
 
@@ -20,7 +44,7 @@ class MyOperationsController extends Controller
             ], 404);
          }
 
-        $ops = $client->operations()->where('operation_status_id', $request->status)->get();
+        $ops = $client->operations()->whereIn('operation_status_id', $status)->get();
 
         $ops->load(
             'client:id,name,last_name,mothers_name,customer_type,type',
