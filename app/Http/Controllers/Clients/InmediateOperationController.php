@@ -24,9 +24,11 @@ use App\Models\VendorRange;
 use App\Models\VendorSpread;
 use App\Models\OperationHistory;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use App\Events\AvailableOperations;
+use App\Enums;
 
 class InmediateOperationController extends Controller
 {
@@ -249,7 +251,8 @@ class InmediateOperationController extends Controller
                 'final_exchange_rate' => $final_exchange_rate,
                 'coupon_code' => $coupon?->code,
                 'coupon_value' => $coupon?->value,
-                'special_exchange_rate_id' => !is_null($special_exchange_rate) ? $special_exchange_rate->id : null
+                'special_exchange_rate_id' => !is_null($special_exchange_rate) ? $special_exchange_rate->id : null,
+                'save' => round($amount * (20/10000) , 2)
             ];
 
             Quotation::create([
@@ -324,7 +327,8 @@ class InmediateOperationController extends Controller
             'final_exchange_rate' => $final_exchange_rate,
             'coupon_code' => $coupon?->code,
             'coupon_value' => $coupon?->value,
-            'special_exchange_rate_id' => !is_null($special_exchange_rate) ? $special_exchange_rate->id : null
+            'special_exchange_rate_id' => !is_null($special_exchange_rate) ? $special_exchange_rate->id : null,
+            'save' => round($amount * (20/10000) , 2)
         ];
 
         Quotation::create([
@@ -548,8 +552,8 @@ class InmediateOperationController extends Controller
             6 => 'domingo',
         ];
 
-        $dayStart  = Configuration::where('shortname', 'OPSSTARTDATE')->first()->value - 1;
-        $dayEnd    = Configuration::where('shortname', 'OPSENDDATE')->first()->value - 1;
+        $dayStart  = Configuration::where('shortname', 'OPSSTARTDATE')->first()->value ;
+        $dayEnd    = Configuration::where('shortname', 'OPSENDDATE')->first()->value;
         $dayStartStr = $daysSpanish[$dayStart];
         $dayEndStr = $daysSpanish[$dayEnd];
         $hourStartStr = Configuration::where('shortname', 'OPSSTARTTIME')->first()->value;
@@ -559,7 +563,7 @@ class InmediateOperationController extends Controller
 
         $now = Carbon::now();
 
-        if($now->dayOfWeek < $dayEnd && $dayStart < $now->dayOfWeek && $now->between($hourStart, $hourEnd)) {
+        if($now->dayOfWeek <= $dayEnd && $dayStart < $now->dayOfWeek && $now->between($hourStart, $hourEnd)) {
             $res = true;
             $msg = "";
         } else {
@@ -612,6 +616,7 @@ class InmediateOperationController extends Controller
         if(!$hours->available){
             return response()->json([
                 'success' => false,
+                'hours' => $hours,
                 'errors' => [
                     'El horario de atención es de ' . $hours->message
                 ]
@@ -848,17 +853,12 @@ class InmediateOperationController extends Controller
                 'comission_amount' => $escrow_account_data['comission_amount']
             ]);
         }
-
+        
         OperationHistory::create(["operation_id" => $operation->id,"user_id" => auth()->id(),"action" => "Operación creada"]);
-
+        
         // Matching with vendor
         if(!is_null($request->special_exchange_rate_id)){
             $vendor_operation = InmediateOperationController::match_operation_vendor($operation->id,$request->special_exchange_rate_id)->getData();
-
-            return response()->json([
-                'success' => true,
-                'vendor_op' => $vendor_operation
-            ]);
         }
 
         AvailableOperations::dispatch();
@@ -871,12 +871,123 @@ class InmediateOperationController extends Controller
         ]);
     }
 
-    public function match_operation_vendor($operation_id,$special_exchange_rate_id) {
-        $operation = Operation::find($operation_id);
+    public function match_operation_vendor($operation_id, $special_exchange_rate_id) {
+        $operation = Operation::find($operation_id)->load('bank_accounts','escrow_accounts');
 
         $vendor_id = SpecialExchangeRate::find($special_exchange_rate_id)->vendor_id;
 
-        return response()->json([
+        ####### Validating operation is not previusly matched ##########
+        $operation_match = DB::table('operation_matches')
+            ->where("operation_id", $operation->id)
+            ->get();
+
+        if($operation_match->count() > 0) {
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'La operación ya se encuentra emparejada'
+                ]
+            ]);
+        }
+
+        ######### Creating vendor operation #############
+
+        $op_code = Carbon::now()->format('YmdHisv') . rand(0,9);
+        $status_id = OperationStatus::where('name', 'Pendiente envio fondos')->first()->id;
+
+        // Calculando detracción
+        $detraction_percentage = Configuration::where('shortname', 'DETRACTION')->first()->value;
+        $detraction_amount = 0;
+
+        $matched_operation = Operation::create([
+            'code' => $op_code,
+            'class' => Enums\OperationClass::Inmediata,
+            'type' => ($operation->type == "Compra") ? 'Venta' : ($operation->type == "Venta" ? 'Compra' : 'Interbancaria'),
+            'client_id' => $vendor_id,
+            'user_id' => auth()->id(),
+            'amount' => $operation->amount,
+            'currency_id' => $operation->currency_id,
+            'exchange_rate' => $operation->exchange_rate,
+            'comission_spread' => 0,
+            'comission_amount' => 0,
+            'detraction_amount' => $detraction_amount,
+            'detraction_percentage' => $detraction_percentage,
+            'igv' => 0,
+            'spread' => ($operation->type == "Interbancaria") ? $operation->spread : 0,
+            'operation_status_id' => $status_id,
+            'operation_date' => Carbon::now(),
+            'post' => false
+        ]);
+
+        if($matched_operation){
+            try {
+                
+                
+                foreach ($operation->bank_accounts as $bank_account_data) {
+                    
+                    $escrow_account = EscrowAccount::where('bank_id',$bank_account_data->bank_id)
+                        ->where('currency_id', $bank_account_data->currency_id)
+                        ->first();
+
+                    if(!is_null($escrow_account)){
+                        $matched_operation->escrow_accounts()->attach($escrow_account->id, [
+                            'amount' => $bank_account_data->pivot->amount + $bank_account_data->pivot->comission_amount,
+                            'comission_amount' => 0,
+                            'created_at' => Carbon::now()
+                        ]);
+                    }
+                    else{
+                        return response()->json([
+                            'success' => false,
+                            'errors' => [
+                                'Error en cuenta bancaria'
+                            ]
+                        ], 404);
+                    }
+                }
+
+                foreach ($operation->escrow_accounts as $escrow_account_data) {
+                    
+                    $bank_account = BankAccount::where('bank_id',$escrow_account_data->bank_id)
+                        ->where('client_id', $vendor_id)
+                        ->where('currency_id', $escrow_account_data->currency_id)
+                        ->first();
+
+                    if(!is_null($bank_account)){
+                        $matched_operation->bank_accounts()->attach($bank_account->id, [
+                            'amount' => $escrow_account_data->pivot->amount - $escrow_account_data->pivot->comission_amount,
+                            'comission_amount' => 0,
+                            'created_at' => Carbon::now()
+                        ]);
+                    }
+                    else{
+                        return response()->json([
+                            'success' => false,
+                            'errors' => [
+                                'Error en cuenta bancaria'
+                            ]
+                        ], 404);
+                    }
+
+                }
+            } catch (\Exception $e) {
+                logger('ERROR: archivo adjunto: match_operation_vendor@InmediateOperationController', ["error" => $e]);
+
+                // Envio de correo de notificación de error
+            }
+
+            $operations_matches = $operation->matches()->attach($matched_operation->id, ['created_at' => Carbon::now()]);
+
+            $operation->operation_status_id = $status_id;
+            $operation->save();
+        }
+
+        // Enviar correo instrucciones
+        OperationHistory::create(["operation_id" => $operation->id,"user_id" => auth()->id(),"action" => "Operación emparejada"]);
+
+        AvailableOperations::dispatch();
+
+         return response()->json([
             "vendor_id" => $vendor_id,
             "operacion" => $operation
         ]);

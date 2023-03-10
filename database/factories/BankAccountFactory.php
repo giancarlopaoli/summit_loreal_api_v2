@@ -28,7 +28,7 @@ class BankAccountFactory extends Factory
             "bank_id" => Bank::all()->random()->id,
             "account_number" => $this->faker->creditCardNumber(),
             "cci_number" => $this->faker->creditCardNumber(),
-            "bank_account_status_id" => \App\Models\BankAccountStatus::all()->random()->id,
+            "bank_account_status_id" => 1,
             "comments" => $this->faker->words(4, true),
             "account_type_id" => AccountType::all()->random()->id,
             "currency_id" => Currency::all()->random()->id,

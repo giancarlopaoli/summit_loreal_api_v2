@@ -21,7 +21,7 @@ class BankSeeder extends Seeder
             'corfid_id' => 2,
             'main' => true,
             'active' => true,
-            'image' => 'https://cdn.pixabay.com/photo/2014/06/03/19/38/road-sign-361514_960_720.png'
+            'image' => 'https://bill-upload.s3.amazonaws.com/static/img/bcp.png'
         ]);
 
         Bank::create([
@@ -30,7 +30,7 @@ class BankSeeder extends Seeder
             'corfid_id' => 3,
             'main' => false,
             'active' => true,
-            'image' => 'https://cdn.pixabay.com/photo/2014/06/03/19/38/road-sign-361514_960_720.png'
+            'image' => 'https://bill-upload.s3.amazonaws.com/static/img/interbank.png'
         ]);
 
         Bank::create([
@@ -39,7 +39,7 @@ class BankSeeder extends Seeder
             'corfid_id' => 11,
             'main' => false,
             'active' => true,
-            'image' => 'https://cdn.pixabay.com/photo/2014/06/03/19/38/road-sign-361514_960_720.png'
+            'image' => 'https://bill-upload.s3.amazonaws.com/static/img/bbva.png'
         ]);
 
         Bank::create([
@@ -48,7 +48,7 @@ class BankSeeder extends Seeder
             'corfid_id' => 41,
             'main' => false,
             'active' => true,
-            'image' => 'https://cdn.pixabay.com/photo/2014/06/03/19/38/road-sign-361514_960_720.png'
+            'image' => 'https://bill-upload.s3.amazonaws.com/static/img/scotia.png'
         ]);
 
         Bank::create([
@@ -57,7 +57,7 @@ class BankSeeder extends Seeder
             'corfid_id' => 38,
             'main' => false,
             'active' => true,
-            'image' => 'https://cdn.pixabay.com/photo/2014/06/03/19/38/road-sign-361514_960_720.png'
+            'image' => 'https://bill-upload.s3.amazonaws.com/static/img/banbif.png'
         ]);
 
         Bank::create([
@@ -66,7 +66,7 @@ class BankSeeder extends Seeder
             'corfid_id' => 35,
             'main' => false,
             'active' => true,
-            'image' => 'https://cdn.pixabay.com/photo/2014/06/03/19/38/road-sign-361514_960_720.png'
+            'image' => 'https://bill-upload.s3.amazonaws.com/static/img/pichincha.png'
         ]);
 
         Bank::create([
@@ -75,16 +75,7 @@ class BankSeeder extends Seeder
             'corfid_id' => 23,
             'main' => false,
             'active' => true,
-            'image' => 'https://cdn.pixabay.com/photo/2014/06/03/19/38/road-sign-361514_960_720.png'
-        ]);
-
-        Bank::create([
-            'name' => 'CITIBANK N.A LIMA',
-            'shortname' => 'CITIBANK',
-            'corfid_id' => 7,
-            'main' => false,
-            'active' => true,
-            'image' => 'https://cdn.pixabay.com/photo/2014/06/03/19/38/road-sign-361514_960_720.png'
+            'image' => 'https://bill-upload.s3.amazonaws.com/static/img/bancocomercio.png'
         ]);
 
         Bank::create([
@@ -93,7 +84,7 @@ class BankSeeder extends Seeder
             'corfid_id' => 0,
             'main' => false,
             'active' => true,
-            'image' => 'https://cdn.pixabay.com/photo/2014/06/03/19/38/road-sign-361514_960_720.png'
+            'image' => 'https://bill-upload.s3.amazonaws.com/static/img/bn.png'
         ]);
 
     }
