@@ -52,6 +52,7 @@ Route::middleware('encryptresponses')->group(function () {
             Route::GET('list', [\App\Http\Controllers\Clients\MyBankAccountsController::class, 'list_accounts']);
             Route::DELETE('{account_id}', [\App\Http\Controllers\Clients\MyBankAccountsController::class, 'delete_account']);
             Route::POST('{account_id}/main', [\App\Http\Controllers\Clients\MyBankAccountsController::class, 'set_main_account']);
+            Route::PUT('{account_id}', [\App\Http\Controllers\Clients\MyBankAccountsController::class, 'edit_bank_account']);
         });
 
         Route::prefix('profile')->group(function () {
