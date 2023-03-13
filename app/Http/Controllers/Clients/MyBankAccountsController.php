@@ -112,6 +112,7 @@ class MyBankAccountsController extends Controller
         }
 
         $account->updated_by = auth()->id();
+        $account->bank_account_status_id = BankAccountStatus::where('name', 'Inactivo')->first()->id;
         $account->save();
 
         $account->delete();
@@ -149,6 +150,40 @@ class MyBankAccountsController extends Controller
 
         $account->main = true;
         $account->save();
+
+        return response()->json([
+            'success' => true
+        ]);
+    }
+
+    public function edit_bank_account(Request $request, $account_id) {
+        $validator = Validator::make($request->all(), [
+            'client_id' => 'required|exists:clients,id',
+        ]);
+
+        if($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors()
+            ]);
+        }
+
+        $client = Client::find($request->client_id);
+        $account = $client->bank_accounts()->where('id', $account_id)->first();
+
+        if($account == null) {
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'Cuenta bancaria no encontrada para este cliente'
+                ]
+            ], 404);
+        }
+
+        $account->updated_by = auth()->id();
+        $account->alias = $request->alias;
+        $account->save();
+
 
         return response()->json([
             'success' => true
