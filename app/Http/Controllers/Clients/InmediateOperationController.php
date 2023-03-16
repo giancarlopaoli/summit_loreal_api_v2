@@ -85,18 +85,6 @@ class InmediateOperationController extends Controller
         // Validating minimum amount
         $min_amount = InmediateOperationController::minimun_amount($request->client_id)->getData()[0];
 
-        // Validating if client is validated
-        $max_amount = $client->customer_type == 'PN' ? Configuration::where('shortname', 'MAXOPPN')->first()->value : Configuration::where('shortname', 'MAXOPPJ')->first()->value;
-
-        if($request->amount > $max_amount && $client->validated == false){
-            return response()->json([
-                'success' => false,
-                'errors' => [
-                    'Ha excedido el monto máximo de operación. Para poder continuar comuníquese con su ejecutivo.',
-                ]
-            ]);
-        }
-
         $coupon = null;
         if($request->coupon_code != null) {
             $coupon = Coupon::validate($request->coupon_code);
@@ -217,11 +205,24 @@ class InmediateOperationController extends Controller
 
             $amount = round($request->amount / $final_exchange_rate,2);
 
+            // Validating General Min Amount
             if($amount < $min_amount){
                 return response()->json([
                     'success' => false,
                     'errors' => [
                         'El monto mínimo de operación es $' . number_format($min_amount,2) . " (S/ " . number_format($min_amount*$final_exchange_rate,2) . ")"
+                    ]
+                ]);
+            }
+
+            // Validating if client is validated
+            $max_amount = $client->customer_type == 'PN' ? Configuration::where('shortname', 'MAXOPPN')->first()->value : Configuration::where('shortname', 'MAXOPPJ')->first()->value;
+
+            if($amount > $max_amount && $client->validated == false){
+                return response()->json([
+                    'success' => false,
+                    'errors' => [
+                        'Ha excedido el monto máximo de operación. Para poder continuar comuníquese con su ejecutivo.' . $amount,
                     ]
                 ]);
             }
@@ -280,11 +281,24 @@ class InmediateOperationController extends Controller
 
         $amount = (float) $request->amount;
 
+        // Validating General min Amount
         if($amount < $min_amount){
             return response()->json([
                 'success' => false,
                 'errors' => [
                     'El monto mínimo de operación es $' . number_format($min_amount,2)
+                ]
+            ]);
+        }
+
+        // Validating if client is validated
+        $max_amount = $client->customer_type == 'PN' ? Configuration::where('shortname', 'MAXOPPN')->first()->value : Configuration::where('shortname', 'MAXOPPJ')->first()->value;
+
+        if($request->amount > $max_amount && $client->validated == false){
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'Ha excedido el monto máximo de operación. Para poder continuar comuníquese con su ejecutivo.',
                 ]
             ]);
         }
@@ -587,6 +601,15 @@ class InmediateOperationController extends Controller
         ]);
     }
 
+    public function max_amount() {
+
+        $max_amount = Range::where('active', true)->max('max_range');
+
+        return response()->json([
+            $max_amount
+        ]);
+    }
+
     public function create_operation(Request $request) {
         $validator = Validator::make($request->all(), [
             'client_id' => 'required|exists:clients,id',
@@ -647,6 +670,15 @@ class InmediateOperationController extends Controller
             ]);
         }
 
+        // Validating general max amount
+        $max_amount = InmediateOperationController::max_amount()->getData()[0];
+
+        $post = true;
+        if($request->amount > $max_amount){
+            $post = false;
+        }
+
+        // Discount coupons
         $coupon = null;
         if($request->has('coupon_id') && !is_null($request->coupon_id) && $request->coupon_id != "") {
             $coupon = Coupon::find($request->coupon_id);
@@ -837,7 +869,7 @@ class InmediateOperationController extends Controller
             'coupon_type' => $coupon?->type,
             'coupon_value' => $coupon?->value,
             'operation_date' => Carbon::now(),
-            'post' => true
+            'post' => $post
         ]);
 
         foreach ($bank_accounts as $bank_account_data) {
