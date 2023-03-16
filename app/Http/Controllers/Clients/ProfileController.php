@@ -108,9 +108,9 @@ class ProfileController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'client_id' => 'required|exists:clients,id',
-            'phone' => 'required|string',
-            'email' => 'required|email',
-            'address' => 'required|string',
+            'phone' => 'nullable|string',
+            'email' => 'nullable|email',
+            'address' => 'nullable|string',
             'accountable_email' => 'string',
         ]);
         if ($validator->fails()) return response()->json($validator->messages());
