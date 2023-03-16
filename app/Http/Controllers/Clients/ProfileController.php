@@ -9,7 +9,11 @@ use App\Models\User;
 use App\Models\ClientUser;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
-use App\Enums\ClientUserStatus;
+use Illuminate\Support\Facades\Hash;
+use App\Enums;
+use Carbon\Carbon;
+
+use Illuminate\Support\Facades\DB;
 
 class ProfileController extends Controller
 {
@@ -39,15 +43,14 @@ class ProfileController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'phone' => 'required|string',
-            'email' => 'required|email'
+            //'email' => 'required|email'
         ]);
         if ($validator->fails()) return response()->json($validator->messages());
 
         $user = Auth::user();
         $user->phone = $request->phone;
 
-
-        // validating if email have changed
+/*        // validating if email have changed
         if ($user->email != $request->email) {
             $emailexists = User::where('email', $request->email)->get();
 
@@ -59,13 +62,44 @@ class ProfileController extends Controller
                     ]
                 ]);
             } else $user->email = $request->email;
-        }
+        }*/
         $user->save();
 
         return response()->json([
             'success' => true,
             'data' => [
                 'user' => $user->only(['id', 'name', 'last_name', 'email', 'document_number', 'phone'])
+            ]
+        ]);
+    }
+
+    public function change_password(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'old_password' => 'required|string',
+            'new_password' => 'required|string'
+        ]);
+        if ($validator->fails()) return response()->json($validator->messages());
+
+        $user = Auth::user();
+
+        if(!Hash::check($request->old_password, auth()->user()->password)){
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'La contraseña anterior es incorrecta.'
+                ]
+            ]);
+        }
+
+
+        $user->password = Hash::make($request->new_password);
+        $user->save();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'Contraseña actualizada correctamente'
             ]
         ]);
     }
@@ -128,16 +162,16 @@ class ProfileController extends Controller
 
         if (!is_null($client)) {
             $desactivando = ClientUser::where('user_id', Auth::user()->id)
-                ->where('status', ClientUserStatus::Asignado)
+                ->where('status', Enums\ClientUserStatus::Asignado)
                 ->update([
-                    'status' => ClientUserStatus::Activo
+                    'status' => Enums\ClientUserStatus::Activo
                 ]);
 
 
             $activando = ClientUser::where('user_id', Auth::user()->id)
                 ->where('client_id', $client->id)
                 ->update([
-                    'status' => ClientUserStatus::Asignado
+                    'status' => Enums\ClientUserStatus::Asignado
                 ]);
 
             return response()->json([
@@ -194,24 +228,24 @@ class ProfileController extends Controller
 
     public function add_user(Request $request)
     {
-        $users = Client::find($request->client_id)->users;
+        $users = Client::find($request->client_id)->users()->attach($request->user_id, ['updated_by' => auth()->id(), 'created_at' => Carbon::now()]);
 
         return response()->json([
             'success' => true,
             'data' => [
-                'users' => $users
+                'users' => Client::find($request->client_id)->users
             ]
         ]);
     }
 
     public function delete_user(Request $request)
     {
-        $users = Client::find($request->client_id)->users;
+        $users = Client::find($request->client_id)->users()->detach($request->user_id);
 
         return response()->json([
             'success' => true,
             'data' => [
-                'users' => $users
+                'users' => Client::find($request->client_id)->users
             ]
         ]);
     }

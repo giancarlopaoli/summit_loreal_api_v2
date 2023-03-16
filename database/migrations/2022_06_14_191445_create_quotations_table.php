@@ -24,6 +24,7 @@ return new class extends Migration
             $table->decimal('comission_amount', 7, 2);
             $table->decimal('igv', 7, 2);
             $table->decimal('spread', 7, 2);
+            $table->foreignIdFor(\App\Models\SpecialExchangeRate::class)->nullable();
             $table->timestamps();
         });
     }

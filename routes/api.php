@@ -57,14 +57,15 @@ Route::middleware('encryptresponses')->group(function () {
 
         Route::prefix('profile')->group(function () {
             Route::GET('detail', [\App\Http\Controllers\Clients\ProfileController::class, 'profile_detail']);
-            Route::PUT('edit_user', [\App\Http\Controllers\Clients\ProfileController::class, 'edit_user']);
-            Route::PUT('edit_client', [\App\Http\Controllers\Clients\ProfileController::class, 'edit_client']);
-            Route::GET('clients_list', [\App\Http\Controllers\Clients\ProfileController::class, 'clients_list']);
+            Route::PUT('edit-user', [\App\Http\Controllers\Clients\ProfileController::class, 'edit_user']);
+            Route::PUT('edit-client', [\App\Http\Controllers\Clients\ProfileController::class, 'edit_client']);
+            Route::GET('clients-list', [\App\Http\Controllers\Clients\ProfileController::class, 'clients_list']);
             Route::GET('users', [\App\Http\Controllers\Clients\ProfileController::class, 'users_list']);
             Route::POST('change', [\App\Http\Controllers\Clients\ProfileController::class, 'change']);
             Route::GET('bank-accounts', [\App\Http\Controllers\Clients\ProfileController::class, 'bank_accounts']);
             Route::POST('users', [\App\Http\Controllers\Clients\ProfileController::class, 'add_user']);
             Route::DELETE('users', [\App\Http\Controllers\Clients\ProfileController::class, 'delete_user']);
+            Route::PUT('change-password', [\App\Http\Controllers\Clients\ProfileController::class, 'change_password']);
 
         });
 

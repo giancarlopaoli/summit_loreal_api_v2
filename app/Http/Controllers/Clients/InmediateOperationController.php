@@ -552,10 +552,10 @@ class InmediateOperationController extends Controller
             6 => 'domingo',
         ];
 
-        $dayStart  = Configuration::where('shortname', 'OPSSTARTDATE')->first()->value ;
+        $dayStart  = Configuration::where('shortname', 'OPSSTARTDATE')->first()->value;
         $dayEnd    = Configuration::where('shortname', 'OPSENDDATE')->first()->value;
-        $dayStartStr = $daysSpanish[$dayStart];
-        $dayEndStr = $daysSpanish[$dayEnd];
+        $dayStartStr = $daysSpanish[$dayStart-1];
+        $dayEndStr = $daysSpanish[$dayEnd-1];
         $hourStartStr = Configuration::where('shortname', 'OPSSTARTTIME')->first()->value;
         $hourEndStr   =  $client->customer_type == 'PN' ? Configuration::where('shortname', 'OPSENDTIMEPN')->first()->value : Configuration::where('shortname', 'OPSENDTIMEPJ')->first()->value;
         $hourStart = Carbon::createFromTimeString($hourStartStr);
@@ -563,12 +563,12 @@ class InmediateOperationController extends Controller
 
         $now = Carbon::now();
 
-        if($now->dayOfWeek <= $dayEnd && $dayStart < $now->dayOfWeek && $now->between($hourStart, $hourEnd)) {
+        if($now->dayOfWeek >= $dayStart && $now->dayOfWeek <= $dayEnd && $now->between($hourStart, $hourEnd)) {
             $res = true;
             $msg = "";
         } else {
             $res = false;
-            $msg = "$hourStartStr a $hourEndStr de $dayStartStr a $dayEndStr";
+            $msg = "$hourStartStr a $hourEndStr de $dayStartStr a $dayEndStr" . "  $now->dayOfWeek ";
         }
 
         return response()->json([
