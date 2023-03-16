@@ -116,7 +116,7 @@ class ProfileController extends Controller
         if ($validator->fails()) return response()->json($validator->messages());
 
         $client = Client::find($request->client_id)->first()->update(
-            $request->all()
+            $request->except(['client_id'])
         );
 
 
