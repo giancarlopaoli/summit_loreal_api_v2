@@ -115,7 +115,9 @@ class ProfileController extends Controller
         ]);
         if ($validator->fails()) return response()->json($validator->messages());
 
-        $client = Client::find($request->client_id)->first()->update(
+        $client = Client::find($request->client_id)->first();
+
+        $client->update(
             $request->except(['client_id'])
         );
 
@@ -123,7 +125,7 @@ class ProfileController extends Controller
         return response()->json([
             'success' => true,
             'data' => [
-                'client' => $client
+                'client' => $client->only(['name', 'last_name', 'mothers_name', 'document_type_id', 'document_number', 'email', 'address', 'phone', 'accountable_email', 'customer_type', 'document_type'])
             ]
         ]);
     }
