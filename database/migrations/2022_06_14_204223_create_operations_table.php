@@ -39,6 +39,7 @@ return new class extends Migration
             $table->decimal('detraction_percentage', 5,2 );
             $table->string('backup_status', 45)->nullable();
             $table->decimal('base_exchange_rate', 7, 6);
+            $table->foreignIdFor(\App\Models\OperationsAnalyst::class)->nullable()->constrained();
             $table->foreignIdFor(\App\Models\Coupon::class)->nullable()->constrained();
             $table->string('coupon_code', 45)->nullable();
             $table->string('coupon_type', 30)->nullable();

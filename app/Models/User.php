@@ -87,6 +87,10 @@ class User extends Authenticatable
         return $this->hasOne(Executive::class);
     }
 
+    public function operations_analyst() {
+        return $this->hasOne(OperationAnalyst::class);
+    }
+
     public function logs() {
         return $this->hasMany(AccessLog::class);
     }
