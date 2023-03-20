@@ -179,7 +179,7 @@ class ProfileController extends Controller
             return response()->json([
                 'success' => true,
                 'data' => [
-                    'client' => $client->only(['id', 'name', 'last_name', 'mothers_name', 'document_type_id', 'document_number', 'customer_type', 'created_at as registered_at'])
+                    'client' => $client->only(['id', 'name', 'last_name', 'mothers_name', 'document_type_id', 'document_number', 'customer_type', 'email','address','created_at as registered_at'])
                 ]
             ]);
 
