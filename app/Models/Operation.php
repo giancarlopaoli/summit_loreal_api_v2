@@ -58,4 +58,8 @@ class Operation extends Model
     public function history() {
         return $this->hasMany(OperationHistory::class);
     }
+
+    public function operations_analyst() {
+        return $this->belongsTo(OperationsAnalyst::class);
+    }
 }
