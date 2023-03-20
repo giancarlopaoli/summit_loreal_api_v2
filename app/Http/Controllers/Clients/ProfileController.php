@@ -7,11 +7,13 @@ use Illuminate\Http\Request;
 use App\Models\Client;
 use App\Models\User;
 use App\Models\ClientUser;
+use App\Models\Role;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Hash;
 use App\Enums;
 use Carbon\Carbon;
+use Illuminate\Support\Str;
 
 use Illuminate\Support\Facades\DB;
 
@@ -91,7 +93,6 @@ class ProfileController extends Controller
                 ]
             ]);
         }
-
 
         $user->password = Hash::make($request->new_password);
         $user->save();
@@ -229,19 +230,76 @@ class ProfileController extends Controller
     }
 
     public function add_user(Request $request)
-    {
-        $users = Client::find($request->client_id)->users()->attach($request->user_id, ['updated_by' => auth()->id(), 'created_at' => Carbon::now()]);
+    {  
+        $validator = Validator::make($request->all(), [
+            'client_id' => 'required|exists:clients,id',
+            'name' => 'required|string',
+            'last_name' => 'required|string',
+            'email' => 'required|string',
+            'document_type_id' => 'required|exists:document_types,id',
+            'document_number' => 'required|string',
+            'phone' => 'required|string',
+        ]);
+        if ($validator->fails()) return response()->json($validator->messages());
+
+        $user = User::where('email', $request->email)->get();
+
+        /*return response()->json([
+                'success' => false,
+                'errors' => $user->count()
+            ], 404);*/
+
+        if($user->count()){
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'El email ingresado ya se encuentra registrado'
+                ]
+            ]);
+        }
+
+        $password = Str::random(10);
+
+        $user = User::create([
+            'name' => $request->name,
+            'last_name' => $request->last_name,
+            'email' => $request->email,
+            'document_type_id' => $request->document_type_id,
+            'document_number' => $request->document_number,
+            'phone' => $request->phone,
+            'password' => Hash::make($password),
+            'role_id' => Role::where('name', 'cliente')->first()->id,
+            'status' => Enums\UserStatus::Activo,
+        ]);
+
+        // Envio correo creación usuario con contraseña
+
+        $user->assignRole('cliente');
+
+        $client = Client::find($request->client_id);
+
+        $client->users()->attach($user->id, ['status' => Enums\ClientUserStatus::Asignado,]);
 
         return response()->json([
             'success' => true,
             'data' => [
-                'users' => Client::find($request->client_id)->users
+                'users' => $client->users
             ]
         ]);
     }
 
     public function delete_user(Request $request)
     {
+
+        if($request->user_id == auth()->id()){
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'No puedes desasociar tu propio usuario. Por favor comunicate con tu ejecutivo para realizar esta acción.'
+                ]
+            ]);
+        }
+
         $users = Client::find($request->client_id)->users()->detach($request->user_id);
 
         return response()->json([
