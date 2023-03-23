@@ -77,6 +77,15 @@ Route::middleware('encryptresponses')->group(function () {
             Route::POST('create', [\App\Http\Controllers\Clients\InterbankOperationController::class, 'create_operation']);
         });
 
+        Route::prefix('negotiated-operation')->group(function () {
+            Route::GET('quote', [\App\Http\Controllers\Clients\NegotiatedOperationController::class, 'quote_operation']);
+            Route::POST('', [\App\Http\Controllers\Clients\NegotiatedOperationController::class, 'create_operation']);
+            Route::GET('', [\App\Http\Controllers\Clients\NegotiatedOperationController::class, 'operations_list']);
+            Route::GET('{operation}', [\App\Http\Controllers\Clients\NegotiatedOperationController::class, 'operation_detail']);
+            Route::POST('{operation}', [\App\Http\Controllers\Clients\NegotiatedOperationController::class, 'accept_operation']);
+
+        });
+
         Route::prefix('tables')->group(function () {
             Route::GET('currencies', [\App\Http\Controllers\Admin\MasterTablesController::class, 'currencies']);
             Route::GET('banks', [\App\Http\Controllers\Admin\MasterTablesController::class, 'banks']);
