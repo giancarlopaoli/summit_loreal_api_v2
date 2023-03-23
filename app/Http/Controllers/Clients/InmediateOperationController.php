@@ -701,7 +701,7 @@ class InmediateOperationController extends Controller
         $bank_accounts = [];
         $total_amount_bank = 0;
         $total_amount_scrow = 0;
-        $total_comission = round($request->comission_amount + $request->igv);
+        $total_comission = round($request->comission_amount + $request->igv,2);
 
         // Calculando detracción
         $detraction_percentage = Configuration::where('shortname', 'DETRACTION')->first()->value;
