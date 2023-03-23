@@ -70,7 +70,7 @@ class ProfileController extends Controller
         return response()->json([
             'success' => true,
             'data' => [
-                'user' => $user->only(['id', 'name', 'last_name', 'email', 'document_number', 'phone'])
+                'user' => $user->only(['id', 'name', 'last_name', 'email', 'document_number', 'phone','document_type','document_type_id'])
             ]
         ]);
     }
@@ -180,7 +180,7 @@ class ProfileController extends Controller
             return response()->json([
                 'success' => true,
                 'data' => [
-                    'client' => $client->only(['id', 'name', 'last_name', 'mothers_name', 'document_type_id', 'document_number', 'customer_type', 'email','address','created_at as registered_at'])
+                    'client' => $client->only(['id', 'name', 'last_name', 'mothers_name', 'document_type_id', 'document_number', 'customer_type', 'email','address','created_at as registered_at','document_type'])
                 ]
             ]);
 
