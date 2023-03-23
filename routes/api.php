@@ -83,7 +83,6 @@ Route::middleware('encryptresponses')->group(function () {
             Route::GET('', [\App\Http\Controllers\Clients\NegotiatedOperationController::class, 'operations_list']);
             Route::GET('{operation}', [\App\Http\Controllers\Clients\NegotiatedOperationController::class, 'operation_detail']);
             Route::POST('{operation}', [\App\Http\Controllers\Clients\NegotiatedOperationController::class, 'accept_operation']);
-
         });
 
         Route::prefix('tables')->group(function () {
@@ -91,6 +90,7 @@ Route::middleware('encryptresponses')->group(function () {
             Route::GET('banks', [\App\Http\Controllers\Admin\MasterTablesController::class, 'banks']);
             Route::GET('account-types', [\App\Http\Controllers\Admin\MasterTablesController::class, 'account_types']);
             Route::GET('escrow-accounts', [\App\Http\Controllers\Admin\MasterTablesController::class, 'escrow_accounts']);
+            Route::GET('document-types', [\App\Http\Controllers\Register\RegisterController::class, 'document_types']);
         });
 
         Route::prefix('datatec')->group(function () {
