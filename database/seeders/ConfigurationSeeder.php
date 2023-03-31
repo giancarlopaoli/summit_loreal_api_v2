@@ -116,5 +116,11 @@ class ConfigurationSeeder extends Seeder
             "description" => "Monto Máximo PJ Sin validación",
             "value" => 100000,
         ]);
+
+        Configuration::create([
+            "shortname" => "OPNEGSENDTIME",
+            "description" => "Hora fin operaciones negociadas",
+            "value" => "16:00",
+        ]);
     }
 }
