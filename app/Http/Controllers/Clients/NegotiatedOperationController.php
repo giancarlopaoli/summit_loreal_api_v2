@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Clients;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
 use App\Models\BankAccount;
 use App\Models\Client;
 use App\Models\Currency;
@@ -26,7 +27,7 @@ class NegotiatedOperationController extends Controller
         $validator = Validator::make($request->all(), [
             'client_id' => 'required|exists:clients,id',
             'amount' => 'required|numeric',
-            'type' => 'required|in:compra,venta',
+            'type' => 'required|in:Compra,Venta',
             'currency_id' => 'required|exists:currencies,id',
             'exchange_rate' => 'nullable|numeric'
         ]);
@@ -41,6 +42,18 @@ class NegotiatedOperationController extends Controller
         $client = Client::find($request->client_id);
         $client_id = $client->id;
 
+        // Validating available hours
+        $hours = NegotiatedOperationController::operation_hours()->getData();
+
+        if(!$hours->available){
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'El horario de atención es de ' . $hours->message
+                ]
+            ]);
+        }
+
         // Validating minimum amount
         $min_amount = NegotiatedOperationController::minimun_amount($request->client_id)->getData()[0];
         
@@ -49,18 +62,18 @@ class NegotiatedOperationController extends Controller
 
         // If currency == soles
         if($request->currency_id == 1){
-            $type = $request->type == 'compra' ? 'venta' : 'compra';
+            $type = $request->type == 'Compra' ? 'Venta' : 'Compra';
             $exchange_rate = ExchangeRate::latest()->first();
             $amount = $request->amount;
             //retreiving operation range
 
-            $exchange_rate = (isset($request->exchange_rate)) ? $request->exchange_rate : round(($exchange_rate->compra + $exchange_rate->venta)/2, 4);
+            $exchange_rate = (isset($request->exchange_rate)) ? $request->exchange_rate : round(($exchange_rate->Compra + $exchange_rate->Venta)/2, 4);
 
             $range = NegotiatedOperationController::calculate_range_pen($amount,$type,$exchange_rate,$market_closed)->getData()->range;
 
             $comission_spread = $range->comission_spread;
 
-            $final_exchange_rate = $type == 'compra' ? round($exchange_rate + $comission_spread/10000,4) : round($exchange_rate - $comission_spread/10000,4);
+            $final_exchange_rate = $type == 'Compra' ? round($exchange_rate + $comission_spread/10000,4) : round($exchange_rate - $comission_spread/10000,4);
 
             $amount = round($request->amount / $final_exchange_rate,2);
 
@@ -88,14 +101,14 @@ class NegotiatedOperationController extends Controller
 
             $conversion_amount = round($amount * $exchange_rate,2);
 
-            $total_comission = ($type == 'compra') ? round($request->amount - $conversion_amount, 2) : round($conversion_amount - $request->amount, 2);
+            $total_comission = ($type == 'Compra') ? round($request->amount - $conversion_amount, 2) : round($conversion_amount - $request->amount, 2);
 
             $igv_percetage = Configuration::where('shortname', 'IGV')->first()->value / 100;
             $comission_amount = round($total_comission / (1+$igv_percetage), 2);
 
             $igv = round($total_comission - $comission_amount,2);
 
-            $final_amount = $type == 'compra' ? $conversion_amount + $total_comission : $conversion_amount - $total_comission;
+            $final_amount = $type == 'Compra' ? $conversion_amount + $total_comission : $conversion_amount - $total_comission;
             $final_amount = round($final_amount, 2);
             
             $data = [
@@ -162,7 +175,7 @@ class NegotiatedOperationController extends Controller
         ############### Calculating Exchange Rate ##################
         $exchange_rate = ExchangeRate::latest()->first();
 
-        $exchange_rate = (isset($request->exchange_rate)) ? $request->exchange_rate : round(($exchange_rate->compra + $exchange_rate->venta)/2, 4);
+        $exchange_rate = (isset($request->exchange_rate)) ? $request->exchange_rate : round(($exchange_rate->Compra + $exchange_rate->Venta)/2, 4);
 
         $conversion_amount = round($amount * $exchange_rate, 2);
 
@@ -182,7 +195,7 @@ class NegotiatedOperationController extends Controller
 
         $igv = round($total_comission - $comission_amount,2);
 
-        $final_amount = $type == 'compra' ? $conversion_amount + $total_comission : $conversion_amount - $total_comission;
+        $final_amount = $type == 'Compra' ? $conversion_amount + $total_comission : $conversion_amount - $total_comission;
         $final_amount = round($final_amount, 2);
 
         $final_exchange_rate = round($final_amount/$amount, 4);
@@ -230,8 +243,44 @@ class NegotiatedOperationController extends Controller
         ]);
     }
 
+    public function operation_hours() {
+        $daysSpanish = [
+            0 => 'lunes',
+            1 => 'martes',
+            2 => 'miércoles',
+            3 => 'jueves',
+            4 => 'viernes',
+            5 => 'sábado',
+            6 => 'domingo',
+        ];
+
+        $dayStart  = Configuration::where('shortname', 'OPSSTARTDATE')->first()->value;
+        $dayEnd    = Configuration::where('shortname', 'OPSENDDATE')->first()->value;
+        $dayStartStr = $daysSpanish[$dayStart-1];
+        $dayEndStr = $daysSpanish[$dayEnd-1];
+        $hourStartStr = Configuration::where('shortname', 'OPSSTARTTIME')->first()->value;
+        $hourEndStr   = Configuration::where('shortname', 'OPNEGSENDTIME')->first()->value;
+        $hourStart = Carbon::createFromTimeString($hourStartStr);
+        $hourEnd   = Carbon::createFromTimeString($hourEndStr);
+
+        $now = Carbon::now();
+
+        if($now->dayOfWeek >= $dayStart && $now->dayOfWeek <= $dayEnd && $now->between($hourStart, $hourEnd)) {
+            $res = true;
+            $msg = "";
+        } else {
+            $res = false;
+            $msg = "$hourStartStr a $hourEndStr de $dayStartStr a $dayEndStr" . "  $now->dayOfWeek ";
+        }
+
+        return response()->json([
+            'available' => $res,
+            'message' => $msg
+        ]);
+    }
+
     public function calculate_range_pen($amount,$type,$exchange_rate,$market_closed) {
-        if($type == 'compra'){
+        if($type == 'Compra'){
 
             if($market_closed){
                 $range = Range::select("id","min_range","max_range","comission_close as comission_spread","spread_close as spread")->selectRaw("round(($amount/($exchange_rate+(comission_close)/10000)),2) as amount")->whereRaw("($amount/($exchange_rate+(comission_close)/10000) >= min_range and $amount/($exchange_rate+(comission_close)/10000) <= max_range)")->orderByDesc('id')->first();
@@ -275,11 +324,12 @@ class NegotiatedOperationController extends Controller
         $validator = Validator::make($request->all(), [
             'client_id' => 'required|exists:clients,id',
             'amount' => 'required',
-            'type' => 'required|in:compra,venta',
+            'type' => 'required|in:Compra,Venta',
             'exchange_rate' => 'required|numeric',
             'comission_spread' => 'required|numeric',
             'comission_amount' => 'required|numeric',
             'igv' => 'required|numeric',
+            'expired_time' => 'required|string',
             'bank_account_id' => 'required|exists:bank_accounts,id',
             'escrow_account_id' => 'required|exists:escrow_accounts,id'
         ]);
@@ -291,6 +341,32 @@ class NegotiatedOperationController extends Controller
             ]);
         }
         $client = Client::find($request->client_id);
+
+        // Validating available hours
+        $hours = NegotiatedOperationController::operation_hours()->getData();
+
+        if(!$hours->available){
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'El horario de atención es de ' . $hours->message
+                ]
+            ]);
+        }
+
+        // Validating expiring time
+        $hourEndStr = Configuration::where('shortname', 'OPNEGSENDTIME')->first()->value;
+        $max_time   = Carbon::createFromTimeString($hourEndStr);
+        $expired_time   = Carbon::createFromTimeString($request->expired_time);
+
+        if($expired_time > $max_time){
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'El horario de vigencia no puede ser mayor a ' . $hourEndStr 
+                ]
+            ]);
+        }
 
         // Validating minimum amount
         $min_amount = NegotiatedOperationController::minimun_amount($request->client_id)->getData()[0];
@@ -322,7 +398,7 @@ class NegotiatedOperationController extends Controller
 
         // Calculando detracción
         $total_comission = round($request->comission_amount + $request->igv,2);
-        $final_amount = ($request->type == 'compra') ? round(round($request->amount*$request->exchange_rate,2) + $total_comission,2) : round(round($request->amount*$request->exchange_rate,2)  - $total_comission,2);
+        $final_amount = ($request->type == 'Compra') ? round(round($request->amount*$request->exchange_rate,2) + $total_comission,2) : round(round($request->amount*$request->exchange_rate,2)  - $total_comission,2);
         $detraction_percentage = Configuration::where('shortname', 'DETRACTION')->first()->value;
         $detraction_amount = 0;
 
@@ -330,7 +406,7 @@ class NegotiatedOperationController extends Controller
             $detraction_amount = round( ($total_comission) * ($detraction_percentage / 100), 0);
         }
 
-        $ba_currency_id = ($request->type == 'compra') ? $dolares_id : $soles_id;
+        $ba_currency_id = ($request->type == 'Compra') ? $dolares_id : $soles_id;
 
         $bank_account = BankAccount::where('id', $request->bank_account_id)
             ->where('client_id',$request->client_id)
@@ -348,7 +424,7 @@ class NegotiatedOperationController extends Controller
             ]);
         }
 
-        $ea_currency_id = ($request->type == 'venta') ? $dolares_id : $soles_id;
+        $ea_currency_id = ($request->type == 'Venta') ? $dolares_id : $soles_id;
 
         //Validating Escrow Accounts
         $escrow_accounts = [];
@@ -386,17 +462,18 @@ class NegotiatedOperationController extends Controller
             'detraction_percentage' => $detraction_percentage,
             'operation_status_id' => $status_id,
             'operation_date' => Carbon::now(),
-            'post' => 0
+            'post' => 0,
+            'negotiated_expired_date' => $expired_time
         ]);
 
         $operation->bank_accounts()->attach($request->bank_account_id, [
-            'amount' => ($request->type == 'compra') ? $request->amount : $final_amount,
-            'comission_amount' => ($request->type == 'compra') ? 0 : $total_comission,
+            'amount' => ($request->type == 'Compra') ? $request->amount : $final_amount,
+            'comission_amount' => ($request->type == 'Compra') ? 0 : $total_comission,
         ]);
 
         $operation->escrow_accounts()->attach($request->escrow_account_id, [
-            'amount' => ($request->type == 'venta') ? $request->amount : $final_amount,
-            'comission_amount' => ($request->type == 'venta') ? 0 : $total_comission,
+            'amount' => ($request->type == 'Venta') ? $request->amount : $final_amount,
+            'comission_amount' => ($request->type == 'Venta') ? 0 : $total_comission,
         ]);
         
         OperationHistory::create(["operation_id" => $operation->id,"user_id" => auth()->id(),"action" => "Operación creada"]);
@@ -413,26 +490,28 @@ class NegotiatedOperationController extends Controller
     public function operations_list(Request $request) {
         $validator = Validator::make($request->all(), [
             'client_id' => 'required|exists:clients,id',
-            'type' => 'nullable|in:compra,venta'
+            'type' => 'nullable|in:Compra,Venta'
         ]);
 
-        if($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'errors' => $validator->errors()->toJson()
-            ]);
-        }
+        if($validator->fails()) {return response()->json(['success' => false,'errors' => $validator->errors()->toJson()]);}
+        
         $client = Client::find($request->client_id);
 
-        $operations = Operation::select('id','code','class','type','amount','currency_id','exchange_rate','comission_amount','igv','operation_date','comission_spread')
-            ->selectRaw("(round(amount * exchange_rate, 2)) as conversion_amount")
+        $operations = Operation::select('id','code','class','type','amount','currency_id','comission_amount','igv','operation_date','comission_spread')
+            ->selectRaw("round(exchange_rate,4) as exchange_rate, (round(amount * exchange_rate, 2)) as conversion_amount")
+            ->selectRaw("TIMESTAMPDIFF(MINUTE,now(),negotiated_expired_date) as minutes_left")
+            ->selectRaw("if(type = 'Compra', 'Venta', 'Compra') as type")
+            ->selectRaw("(1) as deposit_bank")
             ->where('class', Enums\OperationClass::Programada)
+            ->whereIn('type', ['Compra','Venta'])
             ->where('operation_status_id', OperationStatus::where('name', 'Disponible')->first()->id)
             ->where('client_id','<>', $request->client_id)
-            ->with('bank_accounts:id,bank_id','bank_accounts.bank:id,name,shortname')
-            ->with('escrow_accounts:id,bank_id','escrow_accounts.bank:id,name,shortname');
+            ->whereRaw("(TIMESTAMPDIFF(MINUTE,now(),negotiated_expired_date) > 0)")
+            ->with('currency:id,name:sign');
 
-        if(isset($request->type)) $operations = $operations->where('type', $request->type);
+        $type = $request->type == 'Compra' ? 'Venta' : 'Compra';
+
+        if(isset($request->type)) $operations = $operations->where('type', $type);
 
         return response()->json([
             'success' => true,
@@ -451,6 +530,20 @@ class NegotiatedOperationController extends Controller
             ]);
         }
 
+        ####### Validating operation is not previusly matched ##########
+        $operation_match = DB::table('operation_matches')
+            ->where("operation_id", $operation->id)
+            ->get();
+
+        if($operation_match->count() > 0) {
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'La oferta seleccionada ya no se encuentra disponible'
+                ]
+            ]);
+        }
+
         $operation->load(
             'currency:id,name,sign',
             'status:id,name',
@@ -461,20 +554,197 @@ class NegotiatedOperationController extends Controller
             'escrow_accounts.currency:id,name,sign',
             'escrow_accounts.bank:id,name,shortname,image'
         );
+        
+        $type = $operation->type == 'Compra' ? 'Venta' : 'Compra';
+
+        $market_close_time = Configuration::where('shortname', 'MARKETCLOSE')->first()->value;
+        $market_closed = Carbon::now() >= Carbon::create($market_close_time);
+
+        $range = NegotiatedOperationController::calculate_range_pen($operation->amount,$type,$operation->exchange_rate,$market_closed)->getData()->range;
+        $comission_spread = $range->comission_spread;
+
+        $final_exchange_rate = $type == 'Compra' ? round($operation->exchange_rate + $comission_spread/10000,4) : round($operation->exchange_rate - $comission_spread/10000,4);
+
+        $conversion_amount = round($operation->amount * $operation->exchange_rate,2);
+
+        $total_comission = round($operation->amount*($comission_spread/10000), 2);
+
+        $igv_percetage = Configuration::where('shortname', 'IGV')->first()->value / 100;
+        $comission_amount = round($total_comission / (1+$igv_percetage), 2);
+
+        $igv = round($total_comission - $comission_amount,2);
+
+        $final_amount = $type == 'Compra' ? $conversion_amount + $total_comission : $conversion_amount - $total_comission;
+        $final_amount = round($final_amount, 2);
+
+        $data = [
+            'amount' => $operation->amount,
+            'type' => $type,
+            'spread' => 0,
+            'exchange_rate' => round($operation->exchange_rate,4),
+            'conversion_amount' => $conversion_amount,
+            'comission_spread' => $comission_spread,
+            'comission_amount' => $comission_amount,
+            'igv' => $igv,
+            'final_mount' => $final_amount,
+            'final_exchange_rate' => $final_exchange_rate,
+            'bank_account_bank_id' => $operation->escrow_accounts[0]->bank_id,
+            'escrow_account_bank_id' => $operation->bank_accounts[0]->bank_id
+        ];
 
         return response()->json([
             'success' => true,
             'data' => [
-                'operation' => $operation->only(['id','code','class','type','amount','currency_id','exchange_rate','comission_amount','igv','operation_date','comission_spread','currency','bank_accounts','escrow_accounts'])
+                'operation' => $data
             ]
         ]);
     }
 
     public function accept_operation(Request $request, Operation $operation) {
+        $validator = Validator::make($request->all(), [
+            'client_id' => 'required|exists:clients,id',
+            'comission_spread' => 'required|numeric',
+            'comission_amount' => 'required|numeric',
+            'igv' => 'required|numeric',
+            'bank_account_id' => 'required|exists:bank_accounts,id',
+            'escrow_account_id' => 'required|exists:escrow_accounts,id'
+        ]);
 
-        return response()->json([
-            'success' => true,
-            'data' => $data
+        if($validator->fails()) {return response()->json(['success' => false,'errors' => $validator->errors()->toJson()]);}
+
+        $operation->load('bank_accounts','escrow_accounts');
+
+        ####### Validating operation is not previusly matched ##########
+        $operation_match = DB::table('operation_matches')
+            ->where("operation_id", $operation->id)
+            ->get();
+
+        if($operation_match->count() > 0) {
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'La oferta seleccionada ya no se encuentra disponible'
+                ]
+            ]);
+        }
+
+        if($operation->client_id == $request->client_id) {
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'No puedes tomar una oferta propia'
+                ]
+            ]);
+        }
+
+        //Validating Bank Accounts
+        $soles_id = Currency::where('name', 'Soles')->first()->id;
+        $dolares_id = Currency::where('name', 'Dolares')->first()->id;
+
+        // Calculando detracción
+        $total_comission = round($request->comission_amount + $request->igv,2);
+        $final_amount = ($operation->type == 'Venta') ? round(round($operation->amount*$operation->exchange_rate,2) + $total_comission,2) : round(round($operation->amount*$operation->exchange_rate,2)  - $total_comission,2);
+        $detraction_percentage = Configuration::where('shortname', 'DETRACTION')->first()->value;
+        $detraction_amount = 0;
+
+        if($total_comission >= 700) {
+            $detraction_amount = round( ($total_comission) * ($detraction_percentage / 100), 0);
+        }
+
+        $ba_currency_id = ($operation->type == 'Venta') ? $dolares_id : $soles_id;
+
+        $bank_account = BankAccount::where('id', $request->bank_account_id)
+            ->where('client_id',$request->client_id)
+            ->where('currency_id',$ba_currency_id)
+            ->where('bank_account_status_id', Enums\BankAccountStatus::Activo)
+            ->first();
+
+        // Validating that the bank account is valid.
+        if(is_null($bank_account)) {
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'Error en la cuenta bancaria id = ' . $request->bank_account_id
+                ]
+            ]);
+        }
+
+        $ea_currency_id = ($operation->type == 'Compra') ? $dolares_id : $soles_id;
+
+        //Validating Escrow Accounts
+        $escrow_accounts = [];
+        $escrow_account = EscrowAccount::where('id', $request->escrow_account_id)
+            ->where('active', true)
+            ->where('currency_id',$ea_currency_id)
+            ->first();
+
+        if(is_null($escrow_account)) {
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'La cuenta fideicomiso ' . $request->escrow_account_id . ' no es valida'
+                ]
+            ]);
+        }
+
+        ######### Creating new operation #############
+
+        $op_code = Carbon::now()->format('YmdHisv') . rand(0,9);
+        $status_id = OperationStatus::where('name', 'Pendiente envio fondos')->first()->id;
+
+        $matched_operation = Operation::create([
+            'code' => $op_code,
+            'class' => Enums\OperationClass::Programada,
+            'type' => ($operation->type == "Compra") ? 'Venta' : ($operation->type == "Venta" ? 'Compra' : 'Interbancaria'),
+            'client_id' => $request->client_id,
+            'user_id' => auth()->id(),
+            'amount' => $operation->amount,
+            'currency_id' => $operation->currency_id,
+            'exchange_rate' => $operation->exchange_rate,
+            'comission_spread' => $request->comission_spread,
+            'comission_amount' => $request->comission_amount,
+            'igv' => $request->igv,
+            'detraction_amount' => $detraction_amount,
+            'detraction_percentage' => $detraction_percentage,
+            'spread' => 0,
+            'operation_status_id' => $status_id,
+            'operation_date' => Carbon::now(),
+            'post' => false
+        ]);
+
+        if($matched_operation){
+            try {
+                
+                $matched_operation->bank_accounts()->attach($request->bank_account_id, [
+                    'amount' => ($operation->type == 'Venta') ? $operation->amount : $final_amount,
+                    'comission_amount' => ($operation->type == 'Venta') ? 0 : $total_comission,
+                ]);
+
+                $matched_operation->escrow_accounts()->attach($request->escrow_account_id, [
+                    'amount' => ($operation->type == 'Compra') ? $operation->amount : $final_amount,
+                    'comission_amount' => ($operation->type == 'Compra') ? 0 : $total_comission,
+                ]);
+
+            } catch (\Exception $e) {
+                logger('ERROR: archivo adjunto: match_operation_vendor@InmediateOperationController', ["error" => $e]);
+
+                // Envio de correo de notificación de error
+            }
+
+            $operations_matches = $operation->matches()->attach($matched_operation->id, ['created_at' => Carbon::now()]);
+
+            $operation->operation_status_id = $status_id;
+            $operation->save();
+        }
+
+        // Enviar correo instrucciones
+        OperationHistory::create(["operation_id" => $operation->id,"user_id" => auth()->id(),"action" => "Operación emparejada"]);
+
+         return response()->json([
+            "operacion" => $matched_operation,
+            "data" => [
+                'Oferta tomada exitosamente.'
+            ]
         ]);
     }
 

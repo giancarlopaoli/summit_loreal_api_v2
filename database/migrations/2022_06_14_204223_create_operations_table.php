@@ -49,6 +49,7 @@ return new class extends Migration
             $table->timestamp('deposit_date')->nullable();
             $table->timestamp('sign_date')->nullable();
             $table->timestamp('mail_instructions')->nullable();
+            $table->timestamp('negotiated_expired_date')->nullable();
             $table->timestamp('canceled_at')->nullable();
             $table->timestamps();
         });

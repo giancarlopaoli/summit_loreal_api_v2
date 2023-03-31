@@ -51,5 +51,9 @@ class OperationStatusSeeder extends Seeder
             'name' => 'Cancelado'
         ]);
 
+        OperationStatus::create([
+            'name' => 'Expirado'
+        ]);
+
     }
 }
