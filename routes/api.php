@@ -78,6 +78,7 @@ Route::middleware('encryptresponses')->group(function () {
         });
 
         Route::prefix('negotiated-operation')->group(function () {
+            Route::GET('max-hour', [\App\Http\Controllers\Clients\NegotiatedOperationController::class, 'max_hour']);
             Route::GET('quote', [\App\Http\Controllers\Clients\NegotiatedOperationController::class, 'quote_operation']);
             Route::POST('', [\App\Http\Controllers\Clients\NegotiatedOperationController::class, 'create_operation']);
             Route::GET('', [\App\Http\Controllers\Clients\NegotiatedOperationController::class, 'operations_list']);
