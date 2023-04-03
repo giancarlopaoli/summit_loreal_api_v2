@@ -67,7 +67,7 @@ class NegotiatedOperationController extends Controller
             $amount = $request->amount;
             //retreiving operation range
 
-            $exchange_rate = (isset($request->exchange_rate)) ? $request->exchange_rate : round(($exchange_rate->Compra + $exchange_rate->Venta)/2, 4);
+            $exchange_rate = (isset($request->exchange_rate)) ? $request->exchange_rate : round(($exchange_rate->compra + $exchange_rate->venta)/2, 4);
 
             $range = NegotiatedOperationController::calculate_range_pen($amount,$type,$exchange_rate,$market_closed)->getData()->range;
 
@@ -175,7 +175,7 @@ class NegotiatedOperationController extends Controller
         ############### Calculating Exchange Rate ##################
         $exchange_rate = ExchangeRate::latest()->first();
 
-        $exchange_rate = (isset($request->exchange_rate)) ? $request->exchange_rate : round(($exchange_rate->Compra + $exchange_rate->Venta)/2, 4);
+        $exchange_rate = (isset($request->exchange_rate)) ? $request->exchange_rate : round(($exchange_rate->compra + $exchange_rate->venta)/2, 4);
 
         $conversion_amount = round($amount * $exchange_rate, 2);
 
@@ -230,6 +230,18 @@ class NegotiatedOperationController extends Controller
         return response()->json([
             'success' => true,
             'data' => $data
+        ]);
+    }
+
+    public function max_hour(Request $request) {
+
+        $max_hour = Configuration::where('shortname', 'OPNEGSENDTIME')->first()->value;
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'max_hour' => $max_hour
+            ]
         ]);
     }
 
@@ -501,7 +513,8 @@ class NegotiatedOperationController extends Controller
             ->selectRaw("round(exchange_rate,4) as exchange_rate, (round(amount * exchange_rate, 2)) as conversion_amount")
             ->selectRaw("TIMESTAMPDIFF(MINUTE,now(),negotiated_expired_date) as minutes_left")
             ->selectRaw("if(type = 'Compra', 'Venta', 'Compra') as type")
-            ->selectRaw("(1) as deposit_bank")
+            ->selectRaw("(select ba.bank_id from bank_account_operation bao inner join bank_accounts ba on bao.bank_account_id = ba.id where bao.operation_id = operations.id) as deposit_bank")
+            ->selectRaw("(select sa.bank_id from escrow_account_operation eao inner join escrow_accounts sa on eao.escrow_account_id = sa.id where eao.operation_id = operations.id) as receiving_bank")
             ->where('class', Enums\OperationClass::Programada)
             ->whereIn('type', ['Compra','Venta'])
             ->where('operation_status_id', OperationStatus::where('name', 'Disponible')->first()->id)
@@ -520,6 +533,11 @@ class NegotiatedOperationController extends Controller
     }
 
     public function operation_detail(Request $request, Operation $operation) {
+        $validator = Validator::make($request->all(), [
+            'client_id' => 'required|exists:clients,id'
+        ]);
+        if($validator->fails()) {return response()->json(['success' => false,'errors' => $validator->errors()->toJson()]);}
+
 
         if($operation->class != Enums\OperationClass::Programada) {
             return response()->json([
@@ -577,6 +595,10 @@ class NegotiatedOperationController extends Controller
         $final_amount = $type == 'Compra' ? $conversion_amount + $total_comission : $conversion_amount - $total_comission;
         $final_amount = round($final_amount, 2);
 
+        $bank_accounts = BankAccount::where('client_id', $request->client_id)
+            ->where('bank_id', $operation->escrow_accounts[0]->bank_id)
+            ->where('currency_id', $operation->escrow_accounts[0]->currency_id)->get()->count();
+
         $data = [
             'amount' => $operation->amount,
             'type' => $type,
@@ -586,10 +608,11 @@ class NegotiatedOperationController extends Controller
             'comission_spread' => $comission_spread,
             'comission_amount' => $comission_amount,
             'igv' => $igv,
-            'final_mount' => $final_amount,
+            'final_amount' => $final_amount,
             'final_exchange_rate' => $final_exchange_rate,
             'bank_account_bank_id' => $operation->escrow_accounts[0]->bank_id,
-            'escrow_account_bank_id' => $operation->bank_accounts[0]->bank_id
+            'escrow_account_bank_id' => $operation->bank_accounts[0]->bank_id,
+            'flag_has_account_deposit' => ($bank_accounts > 0 ) ? true : false
         ];
 
         return response()->json([
