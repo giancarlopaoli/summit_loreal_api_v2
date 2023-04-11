@@ -613,14 +613,18 @@ class NegotiatedOperationController extends Controller
             'bank_account_bank_id' => $operation->escrow_accounts[0]->bank_id,
             'bank_account_currency_id' => $operation->escrow_accounts[0]->currency_id,
             'escrow_account_bank_id' => $operation->bank_accounts[0]->bank_id,
-            'escrow_account_currency_id' => $operation->bank_accounts[0]->currency_id,
             'flag_has_account_deposit' => ($bank_accounts > 0 ) ? true : false
         ];
+
+        $escrow_account = EscrowAccount::where('bank_id',$operation->bank_accounts[0]->bank_id)->where('currency_id', $operation->bank_accounts[0]->currency_id)->with('bank:id,name,shortname,image','currency:id,name,sign')->first();
+
+        if(is_null($escrow_account)) $escrow_account = EscrowAccount::where('bank_id', 1)->where('currency_id', $operation->bank_accounts[0]->currency_id)->with('bank:id,name,shortname,image','currency:id,name,sign')->first();
 
         return response()->json([
             'success' => true,
             'data' => [
-                'operation' => $data
+                'operation' => $data,
+                'escrow_bank' => $escrow_account->only(['id','bank_id','account_number','cci_number','currency_id','bank','currency'])
             ]
         ]);
     }
