@@ -43,7 +43,7 @@ class AuthController extends Controller
                 'user_id' => $user->id
             ]);
 
-            $assigned_client = ($user->assigned_client->count() == 0) ? null : $user->assigned_client[0]->only(['id','name','last_name','mothers_name','document_type_id', 'document_number', 'customer_type', "created_at", 'document_type', 'email']);
+            $assigned_client = ($user->assigned_client->count() == 0) ? null : $user->assigned_client[0]->only(['id','name','last_name','mothers_name','document_type_id', 'document_number', 'customer_type', "created_at", 'document_type', 'email', 'address']);
 
             return response()->json([
                 'success' => true,
