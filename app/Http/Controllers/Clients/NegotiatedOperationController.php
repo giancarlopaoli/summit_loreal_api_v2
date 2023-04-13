@@ -27,7 +27,7 @@ class NegotiatedOperationController extends Controller
         $validator = Validator::make($request->all(), [
             'client_id' => 'required|exists:clients,id',
             'amount' => 'required|numeric',
-            'type' => 'required|in:Compra,Venta',
+            'type' => 'required|in:compra,venta',
             'currency_id' => 'required|exists:currencies,id',
             'exchange_rate' => 'nullable|numeric'
         ]);
@@ -62,7 +62,7 @@ class NegotiatedOperationController extends Controller
 
         // If currency == soles
         if($request->currency_id == 1){
-            $type = $request->type == 'Compra' ? 'Venta' : 'Compra';
+            $type = $request->type == 'compra' ? 'venta' : 'compra';
             $exchange_rate = ExchangeRate::latest()->first();
             $amount = $request->amount;
             //retreiving operation range
@@ -73,7 +73,7 @@ class NegotiatedOperationController extends Controller
 
             $comission_spread = $range->comission_spread;
 
-            $final_exchange_rate = $type == 'Compra' ? round($exchange_rate + $comission_spread/10000,4) : round($exchange_rate - $comission_spread/10000,4);
+            $final_exchange_rate = $type == 'compra' ? round($exchange_rate + $comission_spread/10000,4) : round($exchange_rate - $comission_spread/10000,4);
 
             $amount = round($request->amount / $final_exchange_rate,2);
 
@@ -101,14 +101,14 @@ class NegotiatedOperationController extends Controller
 
             $conversion_amount = round($amount * $exchange_rate,2);
 
-            $total_comission = ($type == 'Compra') ? round($request->amount - $conversion_amount, 2) : round($conversion_amount - $request->amount, 2);
+            $total_comission = ($type == 'compra') ? round($request->amount - $conversion_amount, 2) : round($conversion_amount - $request->amount, 2);
 
             $igv_percetage = Configuration::where('shortname', 'IGV')->first()->value / 100;
             $comission_amount = round($total_comission / (1+$igv_percetage), 2);
 
             $igv = round($total_comission - $comission_amount,2);
 
-            $final_amount = $type == 'Compra' ? $conversion_amount + $total_comission : $conversion_amount - $total_comission;
+            $final_amount = $type == 'compra' ? $conversion_amount + $total_comission : $conversion_amount - $total_comission;
             $final_amount = round($final_amount, 2);
             
             $data = [
@@ -195,7 +195,7 @@ class NegotiatedOperationController extends Controller
 
         $igv = round($total_comission - $comission_amount,2);
 
-        $final_amount = $type == 'Compra' ? $conversion_amount + $total_comission : $conversion_amount - $total_comission;
+        $final_amount = $type == 'compra' ? $conversion_amount + $total_comission : $conversion_amount - $total_comission;
         $final_amount = round($final_amount, 2);
 
         $final_exchange_rate = round($final_amount/$amount, 4);
@@ -292,7 +292,7 @@ class NegotiatedOperationController extends Controller
     }
 
     public function calculate_range_pen($amount,$type,$exchange_rate,$market_closed) {
-        if($type == 'Compra'){
+        if($type == 'compra'){
 
             if($market_closed){
                 $range = Range::select("id","min_range","max_range","comission_close as comission_spread","spread_close as spread")->selectRaw("round(($amount/($exchange_rate+(comission_close)/10000)),2) as amount")->whereRaw("($amount/($exchange_rate+(comission_close)/10000) >= min_range and $amount/($exchange_rate+(comission_close)/10000) <= max_range)")->orderByDesc('id')->first();
@@ -336,7 +336,7 @@ class NegotiatedOperationController extends Controller
         $validator = Validator::make($request->all(), [
             'client_id' => 'required|exists:clients,id',
             'amount' => 'required',
-            'type' => 'required|in:Compra,Venta',
+            'type' => 'required|in:compra,venta',
             'exchange_rate' => 'required|numeric',
             'comission_spread' => 'required|numeric',
             'comission_amount' => 'required|numeric',
@@ -410,7 +410,7 @@ class NegotiatedOperationController extends Controller
 
         // Calculando detracción
         $total_comission = round($request->comission_amount + $request->igv,2);
-        $final_amount = ($request->type == 'Compra') ? round(round($request->amount*$request->exchange_rate,2) + $total_comission,2) : round(round($request->amount*$request->exchange_rate,2)  - $total_comission,2);
+        $final_amount = ($request->type == 'compra') ? round(round($request->amount*$request->exchange_rate,2) + $total_comission,2) : round(round($request->amount*$request->exchange_rate,2)  - $total_comission,2);
         $detraction_percentage = Configuration::where('shortname', 'DETRACTION')->first()->value;
         $detraction_amount = 0;
 
@@ -418,7 +418,7 @@ class NegotiatedOperationController extends Controller
             $detraction_amount = round( ($total_comission) * ($detraction_percentage / 100), 0);
         }
 
-        $ba_currency_id = ($request->type == 'Compra') ? $dolares_id : $soles_id;
+        $ba_currency_id = ($request->type == 'compra') ? $dolares_id : $soles_id;
 
         $bank_account = BankAccount::where('id', $request->bank_account_id)
             ->where('client_id',$request->client_id)
@@ -436,7 +436,7 @@ class NegotiatedOperationController extends Controller
             ]);
         }
 
-        $ea_currency_id = ($request->type == 'Venta') ? $dolares_id : $soles_id;
+        $ea_currency_id = ($request->type == 'venta') ? $dolares_id : $soles_id;
 
         //Validating Escrow Accounts
         $escrow_accounts = [];
@@ -479,13 +479,13 @@ class NegotiatedOperationController extends Controller
         ]);
 
         $operation->bank_accounts()->attach($request->bank_account_id, [
-            'amount' => ($request->type == 'Compra') ? $request->amount : $final_amount,
-            'comission_amount' => ($request->type == 'Compra') ? 0 : $total_comission,
+            'amount' => ($request->type == 'compra') ? $request->amount : $final_amount,
+            'comission_amount' => ($request->type == 'compra') ? 0 : $total_comission,
         ]);
 
         $operation->escrow_accounts()->attach($request->escrow_account_id, [
-            'amount' => ($request->type == 'Venta') ? $request->amount : $final_amount,
-            'comission_amount' => ($request->type == 'Venta') ? 0 : $total_comission,
+            'amount' => ($request->type == 'venta') ? $request->amount : $final_amount,
+            'comission_amount' => ($request->type == 'venta') ? 0 : $total_comission,
         ]);
         
         OperationHistory::create(["operation_id" => $operation->id,"user_id" => auth()->id(),"action" => "Operación creada"]);
@@ -502,7 +502,7 @@ class NegotiatedOperationController extends Controller
     public function operations_list(Request $request) {
         $validator = Validator::make($request->all(), [
             'client_id' => 'required|exists:clients,id',
-            'type' => 'nullable|in:Compra,Venta'
+            'type' => 'nullable|in:compra,venta'
         ]);
 
         if($validator->fails()) {return response()->json(['success' => false,'errors' => $validator->errors()->toJson()]);}
@@ -522,7 +522,7 @@ class NegotiatedOperationController extends Controller
             ->whereRaw("(TIMESTAMPDIFF(MINUTE,now(),negotiated_expired_date) > 0)")
             ->with('currency:id,name:sign');
 
-        $type = $request->type == 'Compra' ? 'Venta' : 'Compra';
+        $type = $request->type == 'compra' ? 'Venta' : 'Compra';
 
         if(isset($request->type)) $operations = $operations->where('type', $type);
 
@@ -611,20 +611,14 @@ class NegotiatedOperationController extends Controller
             'final_amount' => $final_amount,
             'final_exchange_rate' => $final_exchange_rate,
             'bank_account_bank_id' => $operation->escrow_accounts[0]->bank_id,
-            'bank_account_currency_id' => $operation->escrow_accounts[0]->currency_id,
             'escrow_account_bank_id' => $operation->bank_accounts[0]->bank_id,
             'flag_has_account_deposit' => ($bank_accounts > 0 ) ? true : false
         ];
 
-        $escrow_account = EscrowAccount::where('bank_id',$operation->bank_accounts[0]->bank_id)->where('currency_id', $operation->bank_accounts[0]->currency_id)->with('bank:id,name,shortname,image','currency:id,name,sign')->first();
-
-        if(is_null($escrow_account)) $escrow_account = EscrowAccount::where('bank_id', 1)->where('currency_id', $operation->bank_accounts[0]->currency_id)->with('bank:id,name,shortname,image','currency:id,name,sign')->first();
-
         return response()->json([
             'success' => true,
             'data' => [
-                'operation' => $data,
-                'escrow_bank' => $escrow_account->only(['id','bank_id','account_number','cci_number','currency_id','bank','currency'])
+                'operation' => $data
             ]
         ]);
     }
