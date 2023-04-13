@@ -134,9 +134,12 @@ Route::middleware('encryptresponses')->group(function () {
     ###### Módulo de Administración #####
     #####################################
 
+    Route::GET('test_pdf', [\App\Http\Controllers\Admin\AdminController::class, 'test_pdf']);
+    
     Route::POST('admin/login', [\App\Http\Controllers\Admin\AdminController::class, 'login']);
 
     Route::prefix('admin')->middleware('auth:sanctum')->group(function () {
+
 
         ########## General admin  #############
         Route::GET('has-permission', [\App\Http\Controllers\Admin\AdminController::class, 'has_permission']);

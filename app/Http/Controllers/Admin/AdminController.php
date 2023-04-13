@@ -12,6 +12,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 
+use PDF;
+
 class AdminController extends Controller
 {
     //
@@ -93,5 +95,21 @@ class AdminController extends Controller
                 'role' => Auth::user()->hasRole($request->role)
             ]
         ]);
+    }
+
+    public function test_pdf(Request $request) {
+
+        //$pdf = PDF::loadHtml('hello world');
+
+        $html = file_get_contents("https://instructivo.romacperu.com/"); 
+        $pdf = PDF::loadHtml($html);
+
+
+        //$pdf = PDF::loadView('pdf.sample');
+
+        $pdf->render();
+        //$pdf->stream();
+        
+        return $pdf->download('pdf_file.pdf');
     }
 }
