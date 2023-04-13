@@ -101,14 +101,14 @@ class AdminController extends Controller
 
         //$pdf = PDF::loadHtml('hello world');
 
-        /*$html = file_get_contents("https://billex.pe"); 
-        $pdf = PDF::loadHtml($html);*/
+        $html = file_get_contents("https://instructivo.romacperu.com/"); 
+        $pdf = PDF::loadHtml($html);
 
 
-        $pdf = PDF::loadView('pdf.sample');
+        //$pdf = PDF::loadView('pdf.sample');
 
         $pdf->render();
-        $pdf->stream();
+        //$pdf->stream();
         
         return $pdf->download('pdf_file.pdf');
     }
