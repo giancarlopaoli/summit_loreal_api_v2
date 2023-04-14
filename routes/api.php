@@ -86,6 +86,10 @@ Route::middleware('encryptresponses')->group(function () {
             Route::POST('{operation}', [\App\Http\Controllers\Clients\NegotiatedOperationController::class, 'accept_operation']);
         });
 
+        Route::prefix('indicators')->group(function () {
+            Route::GET('', [\App\Http\Controllers\Clients\IndicatorsController::class, 'indicators']);
+        });
+
         Route::prefix('tables')->group(function () {
             Route::GET('currencies', [\App\Http\Controllers\Admin\MasterTablesController::class, 'currencies']);
             Route::GET('banks', [\App\Http\Controllers\Admin\MasterTablesController::class, 'banks']);

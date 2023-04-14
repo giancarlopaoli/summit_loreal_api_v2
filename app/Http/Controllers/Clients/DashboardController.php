@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Clients;
 
 use App\Http\Controllers\Controller;
 use App\Models\Client;
+use App\Models\Configuration;
 use App\Models\ExchangeRate;
 use App\Models\Range;
 use App\Models\OperationStatus;
@@ -34,7 +35,9 @@ class DashboardController extends Controller
 
         $latest_operations->load(['status:id,name', 'currency:id,name,sign']);
 
-        $total_amount = $client->operations()->whereIn("operation_status_id", OperationStatus::wherein('name', ['Facturado', 'Finalizado sin factura'])->get()->pluck('id'))->selectRaw('SUM(amount) as total, sum(round(amount*250/10000,2)) as save')->first();
+        $pips_save = Configuration::where("shortname", "PIPSAVE")->first()->value;
+
+        $total_amount = $client->operations()->whereIn("operation_status_id", OperationStatus::wherein('name', ['Facturado', 'Finalizado sin factura', 'Pendiente facturar'])->get()->pluck('id'))->selectRaw("SUM(amount) as total, sum(round(amount*$pips_save/10000,2)) as save")->first();
 
         return response()->json([
             'success' => true,

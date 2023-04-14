@@ -122,5 +122,11 @@ class ConfigurationSeeder extends Seeder
             "description" => "Hora fin operaciones negociadas",
             "value" => "16:00",
         ]);
+
+        Configuration::create([
+            "shortname" => "PIPSAVE",
+            "description" => "Puntos de ahorro clientes",
+            "value" => "250",
+        ]);
     }
 }
