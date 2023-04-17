@@ -90,6 +90,12 @@ Route::middleware('encryptresponses')->group(function () {
             Route::GET('', [\App\Http\Controllers\Clients\IndicatorsController::class, 'indicators']);
         });
 
+        Route::prefix('alerts')->group(function () {
+            Route::GET('', [\App\Http\Controllers\Clients\AlertsController::class, 'alerts_list']);
+            Route::POST('', [\App\Http\Controllers\Clients\AlertsController::class, 'new_alert']);
+            Route::DELETE('{exchange_rate_alert}', [\App\Http\Controllers\Clients\AlertsController::class, 'delete_alert']);
+        });
+
         Route::prefix('tables')->group(function () {
             Route::GET('currencies', [\App\Http\Controllers\Admin\MasterTablesController::class, 'currencies']);
             Route::GET('banks', [\App\Http\Controllers\Admin\MasterTablesController::class, 'banks']);
