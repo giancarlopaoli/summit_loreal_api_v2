@@ -34,7 +34,6 @@ class DatatecController extends Controller
         // Haciendo broadcast a los proveedores de liquidez
         DatatecExchangeRate::dispatch();
 
-
         $auth_users = User::get_authenticated_users();
         foreach ($auth_users as $user) {
             NewExchangeRate::dispatch($user);

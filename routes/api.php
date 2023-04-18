@@ -33,6 +33,7 @@ Route::middleware('encryptresponses')->group(function () {
             Route::GET('indicators', [\App\Http\Controllers\Clients\DashboardController::class, 'get_indicators']);
             Route::GET('graphs', [\App\Http\Controllers\Clients\DashboardController::class, 'graphs']);
             Route::GET('exchange-rate', [\App\Http\Controllers\Clients\DashboardController::class, 'exchange_rate']);
+            Route::GET('negotiated-operations', [\App\Http\Controllers\Clients\DashboardController::class, 'number_negotiated_operations']);
         });
 
         Route::prefix('immediate-operation')->group(function () {
