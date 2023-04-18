@@ -112,7 +112,11 @@ class User extends Authenticatable
         return $query->where('last_active', '>=', Carbon::now()->subMinutes($interval)->toDateTimeString());
     }
 
+    public function alerts() {
+        return $this->hasMany(ExchangeRateAlert::class);
+    }
+
     public static function get_authenticated_users() {
-        return self::activityOlderThan(5)->get();
+        return self::activityOlderThan(15)->get();
     }
 }
