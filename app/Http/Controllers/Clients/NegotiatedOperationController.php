@@ -19,6 +19,8 @@ use App\Models\Quotation;
 use App\Models\Range;
 use Carbon\Carbon;
 use App\Enums;
+use App\Events\NegotiatedOperations;
+use App\Events\DatatecExchangeRate;
 
 class NegotiatedOperationController extends Controller
 {
@@ -489,6 +491,9 @@ class NegotiatedOperationController extends Controller
         ]);
         
         OperationHistory::create(["operation_id" => $operation->id,"user_id" => auth()->id(),"action" => "Operación creada"]);
+
+        // notificando sobre nueva operacion negociada
+        NegotiatedOperations::dispatch();
 
         // Enviar Correo()
 

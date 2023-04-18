@@ -6,8 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\Client;
 use App\Models\Configuration;
 use App\Models\ExchangeRate;
-use App\Models\Range;
+use App\Models\Operation;
 use App\Models\OperationStatus;
+use App\Models\Range;
+use App\Enums;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
@@ -44,7 +46,7 @@ class DashboardController extends Controller
             'data' => [
                 'operations' => $latest_operations,
                 'total_operated_amount' => (float) $total_amount->total,
-                'total_saved' => (float) $total_amount->save,
+                'total_saved' => (float) $total_amount->save
             ]
         ]);
     }
@@ -118,8 +120,6 @@ class DashboardController extends Controller
     }
 
     
-    
-
     public function exchange_rate(Request $request) {
         $min_amount = Range::minimun_amount();
         $exchange_rate = ExchangeRate::latest()->first()->for_user(Auth::user(), $min_amount);
@@ -128,6 +128,34 @@ class DashboardController extends Controller
             'success' => true,
             'data' => [
                 'exchange_rate' => $exchange_rate
+            ]
+        ]);
+    }
+
+    public function number_negotiated_operations(Request $request) {
+        $client = Client::find($request->client_id);
+
+        if($client == null) {
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'El id de client enviado no existe'
+                ]
+            ]);
+        }
+
+        $alerts = Operation::selectRaw("count(*) as cuenta")
+            ->where('class', Enums\OperationClass::Programada)
+            ->whereIn('type', ['Compra','Venta'])
+            ->where('operation_status_id', OperationStatus::where('name', 'Disponible')->first()->id)
+            ->where('client_id','<>', $request->client_id)
+            ->whereRaw("(TIMESTAMPDIFF(MINUTE,now(),negotiated_expired_date) > 0)")
+            ->first();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'alerts' => $alerts->cuenta
             ]
         ]);
     }
