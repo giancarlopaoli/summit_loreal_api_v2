@@ -45,6 +45,7 @@ Route::middleware('encryptresponses')->group(function () {
         Route::prefix('my-operations')->group(function () {
             Route::GET('list', [\App\Http\Controllers\Clients\MyOperationsController::class, 'list_my_operations']);
             Route::GET('{operation}', [\App\Http\Controllers\Clients\MyOperationsController::class, 'operation_detail']);
+            Route::POST('upload-voucher', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'upload_voucher']);
         });
 
         Route::prefix('my-bank-accounts')->group(function () {

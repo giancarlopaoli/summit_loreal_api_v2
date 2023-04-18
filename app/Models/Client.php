@@ -110,8 +110,4 @@ class Client extends Model
     public function documents() {
         return $this->hasMany(Document::class);
     }
-
-    public function alerts() {
-        return $this->hasMany(ExchangeRateAlert::class);
-    }
 }
