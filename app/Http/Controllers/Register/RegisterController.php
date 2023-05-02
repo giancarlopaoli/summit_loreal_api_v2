@@ -26,7 +26,7 @@ use App\Models\Currency;
 use App\Models\Lead;
 use App\Models\LeadStatus;
 use App\Models\Executive;
-use App\Models\ExecutiveComission;
+use App\Models\ExecutivesComission;
 use App\Models\Role;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Http;
@@ -37,6 +37,7 @@ use App\Enums;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\Welcome;
+use App\Mail\NewClientNotification;
 
 class RegisterController extends Controller
 {
@@ -722,12 +723,19 @@ class RegisterController extends Controller
                             ]);
                     }
 
+                    return response()->json([
+                    'success' => true,
+                        'executive' => [ 
+                            $executive
+                        ]
+                    ]);
+
                     // Si es freelance, se agrega ejecutivo en tabla executives_comission
                     if(isset($executive)){
                         if($executive->type == 'Freelance'){
 
                             // agregando en tabla de cliente
-                            $executive_comission = ExecutiveComission::create([
+                            $executive_comission = ExecutivesComission::create([
                                 'executive_id' => $executive->id,
                                 'client_id' => $client_id,
                                 'comission' => $executive->comission
@@ -746,7 +754,7 @@ class RegisterController extends Controller
                     $mensaje = 'El registro se realizó de manera exitosa.';
                 }
 
-                //$rpta_mail = Mail::send(new InfoRegistro($request->client['nombres']." ".$request->client['apellido_paterno']." ".$request->client['apellido_materno'], $request->cliente, $mensaje, $client_id));
+                $rpta_mail = Mail::send(new NewClientNotification($mensaje, $client_id));
 
                 return response()->json([
                     'success' => true,
@@ -765,7 +773,7 @@ class RegisterController extends Controller
 
             //Enviando confirmación de Registro al equipo Billex
             $mensaje = "El registro no se realizó o se realizó de manera parcial.";
-            //$rpta_mail = Mail::send(new InfoRegistro($request->client['nombres']." ".$request->client['apellido_paterno']." ".$request->client['apellido_materno'], $request->cliente, $mensaje,$client_id));
+            $rpta_mail = Mail::send(new NewClientNotification($mensaje, $client_id));
 
             return response()->json([
                 'success' => true,
@@ -879,7 +887,7 @@ class RegisterController extends Controller
             $mensaje = 'El registro se realizó de manera exitosa.';
             
             if ($client) {
-                $client_id = $client->id;            
+                $client_id = $client->id;
 
                 // Insertando representantes Legales
                 try {
@@ -953,9 +961,6 @@ class RegisterController extends Controller
                         
 
                 if(!is_null($user)){
-
-                    $user_id = $user->id;
-
                     if ($user) {
                         // Creando Cliente/Usuario
                         try {
@@ -980,12 +985,13 @@ class RegisterController extends Controller
                             'document_number' => $request->client['document_number'],
                             'phone' => $request->client['phone'],
                             'password' => Hash::make($request->client['password']),
-                            'status' => Enums\UserStatus::Activo,
+                            'role_id' => Role::where('name', 'cliente')->first()->id,
+                            'status' => Enums\UserStatus::Activo
                         ]);
 
                         $user->assignRole('cliente');
 
-                        $client->users()->attach($user->id, ['status' => Enums\ClientUserStatus::Activo,]);
+                        $client->users()->attach($user->id, ['status' => Enums\ClientUserStatus::Asignado,]);
 
                     } catch (\Exception $e) {
                         logger('Register Person Usuario: RegisterController@register_person', ["error" => $e]);
@@ -1009,7 +1015,7 @@ class RegisterController extends Controller
                         if($executive->type == 'Freelance'){
 
                             // agregando en tabla de cliente
-                            $executive_comission = ExecutiveComission::create([
+                            $executive_comission = ExecutivesComission::create([
                                 'executive_id' => $executive->id,
                                 'client_id' => $client_id,
                                 'comission' => $executive->comission
@@ -1027,7 +1033,8 @@ class RegisterController extends Controller
                 else{
                     $mensaje = 'El registro se realizó de manera exitosa.';
                 }
-                //$rpta_mail = Mail::send(new InfoRegistro($request->client['razon_social'], $request->cliente, $mensaje,$client_id));
+                
+                $rpta_mail = Mail::send(new NewClientNotification($mensaje, $client_id));
 
                 return response()->json([
                     'success' => true,
@@ -1041,12 +1048,11 @@ class RegisterController extends Controller
 
         } catch (\Exception $e) {
             // Registrando el el log los datos ingresados
-            logger('ERROR: Registro Empresa: RegisterController@register-company', ["error" => $e]);
-            
+            logger('ERROR: Registro Empresa: RegisterController@register-company', ["error" => $e]);    
 
             //Enviando confirmación de Registro al equipo Billex
             $mensaje = "El registro no se realizó o se realizó de manera parcial.";
-            //$rpta_mail = Mail::send(new InfoRegistro($request->client['razon_social'], $request->cliente, $mensaje, $client_id));
+            $rpta_mail = Mail::send(new NewClientNotification($mensaje, $client_id));
 
             return response()->json([
                 'success' => true,
