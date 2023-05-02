@@ -4,8 +4,11 @@
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Billex</title>
-  <style>
-    @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap");
+  <link href='https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap' rel='stylesheet' type='text/css'>
+  <style type="text/css">
+    html {
+      margin: 50pt 15pt;
+    }
 
     body {
       font-family: "Poppins",sans-serif;
@@ -13,7 +16,7 @@
       line-height: 1.5;
       margin: 0;
       padding: 0;
-      color: #333333;
+      color: #333333
     }
     * {
       font-family: "Poppins", sans-serif;
@@ -24,7 +27,7 @@
     }
 
     .check {
-      padding: 40px 0;
+      padding: 40px 0 20px 0;
     }
 
     .check h1 {
@@ -50,7 +53,7 @@
     .information h2 {
       font-size: 20px;
       font-weight: 600;
-      margin-bottom: 8px;
+      margin-bottom: 0px;
       color: #2C54DC;
     }
     
@@ -62,12 +65,11 @@
     }
 
     .information_details {
-      width: 80%;
-      display: flex;
-      margin: 20px auto;
+      width: 90%;
+      margin: 0px auto;
       background-color: #F6F9FF;
       border-radius: 10px;
-      padding: 20px 50px;
+      padding: 20px 30px;
       border-radius: 10px;
     }
 
@@ -75,13 +77,12 @@
       font-size: 12px;
       font-weight: 400;
       margin: 0;
-      display: flex;
       align-items: center;
     }
 
     .information_details h4 {
       font-weight: 600;
-      margin-bottom: 5px;
+      margin-bottom: 0px;
     }
 
     .information_details span {
@@ -106,7 +107,7 @@
     }
 
     .information_details_item span {
-      margin-left: 10px;
+      margin-left: 5px;
       margin-top: 2.5px;
       font-weight: 400;
     }
@@ -123,7 +124,7 @@
     }
 
     .details_line_deposit {
-      width: 168%;
+      width: 100%;
       height: 1px;
       border-bottom: 1px dashed #D4E1FD;
       margin: 15px 0;
@@ -191,12 +192,11 @@
     }
 
     .deposit_document {
-      width: 154%;
+      width: 100%;
       background-color: #F6F9FF;
-      display: flex;
       border-radius: 8px;
       padding: 10px 20px;
-      margin: 15px 0;
+      margin: 30px 0;
     }
 
     .deposit_document_item {
@@ -257,7 +257,7 @@
     <tr>
       <td align="center" class="check">
         <img src="https://bill-upload.s3.amazonaws.com/static/img/check.png" alt="">
-        <h1>Tu operación fue registrada con éxito.</h1>
+        <h1 style="font-family: 'Poppins';">Tu operación fue registrada con éxito.</h1>
       </td>
     </tr>
     <tr>
@@ -267,25 +267,43 @@
     </tr>
     <tr>
       <td align="center" class="information">
-        <h2>¡Hola! Paola</h2>
+        <h2>¡Hola! {{$username}}</h2>
         <p>Aquí te compartimos el detalle de tu operación realizada</p>
       </td>
     </tr>
-    <tr style="width: 650px;">
+    <tr>
+      <td style="height: 20px;"></td>
+    </tr>
+    <tr style="width: 650px; display: table-row;">
       <td class="information_details">
-        <div class="information_details_item">
-          <h4>Código de operación:</h4>
-          <p>210614-1437157838</p>
-        </div>
-        <div class="information_details_item_line"></div>
-        <div class="information_details_item">
-          <h4>Fecha de operación</h4>
-          <p> <img src="https://bill-upload.s3.amazonaws.com/static/img/calendar.png" alt=""> <span>14 de Noviembre del 2022</span></p>
-        </div>
-        <div class="information_details_item hour">
-          <h4> <img src="https://bill-upload.s3.amazonaws.com/static/img/clock.png" alt="">  <span>09:42:15</span></h4>
-        </div>
+        <table>
+          <tr>
+            <th>
+              <div class="information_details_item">
+                <h4>Código de operación:</h4>
+                <p>{{$code}}</p>
+              </div>
+            </th>
+            <th>
+              <div class="information_details_item_line"></div>
+            </th>
+            <th>
+              <div class="information_details_item" style="text-align: left;">
+                <h4>Fecha de operación</h4>
+                <p style="text-align: center;"> <img src="https://bill-upload.s3.amazonaws.com/static/img/calendar.png" alt="" style="display: inline-block; vertical-align: middle;"> <span style="display: inline-block; vertical-align: middle;">{{$operation_date}}</span></p>
+              </div>
+            </th>
+            <th>
+              <div class="information_details_item hour" style="text-align: left; margin-left: 10px; width: 100%;">
+                <p style="text-align: center;"> <img src="https://bill-upload.s3.amazonaws.com/static/img/clock.png" alt="" style="display: inline-block; vertical-align: middle;"> <span style="display: inline-block; vertical-align: middle;">{{$operation_time}}</span></p>
+              </div>
+            </th>
+          </tr>
+        </table>
       </td>
+    </tr>
+    <tr>
+      <td style="height: 30px;"></td>
     </tr>
     <tr>
       <td>
@@ -302,10 +320,10 @@
           </tr>
           <tr class="details_item">
             <td class="details_item_left">
-              <p>Vas a comprar</p>
+              <p>Vas a {{$type}}</p>
             </td>
             <td class="details_item_right">
-              <p>$ 1,200.00</p>
+              <p>{{$currency_sign}} {{$amount}}</p>
             </td>
           </tr>
           <tr>
@@ -318,15 +336,15 @@
               <p>Tipo de cambio</p>
             </td>
             <td class="details_item_right">
-              <p>3.973</p>
+              <p>{{$exchange_rate}}</p>
             </td>
           </tr>
           <tr class="details_item">
             <td class="details_item_left">
-              <p>Comisión (0.30%)</p>
+              <p>Comisión</p>
             </td>
             <td class="details_item_right">
-              <p>S/ 11.88</p>
+              <p>S/ {{$comission_amount}}</p>
             </td>
           </tr>
           <tr class="details_item">
@@ -334,7 +352,7 @@
               <p>IGV</p>
             </td>
             <td class="details_item_right">
-              <p>S/ 2.14</p>
+              <p>S/ {{$igv}}</p>
             </td>
           </tr>
           <tr>
@@ -347,7 +365,7 @@
               <p>Tipo de cambio final</p>
             </td>
             <td class="details_item_right">
-              <p>3.973</p>
+              <p>{{$final_exchange_rate}}</p>
             </td>
           </tr>
           <tr>
@@ -357,10 +375,10 @@
           </tr>
           <tr class="details_item">
             <td class="details_item_left deposit">
-              <p>Debes depositar</p>
+              <p>Vas a {{$pen_type}}</p>
             </td>
             <td class="details_item_right total">
-              <p>S/ 4.767.00</p>
+              <p>S/ {{$pen_amount}}</p>
             </td>
           </tr>
         </table>
@@ -373,17 +391,17 @@
     </tr>
     <tr>
       <td>
-        <table style="width: 100%; margin: 20px auto; padding: 30px;" class="table_accounts">
+        <table style="width: 100%; margin-top: 20px; margin-bottom: 0px; padding: 30px;" class="table_accounts">
           <tr class="details_item">
             <td class="details_item_left">
               <p style="font-size: 18px; font-weight: 600; color: #001489;">Depositarás</p>
             </td>
             <td class="details_item_right">
-              <p style="font-size: 18px; color: #2C54DC;">S/ 4,767.00</p>
+              <p style="font-size: 18px; color: #2C54DC;">{{$deposit_sign}} {{$deposit_amount}}</p>
             </td>
           </tr>
           <tr>
-            <td>
+            <td colspan="2">
               <div class="details_line_deposit"></div>
             </td>
             <td></td>
@@ -394,61 +412,40 @@
             </td>
           </tr>
           <tr>
-            <td>
+            <td colspan="2">
               <div class="details_line_deposit"></div>
             </td>
           </tr>
+
+          @foreach ($escrow_accounts as $escrow_account)
+
           <tr class="details_item account">
-            <td class="details_item_left account">
-              <img src="https://bill-upload.s3.amazonaws.com/static/img/bcp.png" alt="">
-              <div class="account_info">
-                <p>BCP</p>
-                <p>0011-0436-01-00002729</p>
+            <td class="details_item_left account" style="display: inline-block;" colspan="1">
+              <img style="display: inline-block;vertical-align: middle;" src="{{ $escrow_account->bank->image }}" alt="">
+              <div class="account_info" style="display: inline-block;vertical-align: middle;">
+                <p>{{ $escrow_account->bank->shortname }}</p>
+                <p>{{ $escrow_account->account_number }}</p>
               </div>
             </td>
-            <td class="details_item_right">
-              <p style="width: 200px">S/ 114,767.00</p>
+            <td class="details_item_right" colspan="1">
+              <p style="width: 200px; display: inline-block; text-align: right;"> {{ $escrow_account->currency->sign }} {{ number_format($escrow_account->pivot->amount)}} </p>
             </td>
           </tr>
+
+
+
+          @endforeach
+
+
           <tr>
-            <td class="account_space"></td>
-          </tr>
-          <tr class="details_item account">
-            <td class="details_item_left account">
-              <img src="https://bill-upload.s3.amazonaws.com/static/img/bcp.png" alt="">
-              <div class="account_info">
-                <p>Scotiabank</p>
-                <p>0011-0436-01-00002729</p>
-              </div>
-            </td>
-            <td class="details_item_right">
-              <p style="width: 200px">S/ 2,000.00</p>
-            </td>
-          </tr>
-          <tr>
-            <td>
+            <td colspan="2">
               <div class="details_line_deposit"></div>
             </td>
           </tr>
-          <tr class="details_item account">
-            <td style="font-size: 12px;" colspan="2">
-              En caso requiera el número de documento asociado a esta cuenta, deberá consignar lo siguiente:
-            </td>
-          </tr>
-          <tr>
-            <td colspan="2" class="deposit_document">
-              <div class="deposit_document_item">
-                <p>Tipo de Documento (*): <span>DNI</span></p>
-              </div>
-              <div class="deposit_document_line"></div>
-              <div class="deposit_document_item">
-                <p>Número de Documento: <span>20552103816</span></p>
-              </div>
-            </td>
-          </tr>
+          <tr><th style="height: 10px;"></th></tr>
           <tr>
             <td colspan="2" class="deposit_warning">
-              <p><span>RECUERDA: </span>No se aceptarán depósitos en efectivo o con cheques.</p>
+              <p><span>RECUERDA: </span>NO se aceptarán depósitos EN EFECTIVO.</p>
             </td>
           </tr>
         </table>
@@ -456,58 +453,50 @@
     </tr>
     <tr>
       <td>
-        <table style="width: 100%; margin: 20px auto; padding: 30px;" class="table_accounts">
+        <table style="width: 100%; margin: 0 auto; padding: 30px;" class="table_accounts">
           <tr class="details_item">
             <td class="details_item_left">
               <p style="font-size: 18px; font-weight: 600; color: #001489;">Recibirás</p>
             </td>
             <td class="details_item_right">
-              <p style="font-size: 18px; color: #2C54DC;">$ 1,200.00</p>
+              <p style="font-size: 18px; color: #2C54DC;">{{$receive_sign}} {{$receive_amount}}</p>
             </td>
           </tr>
           <tr>
-            <td>
-              <div class="details_line_deposit" style="width: 142%;"></div>
+            <td colspan="2">
+              <div class="details_line_deposit"></div>
             </td>
             <td></td>
           </tr>
           <tr class="details_item">
             <td class="details_item_left" colspan="2">
-              <p><b>Cliente:</b> Paola Burga Torres</p>
+              <p><b>Cliente:</b> {{ $client_name }} </p>
             </td>
           </tr>
           <tr>
-            <td>
-              <div class="details_line_deposit" style="width: 142%;"></div>
+            <td colspan="2">
+              <div class="details_line_deposit"></div>
             </td>
           </tr>
+
+          @foreach ($bank_accounts as $bank_account)
+
           <tr class="details_item account">
-            <td class="details_item_left account">
-              <img src="https://bill-upload.s3.amazonaws.com/static/img/bcp.png" alt="">
-              <div class="account_info">
-                <p>BCP</p>
-                <p>0011-0436-01-00002729</p>
+            <td class="details_item_left account" style="display: inline-block;" colspan="1">
+              <img style="display: inline-block;vertical-align: middle;" src="{{ $bank_account->bank->image }}" alt="">
+              <div class="account_info" style="display: inline-block;vertical-align: middle;">
+                <p>{{ $bank_account->bank->shortname }}</p>
+                <p>{{ $bank_account->account_number }}</p>
               </div>
             </td>
-            <td class="details_item_right">
-              <p>$ 800.00</p>
+            <td class="details_item_right" colspan="1">
+              <p style="width: 200px; display: inline-block; text-align: right;"> {{ $bank_account->currency->sign }} {{ number_format($bank_account->pivot->amount)}} </p>
             </td>
           </tr>
-          <tr>
-            <td class="account_space"></td>
-          </tr>
-          <tr class="details_item account">
-            <td class="details_item_left account">
-              <img src="https://bill-upload.s3.amazonaws.com/static/img/bcp.png" alt="">
-              <div class="account_info">
-                <p>Scotiabank</p>
-                <p>0011-0436-01-00002729</p>
-              </div>
-            </td>
-            <td class="details_item_right">
-              <p>$ 400.00</p>
-            </td>
-          </tr>
+
+
+
+          @endforeach
         </table>
       </td>
     </tr>
@@ -516,21 +505,19 @@
         <div class="line-full"></div>
       </td>
     </tr>
-    <tr>
-      <td class="advice">
-        <p>(*) El tipo de documento se consigna como DNI por requerimiento del banco por ser una cuenta 
-          de Fideicomiso.</p>
-      </td>
-    </tr>
-    <tr>
-      <td class="information_details" style="width: 70%;">
-        <div class="information_details_item" style="display: flex;">
-          <img src="https://bill-upload.s3.amazonaws.com/static/img/check-circle.png" alt="">
-          <div style="margin-left: 15px;">
-            <h4 style="font-size: 16px; color:#001489; margin: 0;">¡Gracias por confiar en nosotros!</h4>
-            <p>Gracias por usar Billex.</p>
-          </div>
-        </div>
+    <tr style="margin: 0 auto;">
+      <td class="information_details" style="display: inline-block;">
+        <table style="width: 100%;">
+          <tr style="width: 100%;">
+            <td style="text-align: center; width: 100%; display: inline-block; justify-content: center; margin: 0 auto;">
+              <img src="https://bill-upload.s3.amazonaws.com/static/img/check-circle.png" alt="" style="display: inline-block; vertical-align: middle;">
+              <div style="margin-left: 10px; text-align: center; display: inline-block; vertical-align: middle;">
+                <h4 style="font-size: 16px; color:#001489; margin: 0; display: inline-block; vertical-align: middle;">¡Gracias por confiar en nosotros!</h4>
+                <p style="text-align: left;">Gracias por usar Billex.</p>
+              </div>
+            </td>
+          </tr>
+        </table>
       </td>
     </tr>
 
@@ -546,16 +533,15 @@
     </tr>
     <tr>
       <td align="center" style="background-color: #001489; padding: 30px 0 0 0;">
-        <a href=""><img src="https://bill-upload.s3.amazonaws.com/static/img/social1.png" alt="" style="margin: 0 15px;"></a>
-        <a href=""><img src="https://bill-upload.s3.amazonaws.com/static/img/social2.png" alt="" style="margin: 0 15px;"></a>
-        <a href=""><img src="https://bill-upload.s3.amazonaws.com/static/img/social3.png" alt="" style="margin: 0 15px;"></a>
+        <a href=""><img src="https://bill-upload.s3.amazonaws.com/static/img/social1.png" alt="" style="margin: 0 15px;" width="30"></a>
+        <a href=""><img src="https://bill-upload.s3.amazonaws.com/static/img/social2.png" alt="" style="margin: 0 15px;" width="30"></a>
+        <a href=""><img src="https://bill-upload.s3.amazonaws.com/static/img/social3.png" alt="" style="margin: 0 15px;" width="30"></a>
       </td>
     </tr>
     <tr>
-      <td style="background-color: #001489; width: 100%; height: 100%; padding: 0 0 10px 0;">
+      <td style="background-color: #001489; width: 100%; padding: 0 0 10px 0;">
         <p style="font-size: 11px;
-        margin: 0; text-align: center; color: #fff; margin: 20px 0;">Este mensaje es solo informativo, favor de no responder a este correo. <br>
-          ©2022 Billex. Todos los derechos reservados</p>
+        margin: 0; text-align: center; color: #fff; margin: 20px 0;">©2022 Billex. Todos los derechos reservados</p>
         <p style="font-size: 11px;
         margin: 0; text-align: center; color: #fff; margin: 20px 0; margin-top: 30px;">Si tienes alguna duda ó pregunta, encuentra la información en nuestra <a href=""style="color: #fff;">página de ayuda</a>  o <a href=""style="color: #fff;">contáctenos</a></p>
       </td>

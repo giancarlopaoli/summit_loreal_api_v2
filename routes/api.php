@@ -22,7 +22,6 @@ Route::middleware('encryptresponses')->group(function () {
 
     Route::POST('login', [\App\Http\Controllers\Clients\AuthController::class, 'login']);
     Route::POST('logout', [\App\Http\Controllers\Clients\AuthController::class, 'logout']);
-    Route::POST('testing', [\App\Http\Controllers\Controller::class, 'envejecimiento']);
 
     Route::middleware('auth:sanctum','role:cliente','validate_client_user')->group(function () {
         Route::GET('/me', function(Request $request) {
@@ -47,6 +46,7 @@ Route::middleware('encryptresponses')->group(function () {
             Route::GET('list', [\App\Http\Controllers\Clients\MyOperationsController::class, 'list_my_operations']);
             Route::GET('{operation}', [\App\Http\Controllers\Clients\MyOperationsController::class, 'operation_detail']);
             Route::POST('upload-voucher', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'upload_voucher']);
+            Route::GET('instruction/{operation}', [\App\Http\Controllers\Admin\AdminController::class, 'instruction']);
         });
 
         Route::prefix('my-bank-accounts')->group(function () {
@@ -146,7 +146,7 @@ Route::middleware('encryptresponses')->group(function () {
     ###### Módulo de Administración #####
     #####################################
 
-    Route::GET('test_pdf', [\App\Http\Controllers\Admin\AdminController::class, 'test_pdf']);
+    Route::GET('instruction/{operation}', [\App\Http\Controllers\Admin\AdminController::class, 'instruction']);
     
     Route::POST('admin/login', [\App\Http\Controllers\Admin\AdminController::class, 'login']);
 

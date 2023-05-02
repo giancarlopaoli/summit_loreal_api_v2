@@ -34,8 +34,8 @@ class Welcome extends Mailable
         return $this
             ->subject('Bienvenido a Billex')
             ->to($this->email)
-            //->bcc(env('MAIL_OPS'))
-            //->bcc(env('MAIL_TI'))
+            ->bcc(env('MAIL_OPS'))
+            ->bcc(env('MAIL_TI'))
             ->view('welcome')
             //->attach(storage_path('Manual_Billex.pdf'))
             //->attach(storage_path('Contrato de Afiliación a Plataforma BILLEX.pdf'))

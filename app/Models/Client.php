@@ -51,7 +51,7 @@ class Client extends Model
         return $this->belongsTo(Association::class);
     }
 
-    public function executives() {
+    public function executive() {
         return $this->belongsTo(Executive::class);
     }
 
