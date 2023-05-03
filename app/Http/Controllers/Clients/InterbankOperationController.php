@@ -237,7 +237,7 @@ class InterbankOperationController extends Controller
 
             $comission_spread = round(10000*$total_comission / $request->amount,2);
 
-            $spread = round($request->financial_expenses / $request->amount,6)*10000;
+            $spread = round(round($request->financial_expenses / $request->amount,6)*10000,2);
 
             // Calculando detracción
             $detraction_percentage = Configuration::where('shortname', 'DETRACTION')->first()->value;

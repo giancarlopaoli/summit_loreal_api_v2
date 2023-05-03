@@ -7,7 +7,7 @@
   <link href='https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap' rel='stylesheet' type='text/css'>
   <style type="text/css">
     html {
-      margin: 50pt 15pt;
+      margin: 20pt 15pt;
     }
 
     body {
@@ -39,7 +39,7 @@
     .line {
       width: 90%;
       height: 1px;
-      margin: 0 auto;
+      margin: 0;
       border-bottom: 1px solid #E6E8F4;
     }
 
@@ -322,7 +322,7 @@
           </tr>
           <tr class="details_item">
             <td class="details_item_left">
-              <p>Vas a {{$type}}</p>
+              <p>Vas a transferir</p>
             </td>
             <td class="details_item_right">
               <p>{{$currency_sign}} {{$amount}}</p>
@@ -333,9 +333,19 @@
               <div class="details_line"></div>
             </td>
           </tr>
+
+
           <tr class="details_item">
             <td class="details_item_left">
-              <p>Tipo de cambio</p>
+              <p>Importe a recibir</p>
+            </td>
+            <td class="details_item_right">
+              <p>{{$currency_sign}} {{$amount}}</p>
+            </td>
+          </tr>
+          <tr class="details_item">
+            <td class="details_item_left">
+              <p>Tipo de cambio Compra</p>
             </td>
             <td class="details_item_right">
               <p>{{$exchange_rate}}</p>
@@ -343,10 +353,26 @@
           </tr>
           <tr class="details_item">
             <td class="details_item_left">
+              <p>Tipo de cambio Venta</p>
+            </td>
+            <td class="details_item_right">
+              <p>{{$exchange_rate_selling}}</p>
+            </td>
+          </tr>
+          <tr class="details_item">
+            <td class="details_item_left">
+              <p>Contravalor</p>
+            </td>
+            <td class="details_item_right">
+              <p>{{$currency_sign}} {{$counter_value}}</p>
+            </td>
+          </tr>
+          <tr class="details_item">
+            <td class="details_item_left">
               <p>Comisión</p>
             </td>
             <td class="details_item_right">
-              <p>S/ {{$comission_amount}}</p>
+              <p>{{$currency_sign}} {{$comission_amount}}</p>
             </td>
           </tr>
           <tr class="details_item">
@@ -354,20 +380,7 @@
               <p>IGV</p>
             </td>
             <td class="details_item_right">
-              <p>S/ {{$igv}}</p>
-            </td>
-          </tr>
-          <tr>
-            <td>
-              <div class="details_line"></div>
-            </td>
-          </tr>
-          <tr class="details_item">
-            <td class="details_item_left">
-              <p>Tipo de cambio final</p>
-            </td>
-            <td class="details_item_right">
-              <p>{{$final_exchange_rate}}</p>
+              <p>{{$currency_sign}} {{$igv}}</p>
             </td>
           </tr>
           <tr>
@@ -377,10 +390,10 @@
           </tr>
           <tr class="details_item">
             <td class="details_item_left deposit">
-              <p>Vas a {{$pen_type}}</p>
+              <p>Vas a depositar</p>
             </td>
             <td class="details_item_right total">
-              <p>S/ {{$pen_amount}}</p>
+              <p>{{$currency_sign}} {{$deposit_amount}}</p>
             </td>
           </tr>
         </table>
@@ -393,13 +406,13 @@
     </tr>
     <tr>
       <td>
-        <table style="width: 100%; margin-top: 10px; margin-bottom: 0px; padding: 20px;" class="table_accounts">
+        <table style="width: 100%; margin-top: 20px; margin-bottom: 0px; padding: 20px;" class="table_accounts">
           <tr class="details_item">
             <td class="details_item_left">
               <p style="font-size: 18px; font-weight: 600; color: #001489;">Depositarás</p>
             </td>
             <td class="details_item_right">
-              <p style="font-size: 18px; color: #2C54DC;">{{$deposit_sign}} {{$deposit_amount}}</p>
+              <p style="font-size: 18px; color: #2C54DC;">{{$currency_sign}} {{$deposit_amount}}</p>
             </td>
           </tr>
           <tr>
@@ -434,7 +447,10 @@
             </td>
           </tr>
 
+
+
           @endforeach
+
 
           <tr>
             <td colspan="2">
@@ -458,7 +474,7 @@
               <p style="font-size: 18px; font-weight: 600; color: #001489;">Recibirás</p>
             </td>
             <td class="details_item_right">
-              <p style="font-size: 18px; color: #2C54DC;">{{$receive_sign}} {{$receive_amount}}</p>
+              <p style="font-size: 18px; color: #2C54DC;">{{$currency_sign}} {{$receive_amount}}</p>
             </td>
           </tr>
           <tr>
@@ -492,6 +508,8 @@
               <p style="width: 200px; display: inline-block; text-align: right;"> {{ $bank_account->currency->sign }} {{ number_format($bank_account->pivot->amount,2)}} </p>
             </td>
           </tr>
+
+
 
           @endforeach
         </table>

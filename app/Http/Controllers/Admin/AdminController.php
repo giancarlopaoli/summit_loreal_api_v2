@@ -106,53 +106,105 @@ class AdminController extends Controller
         //$html = file_get_contents("https://instructivo.romacperu.com/"); 
         //$pdf = PDF::loadHtml($html);
 
-        $pen_amount = $operation->type == 'Compra' ? ($operation->amount*$operation->exchange_rate + $operation->comission_amount + $operation->igv) :  ($operation->amount*$operation->exchange_rate - $operation->comission_amount - $operation->igv);
-        $final_exchange_rate = $operation->type == 'Compra' ? round($operation->exchange_rate + $operation->comission_spread/10000 ,4) : round($operation->exchange_rate - $operation->comission_spread/10000 ,4);
+
+        if($operation->type == 'Compra' || $operation->type == 'Venta'){
+
+            $pen_amount = $operation->type == 'Compra' ? ($operation->amount*$operation->exchange_rate + $operation->comission_amount + $operation->igv) :  ($operation->amount*$operation->exchange_rate - $operation->comission_amount - $operation->igv);
+            $final_exchange_rate = $operation->type == 'Compra' ? round($operation->exchange_rate + $operation->comission_spread/10000 ,4) : round($operation->exchange_rate - $operation->comission_spread/10000 ,4);
 
 
-        $data = [
-                'username' => Str::of($operation->user->name)->ucfirst(),
-                'client_name' => $operation->client->cutomer_type == 'PJ' ? $operation->client->name : $operation->client->name ." " . $operation->client->last_name . " " . $operation->client->mothers_name,
-                'code' => $operation->code,
-                'operation_date' => date('d F Y', strtotime($operation->operation_date)),
-                'operation_time' => date('H:i', strtotime($operation->operation_date)),
-                'type' => $operation->type == 'Compra' ? 'comprar': 'vender',
-                'currency_sign' => $operation->currency->sign,
-                'amount' => number_format($operation->amount),
-                'exchange_rate' => round($operation->exchange_rate,4),
-                'comission_amount' => $operation->comission_amount,
-                'igv' => $operation->igv,
-                'final_exchange_rate' => $final_exchange_rate,
-                'pen_type' => $operation->type == 'Compra' ? 'depositar': 'recibir',
-                'pen_amount' => number_format($pen_amount),
-                'deposit_sign' => $operation->type == 'Compra' ? 'S/' : '$',
-                'deposit_amount' => $operation->type == 'Compra' ? number_format($pen_amount) : number_format($operation->amount),
-                'receive_sign' => $operation->type == 'Compra' ? '$' : 'S/',
-                'receive_amount' => $operation->type == 'Compra' ? number_format($operation->amount) : number_format($pen_amount),
-                'escrow_accounts' => $operation->escrow_accounts->load('bank','currency'),
-                'bank_accounts' => $operation->bank_accounts->load('bank','currency')
-            ];
+            $data = [
+                    'username' => Str::of($operation->user->name)->ucfirst() . " " . Str::of($operation->user->last_name)->ucfirst(),
+                    'client_name' => $operation->client->customer_type == 'PJ' ? $operation->client->name : $operation->client->name ." " . $operation->client->last_name . " " . $operation->client->mothers_name,
+                    'code' => $operation->code,
+                    'operation_date' => date('d F Y', strtotime($operation->operation_date)),
+                    'operation_time' => date('H:i', strtotime($operation->operation_date)),
+                    'type' => $operation->type == 'Compra' ? 'comprar': 'vender',
+                    'currency_sign' => $operation->currency->sign,
+                    'amount' => number_format($operation->amount,2),
+                    'exchange_rate' => round($operation->exchange_rate,4),
+                    'comission_amount' => $operation->comission_amount,
+                    'igv' => $operation->igv,
+                    'final_exchange_rate' => $final_exchange_rate,
+                    'pen_type' => $operation->type == 'Compra' ? 'depositar': 'recibir',
+                    'pen_amount' => number_format($pen_amount,2),
+                    'deposit_sign' => $operation->type == 'Compra' ? 'S/' : '$',
+                    'deposit_amount' => $operation->type == 'Compra' ? number_format($pen_amount,2) : number_format($operation->amount,2),
+                    'receive_sign' => $operation->type == 'Compra' ? '$' : 'S/',
+                    'receive_amount' => $operation->type == 'Compra' ? number_format($operation->amount,2) : number_format($pen_amount,2),
+                    'escrow_accounts' => $operation->escrow_accounts->load('bank','currency'),
+                    'bank_accounts' => $operation->bank_accounts->load('bank','currency')
+                ];
 
-/*        return response()->json([
+    /*        return response()->json([
+                'success' => true,
+                'data' => $data
+            ]);*/
+
+            $alto = 1720 + ($operation->bank_accounts->count() + $operation->escrow_accounts->count()) * 65;
+
+            $pdf = PDF::loadView('pdf.instructionsbuyingselling', $data);
+
+            $pdf->setPaper(array(0,0,595,$alto), 'portrait');
+            $pdf->setOption('isFontSubsettingEnabled', true);
+            $pdf->setOption('defaultMediaType', 'all');
+            $pdf->setOption('isRemoteEnabled', true);
+            $pdf->setOption('defaultFont', 'Poppins');
+            $pdf->render();
+            
+            return $pdf->download('Instructivo_' . $operation->code .'.pdf');
+        }
+        else{  
+
+            $financial_expenses = round($operation->amount * $operation->spread/10000,2);
+            $spread = round(($operation->spread + 1)*$operation->exchange_rate - $operation->exchange_rate,2);
+            $exchange_rate_selling = round($operation->exchange_rate + $spread/10000, 4) ;
+            $counter_value = $operation->amount + $financial_expenses;
+
+
+            /*return response()->json([
             'success' => true,
-            'data' => $data
+            'data' => [
+                'spread' => $spread,
+                'exchange_rate_selling' => $exchange_rate_selling,
+                'counter_value' => $counter_value,
+                '$operation->spread' => $operation->spread,
+                '$operation->exchange_rate' => $operation->exchange_rate,
+                'client' => $operation->client->type
+            ]
         ]);*/
 
-        $alto = 1720 + ($operation->bank_accounts->count() + $operation->escrow_accounts->count()) * 65;
-        //$alto = 1850; op 51
-        //$alto = 1980; 
+            $data = [
+                    'username' => Str::of($operation->user->name)->ucfirst() . " " . Str::of($operation->user->last_name)->ucfirst(),
+                    'client_name' => $operation->client->customer_type == 'PJ' ? $operation->client->name : $operation->client->name ." " . $operation->client->last_name . " " . $operation->client->mothers_name,
+                    'code' => $operation->code,
+                    'operation_date' => date('d F Y', strtotime($operation->operation_date)),
+                    'operation_time' => date('H:i', strtotime($operation->operation_date)),
+                    'currency_sign' => $operation->currency->sign,
+                    'amount' => number_format($operation->amount,2),
+                    'exchange_rate' => round($operation->exchange_rate,4),
+                    'exchange_rate_selling' => round($exchange_rate_selling,4),
+                    'comission_amount' => $operation->comission_amount,
+                    'igv' => $operation->igv,
+                    'counter_value' => number_format($counter_value,2),
+                    'deposit_amount' => $operation->client->type == 'PL' ? number_format($operation->amount,2) : number_format($counter_value + $operation->comission_amount + $operation->igv,2),
+                    'receive_amount' => $operation->client->type == 'PL' ? number_format($counter_value + $operation->comission_amount + $operation->igv,2) : number_format($operation->amount,2),
+                    'escrow_accounts' => $operation->escrow_accounts->load('bank','currency'),
+                    'bank_accounts' => $operation->bank_accounts->load('bank','currency')
+                ];
 
-        $pdf = PDF::loadView('pdf.instructionsbuyingselling', $data);
+            $alto = 1760 + ($operation->bank_accounts->count() + $operation->escrow_accounts->count()) * 65;
 
-        $pdf->setPaper(array(0,0,595,$alto), 'portrait');
-        $pdf->setOption('isFontSubsettingEnabled', true);
-        $pdf->setOption('defaultMediaType', 'all');
-        $pdf->setOption('isRemoteEnabled', true);
-        $pdf->setOption('defaultFont', 'Poppins');
+            $pdf = PDF::loadView('pdf.instructionsinterbank', $data);
 
-        $pdf->render();
-        //$pdf->stream();
-        
-        return $pdf->download('Instructivo_' . $operation->code .'.pdf');
+            $pdf->setPaper(array(0,0,595,$alto), 'portrait');
+            $pdf->setOption('isFontSubsettingEnabled', true);
+            $pdf->setOption('defaultMediaType', 'all');
+            $pdf->setOption('isRemoteEnabled', true);
+            $pdf->setOption('defaultFont', 'Poppins');
+            $pdf->render();
+            
+            return $pdf->download('Instructivo_' . $operation->code .'.pdf');
+        }
     }
 }
