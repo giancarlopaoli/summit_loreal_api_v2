@@ -218,7 +218,8 @@ class DashboardController extends Controller
 
         $date = Carbon::now()->format('Y-m-d');
 
-        $operations = Operation::select('id','code','class','type','client_id','user_id','amount','currency_id','exchange_rate','operation_status_id','operation_date')
+        $operations = Operation::select('id','code','class','client_id','user_id','amount','currency_id','exchange_rate','operation_status_id','operation_date')
+            ->selectRaw("if(type ='Compra', 'Venta','Compra') as type")
             ->selectRaw("if(type = 'Interbancaria', round(amount + round(amount * spread/10000, 2 ), 2), round(amount * exchange_rate, 2)) as conversion_amount")
             ->where('operation_status_id',  OperationStatus::where('name', 'Disponible')->first()->id)
             ->where('post', true)
