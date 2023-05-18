@@ -44,7 +44,9 @@ class MyOperationsController extends Controller
             ], 404);
          }
 
-        $ops = $client->operations()->whereIn('operation_status_id', $status)->get();
+        $ops = $client->operations()->whereIn('operation_status_id', $status)
+            ->orderByDesc('operation_date')
+            ->get();
 
         $ops->load(
             'client:id,name,last_name,mothers_name,customer_type,type',
