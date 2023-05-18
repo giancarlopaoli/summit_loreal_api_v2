@@ -180,15 +180,17 @@ class InmediateOperationController extends Controller
                 $comission_spread = $range->comission_spread;
 
                 if($coupon != null) {
+                    $old_comission_spread = $comission_spread;
                     if($coupon->type == CouponType::Comision) {
-                        if($type == "compra") {
-                            $comission_spread += $coupon->value;
-                        } else {
-                            $comission_spread -= $coupon->value;
-                            $comission_spread = $comission_spread < 0 ? 0 : $comission_spread;
+                        $comission_spread -= $coupon->value;
+                        
+                        if($comission_spread <= 0){
+                            $comission_spread = $old_comission_spread;
+                            $coupon = null;
                         }
+
                     } else if($coupon->type == CouponType::Porcentaje) {
-                        $comission_spread = $comission_spread * ($coupon->value / 100.0);
+                        $comission_spread = round($comission_spread * (1- ($coupon->value / 100.0)),2);
                     } else {
                         return response()->json([
                             'success' => false,
@@ -202,6 +204,8 @@ class InmediateOperationController extends Controller
 
 
             $final_exchange_rate = $type == 'compra' ? round($exchange_rate + $comission_spread/10000,4) : round($exchange_rate - $comission_spread/10000,4);
+
+            $old_final_exchange_rate = is_null($coupon) ? null : (($type == 'compra') ? round($exchange_rate + $old_comission_spread/10000,4) : round($exchange_rate - $old_comission_spread/10000,4));
 
             $amount = round($request->amount / $final_exchange_rate,2);
 
@@ -236,6 +240,7 @@ class InmediateOperationController extends Controller
 
             $igv = round($total_comission - $comission_amount,2);
 
+
             $final_amount = $type == 'compra' ? $conversion_amount + $total_comission : $conversion_amount - $total_comission;
             $final_amount = round($final_amount, 2);
             
@@ -249,9 +254,10 @@ class InmediateOperationController extends Controller
                 'comission_amount' => $comission_amount,
                 'igv' => $igv,
                 'final_mount' => $final_amount,
+                'old_final_exchange_rate' => $old_final_exchange_rate,
                 'final_exchange_rate' => $final_exchange_rate,
                 'coupon_code' => $coupon?->code,
-                'coupon_value' => $coupon?->value,
+                'coupon_value' => ($coupon?->type == CouponType::Comision) ? $coupon?->value : round($old_comission_spread*$coupon?->value/100,2),
                 'special_exchange_rate_id' => !is_null($special_exchange_rate) ? $special_exchange_rate->id : null,
                 'save' => round($amount * (20/10000) , 2)
             ];
@@ -314,6 +320,7 @@ class InmediateOperationController extends Controller
 
         ################### Calculating Spread Comission
         $comission_spread = InmediateOperationController::calculate_comission_spread($amount,$request->client_id,$type,$coupon)->getData()->comission_spread;
+        $old_comission_spread = InmediateOperationController::calculate_comission_spread($amount,$request->client_id,$type,$coupon)->getData()->old_comission_spread;
         
         $total_comission = round($amount * $comission_spread/10000, 2);
         ############# End calculating comission
@@ -327,6 +334,8 @@ class InmediateOperationController extends Controller
         $final_amount = round($final_amount, 2);
 
         $final_exchange_rate = round($final_amount/$amount, 4);
+        $coupon_value = ($coupon?->type == CouponType::Comision) ? $coupon?->value : round($old_comission_spread * $coupon?->value/100,2);
+        $old_final_exchange_rate = is_null($coupon) ? null : (($type == 'compra') ? round($final_exchange_rate + $coupon_value/10000,4) : round($final_exchange_rate - $coupon_value/10000,4));
 
         $data = [
             'amount' => $amount,
@@ -338,9 +347,10 @@ class InmediateOperationController extends Controller
             'comission_amount' => $comission_amount,
             'igv' => $igv,
             'final_mount' => $final_amount,
+            'old_final_exchange_rate' => $old_final_exchange_rate,
             'final_exchange_rate' => $final_exchange_rate,
             'coupon_code' => $coupon?->code,
-            'coupon_value' => $coupon?->value,
+            'coupon_value' => $coupon_value,
             'special_exchange_rate_id' => !is_null($special_exchange_rate) ? $special_exchange_rate->id : null,
             'save' => round($amount * (20/10000) , 2)
         ];
@@ -464,7 +474,7 @@ class InmediateOperationController extends Controller
 
             $comission_spread = $market_closed ? $general_comission->comission_close : $general_comission->comission_open;
 
-            if($coupon != null) {
+            /*if($coupon != null) {
                 if($coupon->type == CouponType::Comision) {
                     if($type == "compra") {
                         $comission_spread += $coupon->value;
@@ -482,11 +492,34 @@ class InmediateOperationController extends Controller
                         ]
                     ], 400);
                 }
+            }*/
+
+            if($coupon != null) {
+                $old_comission_spread = $comission_spread;
+                if($coupon->type == CouponType::Comision) {
+                    $comission_spread -= $coupon->value;
+                    
+                    if($comission_spread <= 0){
+                        $comission_spread = $old_comission_spread;
+                        $coupon = null;
+                    }
+
+                } else if($coupon->type == CouponType::Porcentaje) {
+                    $comission_spread = round($comission_spread * (1- ($coupon->value / 100.0)),2);
+                } else {
+                    return response()->json([
+                        'success' => false,
+                        'errors' => [
+                            'El cupon enviado no es valido'
+                        ]
+                    ], 400);
+                }
             }
         }
 
         return response()->json([
             'comission_spread' => $comission_spread,
+            'old_comission_spread' => $old_comission_spread
         ]);
     }
 
@@ -582,7 +615,7 @@ class InmediateOperationController extends Controller
             $msg = "";
         } else {
             $res = false;
-            $msg = "$hourStartStr a $hourEndStr de $dayStartStr a $dayEndStr" . "  $now->dayOfWeek ";
+            $msg = "$hourStartStr a $hourEndStr de $dayStartStr a $dayEndStr";
         }
 
         return response()->json([
