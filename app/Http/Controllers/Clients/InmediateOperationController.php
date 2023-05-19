@@ -257,7 +257,7 @@ class InmediateOperationController extends Controller
                 'old_final_exchange_rate' => $old_final_exchange_rate,
                 'final_exchange_rate' => $final_exchange_rate,
                 'coupon_code' => $coupon?->code,
-                'coupon_value' => ($coupon?->type == CouponType::Comision) ? $coupon?->value : round($old_comission_spread*$coupon?->value/100,2),
+                'coupon_value' => isset($coupon) ? ($coupon?->type == CouponType::Comision) ? $coupon?->value : round($old_comission_spread*$coupon?->value/100,2) : null,
                 'special_exchange_rate_id' => !is_null($special_exchange_rate) ? $special_exchange_rate->id : null,
                 'save' => round($amount * (20/10000) , 2)
             ];
@@ -334,7 +334,7 @@ class InmediateOperationController extends Controller
         $final_amount = round($final_amount, 2);
 
         $final_exchange_rate = round($final_amount/$amount, 4);
-        $coupon_value = ($coupon?->type == CouponType::Comision) ? $coupon?->value : round($old_comission_spread * $coupon?->value/100,2);
+        $coupon_value = isset($coupon) ? ($coupon?->type == CouponType::Comision) ? $coupon?->value : round($old_comission_spread * $coupon?->value/100,2) : null;
         $old_final_exchange_rate = is_null($coupon) ? null : (($type == 'compra') ? round($final_exchange_rate + $coupon_value/10000,4) : round($final_exchange_rate - $coupon_value/10000,4));
 
         $data = [
@@ -519,7 +519,7 @@ class InmediateOperationController extends Controller
 
         return response()->json([
             'comission_spread' => $comission_spread,
-            'old_comission_spread' => $old_comission_spread
+            'old_comission_spread' => isset($old_comission_spread) ? $old_comission_spread : null
         ]);
     }
 

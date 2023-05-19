@@ -146,12 +146,12 @@ Route::middleware('encryptresponses')->group(function () {
     ###### Módulo de Administración #####
     #####################################
 
-    Route::GET('instruction/{operation}', [\App\Http\Controllers\Admin\AdminController::class, 'instruction']);
     
     Route::POST('admin/login', [\App\Http\Controllers\Admin\AdminController::class, 'login']);
 
     Route::prefix('admin')->middleware('auth:sanctum')->group(function () {
 
+        Route::GET('instruction/{operation}', [\App\Http\Controllers\Admin\AdminController::class, 'instruction']);
 
         ########## General admin  #############
         Route::GET('has-permission', [\App\Http\Controllers\Admin\AdminController::class, 'has_permission']);

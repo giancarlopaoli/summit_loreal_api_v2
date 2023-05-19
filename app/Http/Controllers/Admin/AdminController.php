@@ -100,13 +100,6 @@ class AdminController extends Controller
     }
 
     public function instruction(Request $request, Operation $operation) {
-
-        //$pdf = PDF::loadHtml('hello world');
-
-        //$html = file_get_contents("https://instructivo.romacperu.com/"); 
-        //$pdf = PDF::loadHtml($html);
-
-
         if($operation->type == 'Compra' || $operation->type == 'Venta'){
 
             $pen_amount = $operation->type == 'Compra' ? ($operation->amount*$operation->exchange_rate + $operation->comission_amount + $operation->igv) :  ($operation->amount*$operation->exchange_rate - $operation->comission_amount - $operation->igv);
@@ -136,11 +129,6 @@ class AdminController extends Controller
                     'bank_accounts' => $operation->bank_accounts->load('bank','currency')
                 ];
 
-    /*        return response()->json([
-                'success' => true,
-                'data' => $data
-            ]);*/
-
             $alto = 1720 + ($operation->bank_accounts->count() + $operation->escrow_accounts->count()) * 65;
 
             $pdf = PDF::loadView('pdf.instructionsbuyingselling', $data);
@@ -160,19 +148,6 @@ class AdminController extends Controller
             $spread = round(($operation->spread + 1)*$operation->exchange_rate - $operation->exchange_rate,2);
             $exchange_rate_selling = round($operation->exchange_rate + $spread/10000, 4) ;
             $counter_value = $operation->amount + $financial_expenses;
-
-
-            /*return response()->json([
-            'success' => true,
-            'data' => [
-                'spread' => $spread,
-                'exchange_rate_selling' => $exchange_rate_selling,
-                'counter_value' => $counter_value,
-                '$operation->spread' => $operation->spread,
-                '$operation->exchange_rate' => $operation->exchange_rate,
-                'client' => $operation->client->type
-            ]
-        ]);*/
 
             $data = [
                     'username' => Str::of($operation->user->name)->ucfirst() . " " . Str::of($operation->user->last_name)->ucfirst(),
