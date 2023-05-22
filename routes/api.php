@@ -22,6 +22,7 @@ Route::middleware('encryptresponses')->group(function () {
 
     Route::POST('login', [\App\Http\Controllers\Clients\AuthController::class, 'login']);
     Route::POST('logout', [\App\Http\Controllers\Clients\AuthController::class, 'logout']);
+    Route::POST('forgot-password', [\App\Http\Controllers\Clients\AuthController::class, 'forgot_password']);
 
     Route::middleware('auth:sanctum','role:cliente','validate_client_user')->group(function () {
         Route::GET('/me', function(Request $request) {
@@ -137,8 +138,6 @@ Route::middleware('encryptresponses')->group(function () {
         Route::POST('register-person', [\App\Http\Controllers\Register\RegisterController::class, 'register_person']);
         Route::POST('register-company', [\App\Http\Controllers\Register\RegisterController::class, 'register_company']);
         Route::POST('upload-file', [\App\Http\Controllers\Register\RegisterController::class, 'upload_file']);
-
-        
     });
     
 
