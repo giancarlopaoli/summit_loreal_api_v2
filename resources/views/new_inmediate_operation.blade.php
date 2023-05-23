@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Billex</title>
   <link href='https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap' rel='stylesheet' type='text/css'>
@@ -33,7 +34,7 @@
     }
 
     .line {
-      width: 90%;
+      width: 100%;
       height: 1px;
       margin: 0 auto;
       border-bottom: 1px solid #E6E8F4;
@@ -42,15 +43,15 @@
     .line-full {
       width: 100%;
       height: 1px;
-      margin: 0 auto;
+      margin: 10px auto 0 auto;
       border-bottom: 1px solid #E6E8F4;
     }
 
     .information h2 {
       font-size: 20px;
       font-weight: 600;
-      margin-bottom: 8px;
-      margin-top: 30px;
+      margin-bottom: 0px;
+      margin-top: 20px;
       color: #2C54DC;
     }
     
@@ -59,91 +60,46 @@
       font-weight: 400;
       margin: 0;
       color: #000541;
-      width: 70%;
+      width: 98%;
+      margin: 20px 0 5px 0;
     }
 
     .information_details {
-      width: 30%;
-      display: flex;
-      margin: 10px auto;
+      width: 80%;
+      margin: 0 auto 20px auto;
       background-color: #F6F9FF;
       border-radius: 10px;
-      padding: 10px 30px;
+      padding: 30px 30px;
       border-radius: 10px;
+      text-align: center;
     }
 
-    .information_details h4,.information_details p {
+    .information_details h4 {
+      font-size: 16px;
+      margin: 0 0 7px 0;
+      color: #000541;
+    }
+
+    .information_details h4 span {
+      color: #001489;
+    }
+
+
+    .information_details p, .information_details h5 {
       font-size: 12px;
       font-weight: 400;
-      margin: 0 auto;
-      display: flex;
-      align-items: center;
-      text-align: center;
+      margin: 13px 0 0 0;
     }
 
-    .information_details p {
-      font-weight: 500;
-      margin-bottom: 5px;
-      text-align: center;
-      font-size: 22px;
+    .information_details a {
+      color: #2C54DC;
     }
-
-    .information_details {
-      vertical-align: middle;
-      color: #001489;
-      font-size: 22px;
-      font-weight: 500;
-      text-align: center;
-    }
-
-
-    .advice {
-      text-align: center;
-      padding: 10px 0;
+  
+    .warning {
       border: 1px dashed #2C54DC;
       border-radius: 8px;
-      width: 90%;
-      margin: 30px 20px 20px 20px;
-      display: flex;
-      align-content: center;
-    }
-
-    .advice img {
-      margin-left: 32px;
-    }
-    
-    .advice p {
-      font-size: 10.5px;
-      margin: 0 5px;
-      margin-top: 3.1px;
-      align-items: center;
-      text-align: center;
-    }
-
-
-
-    .buttons{
-      margin: 0 auto;
-    }
-
-    .buttons button {
-      padding: 8px 25px;
-      margin: 0 5px;
-      border-radius: 8px;
-      border: 0;
-      cursor: pointer;
-    }
-    
-    .buttons a:first-child  button{
-      background-color: #F7B825;
-      color: #fff;
-    }
-    
-    .buttons a:last-child button {
-      border: 1px solid #001489;
-      background-color: transparent;
-      color: #001489;
-      font-weight: 600;
+      margin: 10px 0 30px 0;
+      padding: 0 40px;
     }
 
   </style>
@@ -157,8 +113,8 @@
     </tr>
     <tr>
       <td align="center" class="check">
-        <img src="https://bill-upload.s3.amazonaws.com/static/img/lock.png" alt="">
-        <h1 style="font-family: 'Poppins';">Te ayudamos a recuperar tu contraseña</h1>
+        <img src="https://bill-upload.s3.amazonaws.com/static/img/confirm.png" alt="" width="160">
+        <h1>Confirmación de Operación</h1>
       </td>
     </tr>
     <tr>
@@ -168,8 +124,7 @@
     </tr>
     <tr>
       <td align="center" class="information">
-        <h2>¡Hola! {{ $names }}</h2>
-        <p>¿Se te olvidó tu contraseña? No te preocupes, te compartimos tu nueva <br> contraseña para que puedas seguir disfrutando de los beneficios de cambiar divisas en nuestra plataforma.</p>
+        <h2>¡Hola! {{ $name}}</h2>
       </td>
     </tr>
     <tr>
@@ -178,36 +133,15 @@
       </td>
     </tr>
     <tr style="width: 650px;">
-      <td class="information_details" align="center">
-        <p>{{ $new_password }}</p> 
+      <td class="information_details">
+        <h4 style="margin-bottom: 0px;">Tu solicitud de {{ $type }} por <span>${{ $amount }}</span></h4>
+        <h4 style="margin: 0;">ha sido creada exitosamente</h4>
+        <p>Te informaremos los detalles de tu operación apenas sea emparejada por alguno de nuestros clientes o entidades financieras.</p>
       </td>
     </tr>
     <tr>
-      <td style="padding-top: 20px;width: 100%;
+      <td style="padding-top: 30px;width: 100%;
       background-color: #fff;">
-      </td>
-    </tr>
-    <tr>
-      <td class="buttons" align="center">
-        <a href="https://www.billex.pe"><button style="background-color: #F7B825; color: #fff; cursor: pointer;">Ir a la web principal</button></a>
-      </td>
-    </tr>
-    <tr>
-      <td align="center">
-        <div class="advice">
-          <img src="https://bill-upload.s3.amazonaws.com/static/img/warning.jpg" alt="" width="20" height="20">
-          <p>Te sugerimos cambiar tu contraseña por una propia, desde tu perfil de usuario.</p>
-        </div>
-      </td>
-    </tr>
-    <tr>
-      <td style="padding-top: 10px;width: 100%;
-      background-color: #fff;">
-      </td>
-    </tr>
-    <tr>
-      <td style="width: 100%;
-      background-color: #F7B825; padding: 0; padding-top: 5px;">
       </td>
     </tr>
     <tr>

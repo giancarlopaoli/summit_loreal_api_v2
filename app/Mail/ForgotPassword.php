@@ -32,17 +32,13 @@ class ForgotPassword extends Mailable
     public function build()
     {
         $user = User::find($this->user_id);
-        //$user = User::where('id', $this->user_id)->first();
 
         return $this
-            ->subject('BILLEX | Recuperación de Contraseña' . $user->id)
+            ->subject('BILLEX | Recuperación de Contraseña')
             ->to($user->email)
-            //->to('giancarlopaoli@gmail.com')
-            //->bcc(env('MAIL_OPS'))
-            //->bcc(env('MAIL_TI'))
+            ->bcc(env('MAIL_OPS'))
+            ->bcc(env('MAIL_TI'))
             ->view('forgot_password')
-            //->attach(storage_path('Manual_Billex.pdf'))
-            //->attach(storage_path('Contrato de Afiliación a Plataforma BILLEX.pdf'))
             ->with([
                 'names' => $user->name,
                 'new_password' => $this->new_password
