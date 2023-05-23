@@ -29,6 +29,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use App\Events\AvailableOperations;
 use App\Enums;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\NewInmediateOperation;
+use App\Mail\OperationInstructions;
 
 class InmediateOperationController extends Controller
 {
@@ -666,6 +669,10 @@ class InmediateOperationController extends Controller
         }
         $client = Client::find($request->client_id);
 
+        /*return response()->json([
+            'success' => Operation::find(60)->load('user','client')
+        ]);*/
+
         // Validating available hours
         $hours = InmediateOperationController::operation_hours($request->client_id)->getData();
 
@@ -925,10 +932,13 @@ class InmediateOperationController extends Controller
         if(!is_null($request->special_exchange_rate_id)){
             $vendor_operation = InmediateOperationController::match_operation_vendor($operation->id,$request->special_exchange_rate_id)->getData();
         }
+        else{
+            // Enviar Correo()
+            $rpta_mail = Mail::send(new NewInmediateOperation($operation->id));
+        }
+
 
         AvailableOperations::dispatch();
-
-        // Enviar Correo()
 
         return response()->json([
             'success' => true,
@@ -1047,7 +1057,10 @@ class InmediateOperationController extends Controller
             $operation->save();
         }
 
-        // Enviar correo instrucciones
+        // Enviar correo instrucciones ()
+        $rpta_mail = Mail::send(new OperationInstructions($operation->id));
+        
+
         OperationHistory::create(["operation_id" => $operation->id,"user_id" => auth()->id(),"action" => "Operación emparejada"]);
 
         AvailableOperations::dispatch();
