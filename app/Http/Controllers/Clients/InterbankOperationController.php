@@ -158,6 +158,7 @@ class InterbankOperationController extends Controller
                 'data' => [
                     'transfers' => round($request->amount,2),
                     'financial_expenses' => $financial_expenses,
+                    'counter_value' => round(round($request->amount,2) + $financial_expenses,2),
                     'comission' => $comission,
                     'igv' => $igv,
                     'exchange_rate' => $exchange_rate,
