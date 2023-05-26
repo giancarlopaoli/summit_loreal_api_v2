@@ -22,6 +22,7 @@ class MyBankAccountsController extends Controller
 
         $accounts = $client->bank_accounts()
             ->whereRelation('status', 'name', 'Activo')
+            ->orWhereRelation('status', 'name','Pendiente')
             ->with([
             'bank',
             'account_type',
@@ -30,7 +31,7 @@ class MyBankAccountsController extends Controller
 
         if($accounts->isEmpty()) {
             return response()->json([
-                'success' => false,
+                'success' => true,
                 'errors' => 'No cuenta con cuentas bancarias'
             ], 404);
         }
@@ -74,7 +75,7 @@ class MyBankAccountsController extends Controller
             'bank_id' => $request->bank_id,
             'account_number' => $request->account_number,
             'cci_number' => $request->cci_number,
-            'bank_account_status_id' => BankAccountStatus::where('name', 'Activo')->first()->id,
+            'bank_account_status_id' => BankAccountStatus::where('name', 'Pendiente')->first()->id,
             'comments' => '',
             'account_type_id' => $request->account_type_id,
             'currency_id' => $request->currency_id,
