@@ -580,6 +580,10 @@ class NegotiatedOperationController extends Controller
         
         $type = $operation->type == 'Compra' ? 'Venta' : 'Compra';
 
+        //Validating Bank Accounts
+        $soles_id = Currency::where('name', 'Soles')->first()->id;
+        $dolares_id = Currency::where('name', 'Dolares')->first()->id;
+
         $market_close_time = Configuration::where('shortname', 'MARKETCLOSE')->first()->value;
         $market_closed = Carbon::now() >= Carbon::create($market_close_time);
 
@@ -616,7 +620,9 @@ class NegotiatedOperationController extends Controller
             'final_amount' => $final_amount,
             'final_exchange_rate' => $final_exchange_rate,
             'bank_account_bank_id' => $operation->escrow_accounts[0]->bank_id,
+            'bank_account_currency_id' => $operation->escrow_accounts[0]->currency_id,
             'escrow_account_bank_id' => $operation->bank_accounts[0]->bank_id,
+            'escrow_account_currency_id' => $operation->bank_accounts[0]->currency_id,
             'flag_has_account_deposit' => ($bank_accounts > 0 ) ? true : false
         ];
 
