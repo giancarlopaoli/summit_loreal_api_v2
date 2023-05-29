@@ -333,56 +333,123 @@
               <div class="details_line"></div>
             </td>
           </tr>
-          <tr class="details_item">
-            <td class="details_item_left">
-              <p>Tipo de cambio</p>
-            </td>
-            <td class="details_item_right">
-              <p>{{$exchange_rate}}</p>
-            </td>
-          </tr>
-          <tr class="details_item">
-            <td class="details_item_left">
-              <p>Comisión</p>
-            </td>
-            <td class="details_item_right">
-              <p>S/ {{$comission_amount}}</p>
-            </td>
-          </tr>
-          <tr class="details_item">
-            <td class="details_item_left">
-              <p>IGV</p>
-            </td>
-            <td class="details_item_right">
-              <p>S/ {{$igv}}</p>
-            </td>
-          </tr>
-          <tr>
-            <td>
-              <div class="details_line"></div>
-            </td>
-          </tr>
-          <tr class="details_item">
-            <td class="details_item_left">
-              <p>Tipo de cambio final</p>
-            </td>
-            <td class="details_item_right">
-              <p>{{$final_exchange_rate}}</p>
-            </td>
-          </tr>
-          <tr>
-            <td>
-              <div class="details_line"></div>
-            </td>
-          </tr>
-          <tr class="details_item">
-            <td class="details_item_left deposit">
-              <p>Vas a {{$pen_type}}</p>
-            </td>
-            <td class="details_item_right total">
-              <p>S/ {{$pen_amount}}</p>
-            </td>
-          </tr>
+
+          @if ( $type != 'transferir')
+            <tr class="details_item">
+              <td class="details_item_left">
+                <p>Tipo de cambio</p>
+              </td>
+              <td class="details_item_right">
+                <p>{{$exchange_rate}}</p>
+              </td>
+            </tr>
+            <tr class="details_item">
+              <td class="details_item_left">
+                <p>Comisión</p>
+              </td>
+              <td class="details_item_right">
+                <p>S/ {{$comission_amount}}</p>
+              </td>
+            </tr>
+            <tr class="details_item">
+              <td class="details_item_left">
+                <p>IGV</p>
+              </td>
+              <td class="details_item_right">
+                <p>S/ {{$igv}}</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <div class="details_line"></div>
+              </td>
+            </tr>
+            <tr class="details_item">
+              <td class="details_item_left">
+                <p>Tipo de cambio final</p>
+              </td>
+              <td class="details_item_right">
+                <p>{{$final_exchange_rate}}</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <div class="details_line"></div>
+              </td>
+            </tr>
+            <tr class="details_item">
+              <td class="details_item_left deposit">
+                <p>Vas a {{$pen_type}}</p>
+              </td>
+              <td class="details_item_right total">
+                <p>S/ {{$pen_amount}}</p>
+              </td>
+            </tr>
+          @else
+            <tr class="details_item">
+              <td class="details_item_left">
+                <p>Importe a recibir</p>
+              </td>
+              <td class="details_item_right">
+                <p>{{$currency_sign}} {{$amount}}</p>
+              </td>
+            </tr>
+            <tr class="details_item">
+              <td class="details_item_left">
+                <p>Tipo de cambio Compra</p>
+              </td>
+              <td class="details_item_right">
+                <p>{{$exchange_rate}}</p>
+              </td>
+            </tr>
+            <tr class="details_item">
+              <td class="details_item_left">
+                <p>Tipo de cambio Venta</p>
+              </td>
+              <td class="details_item_right">
+                <p>{{$exchange_rate_selling}}</p>
+              </td>
+            </tr>
+            <tr class="details_item">
+              <td class="details_item_left">
+                <p>Contravalor</p>
+              </td>
+              <td class="details_item_right">
+                <p>{{$currency_sign}} {{$counter_value}}</p>
+              </td>
+            </tr>
+            <tr class="details_item">
+              <td class="details_item_left">
+                <p>Comisión</p>
+              </td>
+              <td class="details_item_right">
+                <p>{{$currency_sign}} {{$comission_amount}}</p>
+              </td>
+            </tr>
+            <tr class="details_item">
+              <td class="details_item_left">
+                <p>IGV</p>
+              </td>
+              <td class="details_item_right">
+                <p>{{$currency_sign}} {{$igv}}</p>
+              </td>
+            </tr>
+<!--             <tr>
+              <td>
+                <div class="details_line"></div>
+              </td>
+            </tr>
+            <tr class="details_item">
+              <td class="details_item_left deposit">
+                <p>Vas a depositar</p>
+              </td>
+              <td class="details_item_right total">
+                <p>{{$currency_sign}} {{$deposit_amount}}</p>
+              </td>
+            </tr> -->
+          @endif
+
+          
         </table>
       </td>
     </tr>

@@ -1058,8 +1058,7 @@ class InmediateOperationController extends Controller
         }
 
         // Enviar correo instrucciones ()
-        $rpta_mail = Mail::send(new OperationInstructions($operation->id));
-        
+        $rpta_mail = Mail::send(new OperationInstructions($operation->id));        
 
         OperationHistory::create(["operation_id" => $operation->id,"user_id" => auth()->id(),"action" => "Operación emparejada"]);
 

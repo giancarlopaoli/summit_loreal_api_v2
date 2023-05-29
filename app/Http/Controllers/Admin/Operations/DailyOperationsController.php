@@ -23,6 +23,8 @@ use Illuminate\Support\Str;
 use App\Enums;
 use Illuminate\Support\Facades\Storage;
 use App\Events\AvailableOperations;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\OperationInstructions;
 
 class DailyOperationsController extends Controller
 {
@@ -273,6 +275,9 @@ class DailyOperationsController extends Controller
             $operation->operation_status_id = $status_id;
             $operation->save();
         }
+
+        // Enviar correo instrucciones ()
+        $rpta_mail = Mail::send(new OperationInstructions($operation->id));
 
         OperationHistory::create(["operation_id" => $operation->id,"user_id" => auth()->id(),"action" => "Operación emparejada"]);
 
