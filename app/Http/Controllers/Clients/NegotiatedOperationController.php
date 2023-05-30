@@ -777,7 +777,7 @@ class NegotiatedOperationController extends Controller
         OperationHistory::create(["operation_id" => $operation->id,"user_id" => auth()->id(),"action" => "Operación emparejada"]);
 
          return response()->json([
-            "operacion" => $matched_operation,
+            'success' => true,
             "data" => [
                 'Oferta tomada exitosamente.'
             ]
