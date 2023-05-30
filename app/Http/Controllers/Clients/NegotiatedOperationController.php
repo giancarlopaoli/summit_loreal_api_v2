@@ -620,6 +620,7 @@ class NegotiatedOperationController extends Controller
             'final_amount' => $final_amount,
             'final_exchange_rate' => $final_exchange_rate,
             'bank_account_bank_id' => $operation->escrow_accounts[0]->bank_id,
+            'bank_account_bank_shortname' => $operation->escrow_accounts[0]->bank->shortname,
             'bank_account_currency_id' => $operation->escrow_accounts[0]->currency_id,
             'escrow_account_bank_id' => $operation->bank_accounts[0]->bank_id,
             'escrow_account_currency_id' => $operation->bank_accounts[0]->currency_id,
