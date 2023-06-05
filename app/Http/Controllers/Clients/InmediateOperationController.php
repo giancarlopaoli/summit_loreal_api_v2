@@ -930,13 +930,14 @@ class InmediateOperationController extends Controller
         
         // Matching with vendor
         if(!is_null($request->special_exchange_rate_id)){
-            $vendor_operation = InmediateOperationController::match_operation_vendor($operation->id,$request->special_exchange_rate_id)->getData();
+            $vendor_id = SpecialExchangeRate::find($request->special_exchange_rate_id)->vendor_id;
+
+            $vendor_operation = InmediateOperationController::match_operation_vendor($operation->id,$vendor_id)->getData();
         }
         else{
             // Enviar Correo()
             $rpta_mail = Mail::send(new NewInmediateOperation($operation->id));
         }
-
 
         AvailableOperations::dispatch();
 
@@ -946,10 +947,8 @@ class InmediateOperationController extends Controller
         ]);
     }
 
-    public function match_operation_vendor($operation_id, $special_exchange_rate_id) {
+    public function match_operation_vendor($operation_id, $vendor_id) {
         $operation = Operation::find($operation_id)->load('bank_accounts','escrow_accounts');
-
-        $vendor_id = SpecialExchangeRate::find($special_exchange_rate_id)->vendor_id;
 
         ####### Validating operation is not previusly matched ##########
         $operation_match = DB::table('operation_matches')
@@ -1058,7 +1057,8 @@ class InmediateOperationController extends Controller
         }
 
         // Enviar correo instrucciones ()
-        $rpta_mail = Mail::send(new OperationInstructions($operation->id));        
+        $rpta_mail = Mail::send(new OperationInstructions($operation->id));
+        $rpta_mail = Mail::send(new OperationInstructions($matched_operation->id));
 
         OperationHistory::create(["operation_id" => $operation->id,"user_id" => auth()->id(),"action" => "Operación emparejada"]);
 
