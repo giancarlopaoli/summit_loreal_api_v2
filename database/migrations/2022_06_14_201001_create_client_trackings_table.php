@@ -19,7 +19,6 @@ return new class extends Migration
             $table->foreignIdFor(\App\Models\TrackingStatus::class)->constrained();
             $table->foreignIdFor(\App\Models\TrackingForm::class)->constrained();
             $table->text('comments');
-            $table->string('client_trackingcol', 45);
             $table->foreignId('created_by')->constrained('users');
             $table->timestamps();
         });

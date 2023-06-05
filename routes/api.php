@@ -375,6 +375,24 @@ Route::middleware('encryptresponses')->group(function () {
                 Route::GET('{lead}/validate-dni', [\App\Http\Controllers\Admin\Executives\LeadsController::class, 'validate_dni']);
 
             });
+
+            ########## clients  #############
+            Route::prefix('clients')->group(function () {
+
+                Route::GET('', [\App\Http\Controllers\Admin\Executives\ClientsController::class, 'list']);
+                Route::GET('tracking-forms', [\App\Http\Controllers\Admin\Executives\LeadsController::class, 'tracking_forms']);
+                Route::GET('tracking-statuses', [\App\Http\Controllers\Admin\Executives\LeadsController::class, 'tracking_statuses']);
+                Route::GET('financial-vendors', [\App\Http\Controllers\Admin\Executives\ClientsController::class, 'vendors']);
+                Route::GET('escrow-accounts', [\App\Http\Controllers\Clients\InterbankOperationController::class, 'get_escrow_accounts']);
+                Route::GET('{client}/follow', [\App\Http\Controllers\Admin\Executives\ClientsController::class, 'client_follows']);
+                Route::POST('{client}/follow', [\App\Http\Controllers\Admin\Executives\ClientsController::class, 'register_follow']);
+                Route::GET('bank-accounts', [\App\Http\Controllers\Clients\InterbankOperationController::class, 'get_client_bank_accounts']);
+                Route::GET('quote-inmediate', [\App\Http\Controllers\Admin\Executives\ClientsController::class, 'quote_inmediate_operation']);
+                Route::POST('create-inmediate', [\App\Http\Controllers\Admin\Executives\ClientsController::class, 'create_inmediate_operation']);
+
+                Route::GET('{client}', [\App\Http\Controllers\Admin\Executives\ClientsController::class, 'client_detail']);
+            });
+
         });
 
     });
