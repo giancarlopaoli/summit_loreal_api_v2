@@ -148,10 +148,11 @@ class ClientsController extends Controller
         }
         else{
             $consult2 = new InmediateOperationController();
-            $result2 = $consult->match_operation_vendor($result->data->id, $request->vendor_id)->getData();
+            $result2 = $consult->match_operation_vendor($result->data->id, $request->vendor_id, $request->bank_accounts)->getData();
 
             return response()->json([
                 'success' => true,
+                'match' => $result2,
                 'data' => [
                     "operation" => $result->data
                 ]

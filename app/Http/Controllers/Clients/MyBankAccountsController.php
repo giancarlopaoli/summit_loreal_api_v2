@@ -20,13 +20,13 @@ class MyBankAccountsController extends Controller
             ], 404);
         }
 
-        $accounts = $client->bank_accounts()
+        $accounts = $client->bank_accounts()->select('id','client_id','bank_id','account_number','cci_number','main','bank_account_status_id','comments','currency_id')
             ->whereRelation('status', 'name', 'Activo')
             ->orWhereRelation('status', 'name','Pendiente')
             ->with([
-            'bank',
-            'account_type',
-            'currency'
+            'bank:id,name,shortname,active,image',
+            'account_type:id,name,shortname',
+            'currency:id,name,sign,image'
         ])->get();
 
         if($accounts->isEmpty()) {
@@ -59,8 +59,8 @@ class MyBankAccountsController extends Controller
             'bank_id' => 'required|exists:banks,id',
             'account_type_id' => 'required|exists:account_types,id',
             'currency_id' => 'required|exists:currencies,id',
-            'account_number' => 'required|min:10',
-            'cci_number' => 'required|min:10'
+            'account_number' => 'required|min:5',
+            'cci_number' => 'required|min:20'
         ]);
 
         if($validator->fails()) {
