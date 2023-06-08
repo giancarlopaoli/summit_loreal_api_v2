@@ -928,6 +928,7 @@ class InmediateOperationController extends Controller
         
         OperationHistory::create(["operation_id" => $operation->id,"user_id" => auth()->id(),"action" => "Operación creada"]);
         
+        $vendor_operation = null;
         // Matching with vendor
         if(!is_null($request->special_exchange_rate_id)){
             $vendor_id = SpecialExchangeRate::find($request->special_exchange_rate_id)->vendor_id;
@@ -943,11 +944,12 @@ class InmediateOperationController extends Controller
 
         return response()->json([
             'success' => true,
+            'vendor' => $vendor_operation,
             'data' => $operation
         ]);
     }
 
-    public function match_operation_vendor($operation_id, $vendor_id) {
+    public function match_operation_vendor($operation_id, $vendor_id, $vendor_escrow_accounts=null) {
         $operation = Operation::find($operation_id)->load('bank_accounts','escrow_accounts');
 
         ####### Validating operation is not previusly matched ##########
@@ -994,14 +996,24 @@ class InmediateOperationController extends Controller
         ]);
 
         if($matched_operation){
-            try {
-                
+            //try {
                 
                 foreach ($operation->bank_accounts as $bank_account_data) {
                     
-                    $escrow_account = EscrowAccount::where('bank_id',$bank_account_data->bank_id)
-                        ->where('currency_id', $bank_account_data->currency_id)
-                        ->first();
+                    if(!is_null($vendor_escrow_accounts)){
+                        foreach ($vendor_escrow_accounts as $vendor_escrow_account) {
+
+                            if($bank_account_data->id == $vendor_escrow_account['id'] && $bank_account_data->pivot->amount*1.0 == $vendor_escrow_account['amount']){
+                                $escrow_account = EscrowAccount::find($vendor_escrow_account['vendor_escrow_account_id']);
+
+                            }
+                        }
+                    }
+                    else{
+                        $escrow_account = EscrowAccount::where('bank_id',$bank_account_data->bank_id)
+                            ->where('currency_id', $bank_account_data->currency_id)
+                            ->first();
+                    }
 
                     if(!is_null($escrow_account)){
                         $matched_operation->escrow_accounts()->attach($escrow_account->id, [
@@ -1044,11 +1056,11 @@ class InmediateOperationController extends Controller
                     }
 
                 }
-            } catch (\Exception $e) {
+            /*} catch (\Exception $e) {
                 logger('ERROR: archivo adjunto: match_operation_vendor@InmediateOperationController', ["error" => $e]);
 
                 // Envio de correo de notificación de error
-            }
+            }*/
 
             $operations_matches = $operation->matches()->attach($matched_operation->id, ['created_at' => Carbon::now()]);
 
