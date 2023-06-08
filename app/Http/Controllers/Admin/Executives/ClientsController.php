@@ -98,6 +98,33 @@ class ClientsController extends Controller
         ]);
     }
 
+    //Edit user
+    public function update_user(Request $request, Client $client) {
+        $val = Validator::make($request->all(), [
+            'user_id' => 'required|numeric',
+            'phone' => 'required|string'
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+        if(is_null($client->users()->find($request->user_id))){
+            return response()->json([
+            'success' => false,
+                'errors' => [
+                    'No tiene permisos para modificar datos de este usuario'
+                ]
+            ]);
+        }
+
+        $client->users()->find($request->user_id)->update($request->only(["phone"]));
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'users' => $client->users()->find($request->user_id)->only(['id','name','last_name','email','document_type_id','document_number','phone','tries','last_active','status','created_at','role_id'])
+            ]
+        ]);
+    }
+
     public function vendors(Request $request) {
         
         $vendors = Client::select('id','name','last_name')
@@ -152,7 +179,6 @@ class ClientsController extends Controller
 
             return response()->json([
                 'success' => true,
-                'match' => $result2,
                 'data' => [
                     "operation" => $result->data
                 ]

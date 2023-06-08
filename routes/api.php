@@ -393,6 +393,8 @@ Route::middleware('encryptresponses')->group(function () {
                 Route::POST('bank-accounts', [\App\Http\Controllers\Clients\MyBankAccountsController::class, 'new_account']);
                 Route::GET('my-bank-accounts', [\App\Http\Controllers\Clients\MyBankAccountsController::class, 'list_accounts']);
 
+                Route::PUT('{client}/user', [\App\Http\Controllers\Admin\Executives\ClientsController::class, 'update_user']);
+
                 Route::GET('{client}', [\App\Http\Controllers\Admin\Executives\ClientsController::class, 'client_detail']);
             });
 
