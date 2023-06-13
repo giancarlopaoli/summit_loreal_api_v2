@@ -106,14 +106,14 @@ class ClientsController extends Controller
         ]);
         if($val->fails()) return response()->json($val->messages());
 
-        if(is_null($client->users()->find($request->user_id))){
+        /*if(is_null($client->users()->find($request->user_id))){
             return response()->json([
             'success' => false,
                 'errors' => [
                     'No tiene permisos para modificar datos de este usuario'
                 ]
             ]);
-        }
+        }*/
 
         $client->users()->find($request->user_id)->update($request->only(["phone"]));
 
@@ -184,5 +184,38 @@ class ClientsController extends Controller
                 ]
             ]);
         }
+    }
+
+    // Guardando configuración especial de cliente
+    public function interbank_parameters(Request $request) {
+        $val = Validator::make($request->all(), [
+            'client_id' => 'required|numeric',
+            'comission' => 'nullable|numeric',
+            'spread' => 'nullable|numeric',
+            'exchange_rate' => 'nullable|numeric'
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+        $client = Client::find($request->client_id);
+
+        $client->ibops_client_comissions()->where('active', true)->update([
+            'active' => false
+        ]);
+
+
+        $client->ibops_client_comissions()->create([
+            'client_id' => $request->client_id,
+            'comission_spread' => $request->comission_spread,
+            'spread' => $request->spread,
+            'exchange_rate' => $request->exchange_rate,
+            'active' => true,
+            //'created_at' => Carbon::now(),
+            'created_by' => auth()->id()
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'data' => $client->ibops_client_comissions->where('active', true)->first()
+        ]);
     }
 }

@@ -150,23 +150,23 @@ class AdminController extends Controller
             $counter_value = $operation->amount + $financial_expenses;
 
             $data = [
-                    'username' => Str::of($operation->user->name)->ucfirst() . " " . Str::of($operation->user->last_name)->ucfirst(),
-                    'client_name' => $operation->client->customer_type == 'PJ' ? $operation->client->name : $operation->client->name ." " . $operation->client->last_name . " " . $operation->client->mothers_name,
-                    'code' => $operation->code,
-                    'operation_date' => date('d F Y', strtotime($operation->operation_date)),
-                    'operation_time' => date('H:i', strtotime($operation->operation_date)),
-                    'currency_sign' => $operation->currency->sign,
-                    'amount' => number_format($operation->amount,2),
-                    'exchange_rate' => round($operation->exchange_rate,4),
-                    'exchange_rate_selling' => round($exchange_rate_selling,4),
-                    'comission_amount' => $operation->comission_amount,
-                    'igv' => $operation->igv,
-                    'counter_value' => number_format($counter_value,2),
-                    'deposit_amount' => $operation->client->type == 'PL' ? number_format($operation->amount,2) : number_format($counter_value + $operation->comission_amount + $operation->igv,2),
-                    'receive_amount' => $operation->client->type == 'PL' ? number_format($counter_value + $operation->comission_amount + $operation->igv,2) : number_format($operation->amount,2),
-                    'escrow_accounts' => $operation->escrow_accounts->load('bank','currency'),
-                    'bank_accounts' => $operation->bank_accounts->load('bank','currency')
-                ];
+                'username' => Str::of($operation->user->name)->ucfirst() . " " . Str::of($operation->user->last_name)->ucfirst(),
+                'client_name' => $operation->client->customer_type == 'PJ' ? $operation->client->name : $operation->client->name ." " . $operation->client->last_name . " " . $operation->client->mothers_name,
+                'code' => $operation->code,
+                'operation_date' => date('d F Y', strtotime($operation->operation_date)),
+                'operation_time' => date('H:i', strtotime($operation->operation_date)),
+                'currency_sign' => $operation->currency->sign,
+                'amount' => number_format($operation->amount,2),
+                'exchange_rate' => round($operation->exchange_rate,4),
+                'exchange_rate_selling' => round($exchange_rate_selling,4),
+                'comission_amount' => $operation->comission_amount,
+                'igv' => $operation->igv,
+                'counter_value' => number_format($counter_value,2),
+                'deposit_amount' => $operation->client->type == 'PL' ? number_format($operation->amount,2) : number_format($counter_value + $operation->comission_amount + $operation->igv,2),
+                'receive_amount' => $operation->client->type == 'PL' ? number_format($counter_value + $operation->comission_amount + $operation->igv,2) : number_format($operation->amount,2),
+                'escrow_accounts' => $operation->escrow_accounts->load('bank','currency'),
+                'bank_accounts' => $operation->bank_accounts->load('bank','currency')
+            ];
 
             $alto = 1760 + ($operation->bank_accounts->count() + $operation->escrow_accounts->count()) * 65;
 

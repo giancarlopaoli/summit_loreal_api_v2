@@ -20,6 +20,7 @@ return new class extends Migration
             $table->decimal('spread', 6, 2);
             $table->decimal('exchange_rate', 5, 4);
             $table->boolean('active');
+            $table->foreignId('created_by')->constrained('users');
             $table->timestamps();
         });
     }

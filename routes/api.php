@@ -390,6 +390,10 @@ Route::middleware('encryptresponses')->group(function () {
                 Route::GET('quote-inmediate', [\App\Http\Controllers\Admin\Executives\ClientsController::class, 'quote_inmediate_operation']);
                 Route::POST('create-inmediate', [\App\Http\Controllers\Admin\Executives\ClientsController::class, 'create_inmediate_operation']);
 
+                Route::GET('quote-interbank', [\App\Http\Controllers\Clients\InterbankOperationController::class, 'quote_operation']);
+                Route::POST('interbank-parameters', [\App\Http\Controllers\Admin\Executives\ClientsController::class, 'interbank_parameters']);
+                Route::POST('create-interbank', [\App\Http\Controllers\Clients\InterbankOperationController::class, 'create_operation']);
+
                 Route::POST('bank-accounts', [\App\Http\Controllers\Clients\MyBankAccountsController::class, 'new_account']);
                 Route::GET('my-bank-accounts', [\App\Http\Controllers\Clients\MyBankAccountsController::class, 'list_accounts']);
 

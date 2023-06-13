@@ -6,19 +6,23 @@ use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use App\Models\IbopsRange;
-use App\Models\EscrowAccount;
+use App\Models\BankAccount;
 use App\Models\Client;
 use App\Models\Configuration;
 use App\Models\Currency;
+use App\Models\EscrowAccount;
 use App\Models\ExchangeRate;
 use App\Models\IbopsClientComission;
+use App\Models\IbopsRange;
 use App\Models\Operation;
 use App\Models\OperationStatus;
 use App\Models\OperationHistory;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 use App\Enums;
-
+use Illuminate\Support\Facades\Mail;
+use App\Mail\OperationInstructions;
+use App\Mail\NewInterbankOperation;
 
 class InterbankOperationController extends Controller
 {
@@ -125,7 +129,6 @@ class InterbankOperationController extends Controller
 
             $exchange_rate = ExchangeRate::latest()->first()->venta;
 
-
             // Retrieving client comissions
             $client_comision = IbopsClientComission::where('client_id', $request->client_id)
                 ->where('active', true)
@@ -134,7 +137,7 @@ class InterbankOperationController extends Controller
             if($client_comision->count() > 0){
                 $client_comision = $client_comision->first();
 
-                if(!is_null($client_comision->comission)) $val_comision = $client_comision->comission;
+                if(!is_null($client_comision->comission_spread)) $val_comision = $client_comision->comission_spread;
                 if(!is_null($client_comision->spread)) $val_spread = $client_comision->spread;
                 if(!is_null($client_comision->exchange_rate)) $exchange_rate = $client_comision->exchange_rate;
             }
@@ -195,7 +198,7 @@ class InterbankOperationController extends Controller
         ]);
         if($val->fails()) return response()->json($val->messages());
 
-        try {
+        //try {
 
             $client = Client::find($request->client_id);
 
@@ -252,7 +255,7 @@ class InterbankOperationController extends Controller
             }
 
             $now = Carbon::now();
-            $code = $now->format('ymdHisv') . rand(0, 9);
+            $code = $now->format('YmdHisv') . rand(0, 9);
 
             $escrow_account_operation = array(
                 "escrow_account_id" => $request->escrow_account_id,
@@ -263,7 +266,7 @@ class InterbankOperationController extends Controller
             array_push($escrow_account_list,$escrow_account_operation);
 
 
-            $op = Operation::create([
+            $operation = Operation::create([
                 'code' => $code,
                 'class' => Enums\OperationClass::Interbancaria,
                 'type' => Enums\OperationType::Interbancaria,
@@ -279,26 +282,44 @@ class InterbankOperationController extends Controller
                 'detraction_amount' => $detraction_amount,
                 'detraction_percentage' => $detraction_percentage,
                 'operation_status_id' => OperationStatus::where('name', 'Disponible')->first()->id,
-                'operation_date' => $now->toDateTimeString()
+                'operation_date' => $now->toDateTimeString(),
+                'post' => false
             ]);
 
-            $op->bank_accounts()->attach($bank_account_list);
-            $op->escrow_accounts()->attach($escrow_account_list);
+            $operation->bank_accounts()->attach($bank_account_list);
+            $operation->escrow_accounts()->attach($escrow_account_list);
+
+            // Matching with vendor
+            if(isset($request->vendor_id)){
+
+                $vendor_operation = InterbankOperationController::match_operation_vendor($operation->id, $request->vendor_id)->getData();
+
+                return response()->json([
+                    'success' => true,
+                    'data' => [ 
+                        $vendor_operation
+                    ],
+                ]);
+            }
+            else{
+                // Enviar Correo()
+                $rpta_mail = Mail::send(new NewInterbankOperation($operation));
+            }
 
             return response()->json([
                 'success' => true,
                 'data' => [ 
-                    'operation' => $op
+                    'operation' => $operation
                 ],
             ]);
 
-            $rpta_mail = Mail::send(new NewOperation($op->OperacionId));
-            $rpta_mail = Mail::send(new NotifyOpItbc($op->OperacionId));
+            /*$rpta_mail = Mail::send(new NewOperation($op->OperacionId));
+            $rpta_mail = Mail::send(new NotifyOpItbc($op->OperacionId));*/
 
-        } catch (\Exception $e) {
+        /*} catch (\Exception $e) {
             return response()->json(['success' => false,'data' => ['Error al crear operación']]);
             logger('Creación de Operación Interbancaria: create_operation@InterbankOperationController', ["error" => $e]);
-        }
+        }*/
 
         OperationHistory::create(["operation_id" => $operation->id,"user_id" => auth()->id(),"action" => "Operación creada"]);
 
@@ -309,6 +330,111 @@ class InterbankOperationController extends Controller
             'data' => [
                 "Operación creada exitosamente"
             ]
+        ]);
+    }
+
+    public function match_operation_vendor($operation_id, $vendor_id) {
+        $operation = Operation::find($operation_id)->load('bank_accounts','escrow_accounts');
+
+        ####### Validating operation is not previusly matched ##########
+        $operation_match = DB::table('operation_matches')
+            ->where("operation_id", $operation->id)
+            ->get();
+
+        if($operation_match->count() > 0) {
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'La operación ya se encuentra emparejada'
+                ]
+            ]);
+        }
+
+        ######### Creating vendor operation #############
+
+        $op_code = Carbon::now()->format('YmdHisv') . rand(0,9);
+        $status_id = OperationStatus::where('name', 'Pendiente envio fondos')->first()->id;
+
+        // Calculando detracción
+        $detraction_percentage = Configuration::where('shortname', 'DETRACTION')->first()->value;
+        $detraction_amount = 0;
+
+        $matched_operation = Operation::create([
+            'code' => $op_code,
+            'class' => Enums\OperationClass::Interbancaria,
+            'type' => 'Interbancaria',
+            'client_id' => $vendor_id,
+            'user_id' => auth()->id(),
+            'amount' => $operation->amount,
+            'currency_id' => $operation->currency_id,
+            'exchange_rate' => $operation->exchange_rate,
+            'comission_spread' => $operation->spread,
+            'comission_amount' => 0,
+            'detraction_amount' => $detraction_amount,
+            'detraction_percentage' => $detraction_percentage,
+            'igv' => 0,
+            'spread' => ($operation->type == "Interbancaria") ? $operation->spread : 0,
+            'operation_status_id' => $status_id,
+            'operation_date' => Carbon::now(),
+            'post' => false
+        ]);
+
+        if($matched_operation){
+            try {
+
+                // Getting Vendor bank account
+                $vendor_bank_account = BankAccount::where('client_id', $vendor_id)
+                    ->where('bank_account_status_id', Enums\BankAccountStatus::Activo)
+                    ->where('bank_id', $operation->escrow_accounts[0]->bank_id)
+                    ->where('currency_id', $operation->escrow_accounts[0]->currency_id )
+                    ->first();
+
+                if(is_null($vendor_bank_account)) return response()->json(['error' => true,'data' => ['Error en la cuenta de destino del proveedor de liquidez.']]);
+
+                $financial_expenses =  round(round($matched_operation->spread / 10000, 6) * $matched_operation->amount,2);
+
+                $matched_operation->bank_accounts()->attach($vendor_bank_account->id, [
+                    'amount' => $matched_operation->amount + $financial_expenses,
+                    'comission_amount' => 0,
+                    'created_at' => Carbon::now()
+                ]);
+                
+
+                // Getting Vendor Escrow Accont
+                $vendor_escrow_account = EscrowAccount::where('active', true)
+                    ->where('bank_id', $operation->bank_accounts[0]->bank_id)
+                    ->where('currency_id', $operation->bank_accounts[0]->currency_id)
+                    ->first();
+
+                if(is_null($vendor_escrow_account)) return response()->json(['error' => true,'data' => ['Error en la cuenta de fideicomiso del proveedor de liquidez.']]);
+
+                $matched_operation->escrow_accounts()->attach($vendor_escrow_account->id, [
+                    'amount' => $matched_operation->amount,
+                    'comission_amount' => 0,
+                    'created_at' => Carbon::now()
+                ]);
+                
+            } catch (\Exception $e) {
+                logger('ERROR: archivo adjunto: match_operation_vendor@InmediateOperationController', ["error" => $e]);
+
+                // Envio de correo de notificación de error
+            }
+
+            $operations_matches = $operation->matches()->attach($matched_operation->id, ['created_at' => Carbon::now()]);
+
+            $operation->operation_status_id = $status_id;
+            $operation->save();
+        }
+
+        // Enviar correo instrucciones ()
+        $rpta_mail = Mail::send(new OperationInstructions($operation->id));
+        $rpta_mail = Mail::send(new OperationInstructions($matched_operation->id));
+
+        OperationHistory::create(["operation_id" => $operation->id,"user_id" => auth()->id(),"action" => "Operación emparejada"]);
+
+        return response()->json([
+            "vendor_id" => $vendor_id,
+            "operacion" => $operation
         ]);
     }
 

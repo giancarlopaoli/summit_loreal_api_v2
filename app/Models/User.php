@@ -71,6 +71,10 @@ class User extends Authenticatable
         return $this->hasMany(IbopsRange::class);
     }
 
+    public function ibops_client_comissions() {
+        return $this->hasMany(IbopsClientComission::class);
+    }
+
     public function vendor_spreads() {
         return $this->hasMany(VendorSpread::class);
     }

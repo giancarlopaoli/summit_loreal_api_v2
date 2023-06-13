@@ -996,7 +996,7 @@ class InmediateOperationController extends Controller
         ]);
 
         if($matched_operation){
-            //try {
+            try {
                 
                 foreach ($operation->bank_accounts as $bank_account_data) {
                     
@@ -1056,11 +1056,11 @@ class InmediateOperationController extends Controller
                     }
 
                 }
-            /*} catch (\Exception $e) {
+            } catch (\Exception $e) {
                 logger('ERROR: archivo adjunto: match_operation_vendor@InmediateOperationController', ["error" => $e]);
 
                 // Envio de correo de notificación de error
-            }*/
+            }
 
             $operations_matches = $operation->matches()->attach($matched_operation->id, ['created_at' => Carbon::now()]);
 
