@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Client;
 use App\Models\ClientStatus;
+use App\Models\User;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Controllers\Clients\InmediateOperationController;
 
@@ -115,12 +116,13 @@ class ClientsController extends Controller
             ]);
         }*/
 
-        $client->users()->find($request->user_id)->update($request->only(["phone"]));
+        $user = User::find($request->user_id);
+        $user->update($request->only(["phone"]));
 
         return response()->json([
             'success' => true,
             'data' => [
-                'users' => $client->users()->find($request->user_id)->only(['id','name','last_name','email','document_type_id','document_number','phone','tries','last_active','status','created_at','role_id'])
+                'users' => $user->only(['id','name','last_name','email','document_type_id','document_number','phone','tries','last_active','status','created_at','role_id'])
             ]
         ]);
     }
