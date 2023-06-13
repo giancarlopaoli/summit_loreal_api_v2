@@ -9,11 +9,13 @@ class IbopsClientComission extends Model
 {
     use HasFactory;
 
+    protected $guarded = [];
+
     public function client() {
         return $this->belongsTo(Client::class);
     }
 
-    public function updater() {
-        return $this->belongsTo(User::class, "updated_by");
+    public function creator() {
+        return $this->belongsTo(User::class, "created_by");
     }
 }
