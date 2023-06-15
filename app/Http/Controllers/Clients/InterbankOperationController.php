@@ -199,7 +199,7 @@ class InterbankOperationController extends Controller
         ]);
         if($val->fails()) return response()->json($val->messages());
 
-        //try {
+        try {
 
             $client = Client::find($request->client_id);
 
@@ -315,13 +315,11 @@ class InterbankOperationController extends Controller
                 ],
             ]);
 
-            /*$rpta_mail = Mail::send(new NewOperation($op->OperacionId));
-            $rpta_mail = Mail::send(new NotifyOpItbc($op->OperacionId));*/
 
-        /*} catch (\Exception $e) {
+        } catch (\Exception $e) {
             return response()->json(['success' => false,'data' => ['Error al crear operación']]);
             logger('Creación de Operación Interbancaria: create_operation@InterbankOperationController', ["error" => $e]);
-        }*/
+        }
 
         OperationHistory::create(["operation_id" => $operation->id,"user_id" => auth()->id(),"action" => "Operación creada"]);
 
