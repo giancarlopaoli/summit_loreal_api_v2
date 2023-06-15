@@ -50,9 +50,8 @@ class ClientsController extends Controller
 
     public function client_detail(Request $request, Client $client) {
 
-        $client->load('operations.bank_accounts','operations.escrow_accounts')
+        $client->load('operations:id,code,class,type,client_id,user_id,amount,currency_id,exchange_rate,comission_spread,comission_amount,igv,spread,operation_status_id,invoice_url','operations.status:id,name','operations.bank_accounts','operations.escrow_accounts','tracking_phase:id,name','status:id,name')
             ->only(['id','name','last_name','mothers_name','document_type_id','document_number','phone','email','address','birthdate','district_id','economic_activity_id','client_status_id','accountable_email','comments','association_id','registered_at','executive_id','tracking_phase_id','tracking_date','comission_start_date','comission','accepts_publicity','users']);
-
 
         return response()->json([
             'success' => true,
@@ -106,15 +105,6 @@ class ClientsController extends Controller
             'phone' => 'required|string'
         ]);
         if($val->fails()) return response()->json($val->messages());
-
-        /*if(is_null($client->users()->find($request->user_id))){
-            return response()->json([
-            'success' => false,
-                'errors' => [
-                    'No tiene permisos para modificar datos de este usuario'
-                ]
-            ]);
-        }*/
 
         $user = User::find($request->user_id);
         $user->update($request->only(["phone"]));

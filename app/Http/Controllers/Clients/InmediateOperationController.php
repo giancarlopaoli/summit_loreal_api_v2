@@ -669,10 +669,6 @@ class InmediateOperationController extends Controller
         }
         $client = Client::find($request->client_id);
 
-        /*return response()->json([
-            'success' => Operation::find(60)->load('user','client')
-        ]);*/
-
         // Validating available hours
         $hours = InmediateOperationController::operation_hours($request->client_id)->getData();
 
