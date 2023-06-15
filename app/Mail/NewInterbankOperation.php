@@ -30,12 +30,11 @@ class NewInterbankOperation extends Mailable
      */
     public function build()
     {
-        /*$operation = Operation::find($this->operation_id)
-            ->load('user','client');*/
+        $mail_executive = (isset($this->operation->client->executive->user->email)) ? $this->operation->client->executive->user->email : env('MAIL_CRM');
 
         return $this
             ->subject('BILLEX | Nueva Operación Interbancaria')
-            ->to($this->operation->user->email)
+            ->to( $mail_executive)
             ->bcc(env('MAIL_OPS'))
             ->bcc(env('MAIL_TI'))
             ->view('new_interbank_operation')

@@ -9,7 +9,11 @@ class TrackingPhase extends Model
 {
     use HasFactory;
 
-    public function trackings() {
+    public function leads() {
         return $this->hasMany(LeadTracking::class);
+    }
+
+    public function clients() {
+        return $this->hasMany(Client::class);
     }
 }

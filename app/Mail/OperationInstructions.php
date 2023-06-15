@@ -93,9 +93,12 @@ class OperationInstructions extends Mailable
 
         }
 
+        $mail_executive = (isset($operation->client->executive->user->email)) ? $operation->client->executive->user->email : env('MAIL_OPS');
+
         return $this
             ->subject('BILLEX | Instrucciones de la Operación')
             ->to($operation->user->email)
+            ->cc($mail_executive)
             ->bcc(env('MAIL_OPS'))
             ->bcc(env('MAIL_TI'))
             ->view('operation_instructions')

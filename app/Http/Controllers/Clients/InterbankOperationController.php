@@ -23,6 +23,7 @@ use App\Enums;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\OperationInstructions;
 use App\Mail\NewInterbankOperation;
+use App\Mail\NotifyOpsInterbankOperation;
 
 class InterbankOperationController extends Controller
 {
@@ -304,12 +305,13 @@ class InterbankOperationController extends Controller
             else{
                 // Enviar Correo()
                 $rpta_mail = Mail::send(new NewInterbankOperation($operation));
+                $rpta_mail = Mail::send(new NotifyOpsInterbankOperation($operation));
             }
 
             return response()->json([
                 'success' => true,
                 'data' => [ 
-                    'operation' => $operation
+                    'operation' => $operation->only(['id','code','type','amount','currency_id'])
                 ],
             ]);
 

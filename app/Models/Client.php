@@ -110,4 +110,8 @@ class Client extends Model
     public function documents() {
         return $this->hasMany(Document::class);
     }
+
+    public function tracking_phase() {
+        return $this->belongsTo(TrackingPhase::class);
+    }
 }
