@@ -65,6 +65,7 @@ class DailyOperationsController extends Controller
             ->selectRaw("(select sum(op1.amount) from operations op1 where month(op1.operation_date) = $month and year(op1.operation_date) = $year and op1.operation_status_id in (" . substr($finalizadas, 1, Str::length($finalizadas)-2) . ")) as monthly_amount")
             ->selectRaw("(select count(op1.amount) from operations op1 where month(op1.operation_date) = $month and year(op1.operation_date) = $year and op1.operation_status_id in (" . substr($finalizadas, 1, Str::length($finalizadas)-2) . ")) as monthly_operations")
             ->whereRaw("date(operation_date) = '$date'")
+            ->whereNotIn('client_id', Client::where('type','PL')->get()->pluck('id'))
             ->whereIn('operation_status_id', $finalizadas)
             ->get();
 
@@ -88,7 +89,7 @@ class DailyOperationsController extends Controller
             ->selectRaw("if(type = 'Interbancaria', round(amount * spread/10000, 2 ) , null ) as financial_expenses")
             ->whereIn('operation_status_id', OperationStatus::wherein('name', ['Disponible'])->get()->pluck('id'))
             ->whereRaw("date(operation_date) = '$date'")
-            ->with('client:id,name')
+            ->with('client:id,name,last_name,mothers_name,customer_type,type,document_type_id,document_number')
             ->with('client.document_type:id,name')
             ->with('currency:id,name:sign')
             ->with('status:id,name')
