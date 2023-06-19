@@ -16,7 +16,7 @@ class ClientTracking extends Model
     }
 
     public function status() {
-        return $this->belongsTo(TrackingStatus::class);
+        return $this->belongsTo(TrackingStatus::class, "tracking_status_id");
     }
 
     public function creator() {
@@ -24,6 +24,6 @@ class ClientTracking extends Model
     }
 
     public function form() {
-        return $this->belongsTo(TrackingForm::class);
+        return $this->belongsTo(TrackingForm::class, "tracking_form_id");
     }
 }
