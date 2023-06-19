@@ -31,6 +31,7 @@ class DashboardController extends Controller
         $latest_operations = $client
             ->operations()
             ->select('id','code','class','type','amount','currency_id','operation_date','operation_status_id','exchange_rate')
+            ->selectRaw("if(type = 'Compra', round(exchange_rate + comission_spread/10000, 4), if(type = 'Venta', round(exchange_rate - comission_spread/10000, 4), round(exchange_rate * (1 + spread/10000),4))) as final_exchange_rate")
             ->latest()
             ->take(5)
             ->get();
