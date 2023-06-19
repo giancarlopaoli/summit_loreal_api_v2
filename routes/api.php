@@ -167,6 +167,8 @@ Route::middleware('encryptresponses')->group(function () {
 
         Route::GET('account-types', [\App\Http\Controllers\Admin\MasterTablesController::class, 'account_types']);
         Route::GET('currencies', [\App\Http\Controllers\Admin\MasterTablesController::class, 'currencies']);
+        Route::GET('banks', [\App\Http\Controllers\Admin\MasterTablesController::class, 'banks']);
+        Route::GET('document-types', [\App\Http\Controllers\Register\RegisterController::class, 'document_types']);
 
         Route::GET('exchange-rate', [\App\Http\Controllers\Admin\DatatecController::class, 'exchange_rate']);
 
