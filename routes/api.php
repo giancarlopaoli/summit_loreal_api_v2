@@ -394,6 +394,8 @@ Route::middleware('encryptresponses')->group(function () {
 
                 Route::GET('quote-interbank', [\App\Http\Controllers\Clients\InterbankOperationController::class, 'quote_operation']);
                 Route::POST('interbank-parameters', [\App\Http\Controllers\Admin\Executives\ClientsController::class, 'interbank_parameters']);
+                Route::GET('interbank-parameters', [\App\Http\Controllers\Admin\Executives\ClientsController::class, 'get_interbank_parameters']);
+                Route::DELETE('interbank-parameters/{ibops_client_comissions}', [\App\Http\Controllers\Admin\Executives\ClientsController::class, 'delete_interbank_parameter']);
                 Route::POST('create-interbank', [\App\Http\Controllers\Clients\InterbankOperationController::class, 'create_operation']);
 
                 Route::POST('bank-accounts', [\App\Http\Controllers\Clients\MyBankAccountsController::class, 'new_account']);

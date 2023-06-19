@@ -168,7 +168,9 @@ class InterbankOperationController extends Controller
                     'exchange_rate' => $exchange_rate,
                     'receives' => $depositar,
                     'selling_exchange_rate' => $tcventa,
-                    'currency' => Currency::find($request->currency_id)->only(['id','name','sign'])
+                    'currency' => Currency::find($request->currency_id)->only(['id','name','sign']),
+                    'spread' => $val_spread,
+                    'comission_spread' => $val_comision
                 ]
             ]);
 
