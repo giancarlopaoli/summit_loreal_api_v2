@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Client;
 use App\Models\ClientStatus;
+use App\Models\IbopsClientComission;
 use App\Models\User;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Controllers\Clients\InmediateOperationController;
@@ -178,7 +179,27 @@ class ClientsController extends Controller
         }
     }
 
-    // Guardando configuración especial de cliente
+    // List of Interbank Operations parameters
+    public function get_interbank_parameters(Request $request) {
+        $val = Validator::make($request->all(), [
+            'client_id' => 'required|numeric',
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+       $parameters = IbopsClientComission::select('id','client_id','comission_spread','spread','exchange_rate')
+            ->where('client_id', $request->client_id)
+            ->where('active', true)
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'ibops_client_comissions' => $parameters
+            ]
+        ]);
+    }
+
+    // Saving special configuration
     public function interbank_parameters(Request $request) {
         $val = Validator::make($request->all(), [
             'client_id' => 'required|numeric',
@@ -207,7 +228,27 @@ class ClientsController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $client->ibops_client_comissions->where('active', true)->first()
+            'data' => [
+                'ibops_client_comissions' => $client->ibops_client_comissions->where('active', true)->first()
+            ]
+        ]);
+    }
+
+    // Eliminar Comision cliente
+    public function delete_interbank_parameter(Request $request, IbopsClientComission $ibops_client_comissions) {
+        $val = Validator::make($request->all(), [
+            'client_id' => 'required|numeric'
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+        $ibops_client_comissions->active = false;
+        $ibops_client_comissions->save();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'Parametros eliminados exitosamente'
+            ]
         ]);
     }
 }
