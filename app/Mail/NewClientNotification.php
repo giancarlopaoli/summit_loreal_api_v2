@@ -41,7 +41,7 @@ class NewClientNotification extends Mailable
         $executive2 = ($client->executives_comissions->count() > 0) ? $client->executives_comissions[0]->executive->user : null;
 
         return $this->from(env('MAIL_FROM_ADDRESS'), env('MAIL_FROM_NAME'))
-            ->subject('Nuevo registro de cliente: '.$bussiness_name)
+            ->subject('BILLEX | Nuevo registro de cliente: '.$bussiness_name)
             ->to(env('MAIL_CRM'))
             ->cc(env('MAIL_OPS'))
             ->cc(env('MAIL_TI'))

@@ -25,6 +25,7 @@ use Illuminate\Support\Facades\Storage;
 use App\Events\AvailableOperations;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\OperationInstructions;
+use App\Mail\OperationSign;
 
 class DailyOperationsController extends Controller
 {
@@ -728,6 +729,7 @@ class DailyOperationsController extends Controller
         else{
             
             // Enviar Correo()
+            $rpta_mail = Mail::send(new OperationSign($operation));
 
             $operation->sign_date = Carbon::now();
             $operation->save();
