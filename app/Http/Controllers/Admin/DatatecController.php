@@ -53,4 +53,16 @@ class DatatecController extends Controller
             ]
         ]);
     }
+
+    public function exchange_rate_list(Request $request) {
+        $min_amount = Range::minimun_amount();
+        $exchange_rate = ExchangeRate::latest()->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'exchange_rate' => $exchange_rate
+            ]
+        ]);
+    }
 }

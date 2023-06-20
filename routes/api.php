@@ -46,6 +46,8 @@ Route::middleware('encryptresponses')->group(function () {
 
         Route::prefix('my-operations')->group(function () {
             Route::GET('list', [\App\Http\Controllers\Clients\MyOperationsController::class, 'list_my_operations']);
+            Route::GET('download-file', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'download_file']);
+            
             Route::GET('{operation}', [\App\Http\Controllers\Clients\MyOperationsController::class, 'operation_detail']);
             Route::POST('upload-voucher', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'upload_voucher']);
             Route::GET('instruction/{operation}', [\App\Http\Controllers\Admin\AdminController::class, 'instruction']);
@@ -405,6 +407,8 @@ Route::middleware('encryptresponses')->group(function () {
 
                 Route::GET('{client}', [\App\Http\Controllers\Admin\Executives\ClientsController::class, 'client_detail']);
             });
+
+            Route::GET('exchange-rate', [\App\Http\Controllers\Admin\Operations\ExchangeRateController::class, 'list']);
 
         });
 
