@@ -729,7 +729,7 @@ class DailyOperationsController extends Controller
         else{
             
             // Enviar Correo()
-            $rpta_mail = Mail::send(new OperationSign($operation));
+            $rpta_mail = Mail::send(new OperationSign($operation), $request->sign);
 
             $operation->sign_date = Carbon::now();
             $operation->save();
