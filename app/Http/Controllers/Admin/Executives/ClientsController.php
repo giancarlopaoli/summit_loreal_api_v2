@@ -66,7 +66,7 @@ class ClientsController extends Controller
     }
 
     public function client_follows(Request $request, Client $client) {
-        $tracking = $client->trackings;
+        $tracking = $client->trackings->load('status:id,name','form:id,name','creator:id,name,last_name');
         
         return response()->json([
             'success' => true,

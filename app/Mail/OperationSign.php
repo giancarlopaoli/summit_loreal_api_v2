@@ -18,10 +18,11 @@ class OperationSign extends Mailable
      *
      * @return void
      */
-    public function __construct(Operation $operation)
+    public function __construct(Operation $operation, $sign)
     {
         //
         $this->operation = $operation;
+        $this->sign = $sign;
     }
 
     /**
