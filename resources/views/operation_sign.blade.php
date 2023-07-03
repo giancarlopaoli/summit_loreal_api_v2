@@ -105,7 +105,7 @@
   </style>
 </head>
 <body style="font-family: 'Poppins';">
-  <table style="margin: 0; padding: 20px 40px; width: 650px; margin: 0 auto; background-color: #fff;" cellpadding="0" cellspacing="0">
+  <table style="margin: 0; padding: 20px 40px; width: 800px; margin: 0 auto; background-color: #fff;" cellpadding="0" cellspacing="0">
     <tr>
       <td class="header" align="center">
         <img src="https://bill-upload.s3.amazonaws.com/static/img/logo.png" alt="" />
@@ -141,26 +141,66 @@
           background-color: #fff;">
           </td>
         </tr>
-        
+
         <table>
-            <tr><td><b>Fase de Operación</b></td><td>@FaseOperacion</td></tr>
-            <tr><td><b>Tipo de Operación</b></td><td>@TipoOperacion</td></tr>
-            <tr><td><b>Fecha</b></td><td>@OperacionEmparejada</td></tr>
-            <tr><td><b>Cliente</b></td><td>@ClienteOperacionCreada</td></tr>
-            <tr><td><b>@TituloMontoOperacionCreada</b></td><td>@MontoOperacionCreada</td></tr>
-            <tr><td><b>@TituloMontoRecibidoOperacionCreada</b></td><td>@MontoRecibidoOperacionCreada</td></tr>
-            <tr><td><b>Cuenta destino Cliente</b></td><td>@cuentaDestinoCreado</td></tr>
-            <tr><td><b>Banco cuenta Cliente</b></td><td><img src=@CuentaImg width="60" height="20" style="display: @DisplayCuentaImg"> @bancoDestinoCreado</td></tr>
-            <tr><td><b>Cliente contraparte</b></td><td>@ClienteOperacionTomada</td></tr>
-            <tr><td><b>@TituloMontoDepositadoOperacionTomada</b></td><td>@MontoDepositadoOperacionTomada</td></tr>
-            <tr><td><b>@TituloMontoRecibidoOperacionTomada</b></td><td>@MontoRecibidoOperacionTomada</td></tr>
-            <tr><td><b>Cuenta destino Contraparte</b></td><td>@cuentaDestinoTomado</td></tr>
-            <tr><td><b>Banco destino Contraparte</b></td><td><img src=@CuentaImgContraparte width="60" height="20" style="display: @DisplayCuentaImgContraparte"> @bancoDestinoTomado</td></tr>
-            <tr><td><b>T/C pactado</b></td><td>@TCpactado</td></tr>
-            <tr><td><b>Comisión Cliente (@TipoMoneda)</b></td><td>@ComisionClienteSoles</td></tr>
-            <tr><td><b>Comisión Contraparte (@TipoMoneda)</b></td><td>@ComisionContraparte</td></tr>
-            <tr><td><b>Comisión Billex Cliente %</b></td><td>@ComisionBillex</td></tr>
-            <tr><td><b>Comisión Contraparte %</b></td><td>@ComisionCPBillex</td></tr>
+            <tr><td><b>Fase de Operación</b></td><td>{{ $phase }}</td></tr>
+            <tr><td><b>Tipo de Operación</b></td><td>{{ $type }}</td></tr>
+            <tr><td><b>Fecha</b></td><td>{{ $date}}</td></tr>
+            <tr><td><b>Cliente</b></td><td>{{ $client_name }}</td></tr>
+            <tr><td><b>Importe transferido {{ $sent_currency }}</b></td><td> {{ $sent_amount }} </td></tr>
+            <tr><td><b>Importe recibido {{ $received_currency }} </b></td><td> {{ $received_amount }} </td></tr>
+
+            <tr><td><b>Fideicomiso deposito Cliente</b></td><td><table border = 1 style="width: 100%;"><tr><th>Banco</th><th>Cuenta</th><th>Monto</th></tr>
+            @foreach ($client_escrow_accounts as $escrow_account)
+            <tr>
+              <td><img src="{{$escrow_account->bank->image}}" width="30" style="display: {{$show_image_client}}"> {{$escrow_account->bank->shortname}}</td>
+              <td>Nro: {{$escrow_account->account_number}} <br>CCI: {{$escrow_account->cci_number}}</td>
+              <td>{{ $sent_currency }}{{number_format($escrow_account->pivot->amount,2)}}</td>
+            </tr>
+            @endforeach
+            </table></td></tr>
+
+            <tr><td><b>Banco cuenta Cliente</b></td><td><table border = 1 style="width: 100%;"><tr><th>Banco</th><th>Cuenta</th><th>Monto</th></tr>
+            @foreach ($client_account as $bank_account)
+            <tr>
+              <td><img src="{{$bank_account->bank->image}}" width="30" style="display: {{$show_image_client}}"> {{$bank_account->bank->shortname}}</td>
+              <td>Nro: {{$bank_account->account_number}} <br>CCI: {{$bank_account->cci_number}}</td>
+              <td>{{ $received_currency }}{{number_format($bank_account->pivot->amount,2)}}</td>
+            </tr>
+            @endforeach
+            </table></td></tr>
+
+            <br>
+            <tr><td></td><td></td></tr>
+            <tr><td><b>Cliente contraparte</b></td><td> {{ $counterpart_name }} </td></tr>
+            <tr><td><b>Importe transferido {{ $received_currency }} </b></td><td>{{ $counterpart_sent_amount }}</td></tr>
+            <tr><td><b>Importe recibido {{ $sent_currency }}</b></td><td>{{ $counterpart_received_amount }}</td></tr>
+
+            <tr><td><b>Fideicomiso deposito Contraparte</b></td><td><table border = 1 style="width: 100%;"><tr><th>Banco</th><th>Cuenta</th><th>Monto</th></tr>
+            @foreach ($counterpart_escrow_accounts as $escrow_account)
+            <tr>
+              <td><img src="{{$escrow_account->bank->image}}" width="30" style="display: {{$show_image_counterpart}}"> {{$escrow_account->bank->shortname}}</td>
+              <td>Nro: {{$escrow_account->account_number}} <br>CCI: {{$escrow_account->cci_number}}</td>
+              <td>{{ $sent_currency }}{{number_format($escrow_account->pivot->amount,2)}}</td>
+            </tr>
+            @endforeach
+            </table></td></tr>
+
+            <tr><td><b>Cuenta destino Contraparte</b></td><td><table border = 1 style="width: 100%;"><tr><th>Banco</th><th>Cuenta</th><th>Monto</th></tr>
+            @foreach ($counterpart_bank_account as $bank_account)
+            <tr>
+              <td><img src="{{$bank_account->bank->image}}" width="30" style="display: {{$show_image_counterpart}}"> {{$bank_account->bank->shortname}}</td>
+              <td>Nro: {{$bank_account->account_number}} <br>CCI: {{$bank_account->cci_number}}</td>
+              <td>{{ $received_currency }}{{number_format($bank_account->pivot->amount,2)}}</td>
+            </tr>
+            @endforeach
+            </table></td></tr>
+
+            <tr><td><b>T/C pactado</b></td><td>{{$exchange_rate}}</td></tr>
+            <tr><td><b>Comisión Cliente {{ $comission_currency }}</b></td><td>{{ $comission_amount }}</td></tr>
+            <tr><td><b>Comisión Contraparte {{ $comission_currency }}</b></td><td>{{ $counterpart_comission_amount }}</td></tr>
+            <tr><td><b>Spread Comisión Billex Cliente</b></td><td>{{ $client_spread_comission}}</td></tr>
+            <tr><td><b>Spread Comisión Contraparte</b></td><td>{{ $counterpart_spread_comission }}</td></tr>
 
         </table>
         

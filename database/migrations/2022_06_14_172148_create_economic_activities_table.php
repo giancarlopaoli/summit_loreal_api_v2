@@ -15,7 +15,7 @@ return new class extends Migration
     {
         Schema::create('economic_activities', function (Blueprint $table) {
             $table->id();
-            $table->string('name', 45);
+            $table->string('name', 200);
             $table->string('code', 45);
             $table->timestamps();
         });

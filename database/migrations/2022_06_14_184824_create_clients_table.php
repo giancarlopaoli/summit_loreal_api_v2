@@ -17,14 +17,14 @@ return new class extends Migration
             $table->id();
             $table->string('name', 255);
             $table->string('last_name', 255);
-            $table->string('mothers_name', 255);
+            $table->string('mothers_name', 255)->nullable();
             $table->foreignIdFor(\App\Models\DocumentType::class)->constrained();
             $table->string('document_number', 12);
             $table->string('phone', 20);
             $table->string('email', 100);
             $table->string('address', 255);
             $table->date('birthdate');
-            $table->foreignIdFor(\App\Models\District::class)->constrained();
+            $table->foreignIdFor(\App\Models\District::class)->nullable()->constrained();
             $table->foreignIdFor(\App\Models\Country::class)->nullable()->constrained();
             $table->foreignIdFor(\App\Models\EconomicActivity::class)->nullable()->constrained();
             $table->foreignIdFor(\App\Models\Profession::class)->nullable()->nullable()->constrained();
@@ -36,7 +36,7 @@ return new class extends Migration
             $table->string('funds_source', 255)->nullable();
             $table->string('funds_comments', 255)->nullable();
             $table->string('other_funds_comments', 255)->nullable();
-            $table->boolean('pep')->default(false);
+            $table->boolean('pep')->default(false)->nullable();
             $table->string('pep_company', 100)->nullable();
             $table->string('pep_position', 100)->nullable();
             $table->integer('corfid_id')->nullable();
@@ -53,8 +53,8 @@ return new class extends Migration
             $table->date('comission_start_date')->nullable();
             $table->decimal('comission', 5, 4)->nullable();
             $table->unsignedInteger("invoice_to")->nullable();
-            $table->boolean('accepts_publicity')->default(false);
-            $table->boolean('validated')->default(false);
+            $table->boolean('accepts_publicity')->nullable()->default(false);
+            $table->boolean('validated')->nullable()->default(false);
             $table->timestamps();
         });
     }

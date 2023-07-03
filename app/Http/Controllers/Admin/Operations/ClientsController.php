@@ -51,6 +51,14 @@ class ClientsController extends Controller
             $client = $client->whereIn('client_status_id', ClientStatus::whereIn('name', ['Aprobado Billex'])->get()->pluck('id'));
         }
 
+        if(isset($request->customer_type)) $client = $client->where('customer_type', $request->customer_type);
+
+        if($request->company_name != "") $client = $client->whereRaw("CONCAT(name,' ',last_name,' ',mothers_name) like "."'%"."$request->company_name"."%'");
+
+        if($request->document_number != "")  $client = $client->where('document_number', 'like', "%".$request->document_number."%");
+
+        if($request->document_type_id != "")  $client = $client->where('document_type_id', 'like', "%".$request->document_type_id."%");
+
         return response()->json([
             'success' => true,
             'data' => [

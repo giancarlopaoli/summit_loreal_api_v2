@@ -18,8 +18,8 @@ return new class extends Migration
             $table->foreignIdFor(\App\Models\Executive::class)->constrained();
             $table->foreignIdFor(\App\Models\Client::class)->constrained();
             $table->decimal('comission', 5,  4);
-            $table->date('start_date');
-            $table->date('end_date');
+            $table->date('start_date')->nullable();
+            $table->date('end_date')->nullable();
             $table->timestamps();
         });
     }

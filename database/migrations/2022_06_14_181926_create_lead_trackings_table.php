@@ -17,10 +17,10 @@ return new class extends Migration
             $table->id();
             $table->foreignIdFor(\App\Models\Lead::class)->constrained();
             $table->foreignIdFor(\App\Models\TrackingStatus::class)->constrained();
-            $table->foreignIdFor(\App\Models\TrackingForm::class)->constrained();
+            $table->foreignIdFor(\App\Models\TrackingForm::class)->nullable()->constrained();
             $table->foreignIdFor(\App\Models\TrackingPhase::class)->constrained();
-            $table->foreignIdFor(\App\Models\LeadContact::class)->constrained();
-            $table->string('comments', 45);
+            $table->foreignIdFor(\App\Models\LeadContact::class)->nullable()->constrained();
+            $table->text('comments')->nullable();
             $table->foreignId('created_by')->constrained('users');
             $table->timestamps();
         });

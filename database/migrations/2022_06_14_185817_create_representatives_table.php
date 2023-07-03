@@ -18,7 +18,7 @@ return new class extends Migration
             $table->foreignIdFor(\App\Models\Client::class)->constrained();
             $table->enum('representative_type', ['Socio', 'Representante Legal']);
             $table->foreignIdFor(\App\Models\DocumentType::class)->constrained();
-            $table->string('document_number', 15);
+            $table->string('document_number', 100);
             $table->string('names', 150);
             $table->string('last_name', 50)->nullable();
             $table->string('mothers_name', 50)->nullable();

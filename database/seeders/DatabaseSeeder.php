@@ -47,9 +47,14 @@ class DatabaseSeeder extends Seeder
             TrackingPhaseSeeder::class
         ]);
 
-        if(env('APP_DEBUG')) {
+        if(env('APP_ENV') == 'prod') {
+            $this->call(PRDSeeder::class);
+        }
+        else{
             $this->call(TestingSeeder::class);
         }
+
+
         // \App\Models\User::factory(10)->create();
 
         // \App\Models\User::factory()->create([

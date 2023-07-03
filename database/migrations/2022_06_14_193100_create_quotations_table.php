@@ -17,10 +17,11 @@ return new class extends Migration
             $table->id();
             $table->foreignIdFor(\App\Models\User::class)->constrained();
             $table->foreignIdFor(\App\Models\Client::class)->constrained();
-            $table->enum('type', ['Compra', 'Venta', 'Interbancario']);
+            $table->enum('type', ['Compra', 'Venta', 'Interbancaria']);
             $table->decimal('amount', 11, 2);
+            $table->foreignIdFor(\App\Models\Currency::class)->nullable()->constrained();
             $table->decimal('exchange_rate', 7, 6);
-            $table->decimal('comission_spread', 7, 2);
+            $table->decimal('comission_spread', 7, 2)->nullable();
             $table->decimal('comission_amount', 7, 2);
             $table->decimal('igv', 7, 2);
             $table->decimal('spread', 7, 2);

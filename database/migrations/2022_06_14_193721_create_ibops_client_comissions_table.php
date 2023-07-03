@@ -16,11 +16,11 @@ return new class extends Migration
         Schema::create('ibops_client_comissions', function (Blueprint $table) {
             $table->id();
             $table->foreignIdFor(\App\Models\Client::class)->constrained();
-            $table->decimal('comission_spread', 6, 2);
-            $table->decimal('spread', 6, 2);
-            $table->decimal('exchange_rate', 5, 4);
+            $table->decimal('comission_spread', 6, 2)->nullable();
+            $table->decimal('spread', 6, 2)->nullable();
+            $table->decimal('exchange_rate', 5, 4)->nullable();
             $table->boolean('active');
-            $table->foreignId('created_by')->constrained('users');
+            $table->foreignId('created_by')->nullable()->constrained('users');
             $table->timestamps();
         });
     }

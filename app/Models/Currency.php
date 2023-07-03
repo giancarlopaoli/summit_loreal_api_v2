@@ -21,6 +21,10 @@ class Currency extends Model
         return $this->hasMany(Operation::class);
     }
 
+    public function quotations() {
+        return $this->hasMany(Quotation::class);
+    }
+
     public function ibops_ranges() {
         return $this->hasMany(IbopsRange::class);
     }

@@ -18,7 +18,7 @@ return new class extends Migration
             $table->foreignIdFor(\App\Models\LeadContact::class)->constrained();
             $table->enum('type', ['Fijo', 'Celular', 'Email']);
             $table->string('contact');
-            $table->foreignId('created_by')->constrained('users');
+            $table->foreignId('created_by')->nullable()->constrained('users');
             $table->timestamps();
         });
     }
