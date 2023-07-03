@@ -20,7 +20,7 @@ return new class extends Migration
             $table->string('email', 100)->unique();
             $table->foreignIdFor(\App\Models\DocumentType::class)->constrained();
             $table->string('document_number', 15);
-            $table->string('phone', 30);
+            $table->string('phone', 30)->nullable();
             $table->integer('tries')->default(0);
             $table->string('password');
             $table->timestamp('last_active')->nullable();

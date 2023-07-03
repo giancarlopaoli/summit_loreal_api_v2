@@ -718,6 +718,14 @@ class DailyOperationsController extends Controller
         /*$operation->operation_status_id = OperationStatus::where('name', 'Pendiente envio fondos')->first()->id;
         $operation->save();*/
 
+
+        /*return response()->json([
+                'data' => [
+                    $operation->matches[0]->client
+                ]
+            ]);*/
+
+
         if($request->sign ==1 && $operation->operation_status_id != OperationStatus::wherein('name', ['Pendiente envio fondos'])->first()->id){
             return response()->json([
                 'success' => false,
@@ -729,7 +737,7 @@ class DailyOperationsController extends Controller
         else{
             
             // Enviar Correo()
-            $rpta_mail = Mail::send(new OperationSign($operation), $request->sign);
+            $rpta_mail = Mail::send(new OperationSign($operation, $request->sign));
 
             $operation->sign_date = Carbon::now();
             $operation->save();

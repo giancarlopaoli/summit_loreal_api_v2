@@ -16,4 +16,8 @@ class SpecialExchangeRate extends Model
     public function vendor() {
         return $this->belongsTo(Client::class, "vendor_id");
     }
+
+    public function updater() {
+        return $this->belongsTo(User::class, "updated_by");
+    }
 }

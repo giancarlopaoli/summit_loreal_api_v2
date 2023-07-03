@@ -120,6 +120,10 @@ class User extends Authenticatable
         return $this->hasMany(ExchangeRateAlert::class);
     }
 
+    public function special_exchange_rates_updated() {
+        return $this->hasMany(SpecialExchangeRate::class, "updated_by");
+    }
+
     public static function get_authenticated_users() {
         return self::activityOlderThan(15)->get();
     }

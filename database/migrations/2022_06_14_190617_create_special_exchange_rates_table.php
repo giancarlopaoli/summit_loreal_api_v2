@@ -17,11 +17,12 @@ return new class extends Migration
             $table->id();
             $table->foreignIdFor(\App\Models\Client::class)->constrained();
             $table->foreignId('vendor_id')->constrained('clients');
-            $table->decimal('buying', 5, 4)->nullable();
-            $table->decimal('selling', 5, 4)->nullable();
+            $table->decimal('buying', 6, 4)->nullable();
+            $table->decimal('selling', 6, 4)->nullable();
             $table->integer('duration_time');
             $table->boolean('active');
             $table->timestamp('finished_at');
+            $table->foreignId('updated_by')->nullable()->constrained('users');
             $table->timestamps();
         });
     }

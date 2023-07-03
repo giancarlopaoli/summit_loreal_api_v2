@@ -28,8 +28,8 @@ return new class extends Migration
             $table->integer('client_id')->nullable();
             $table->text('comments')->nullable();
             $table->foreignIdFor(\App\Models\Executive::class)->nullable()->constrained();
-            $table->timestamp('tracking_date');
-            $table->foreignId('created_by')->constrained('users');
+            $table->timestamp('tracking_date')->nullable();
+            $table->foreignId('created_by')->nullable()->constrained('users');
             $table->timestamps();
         });
     }
