@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\Client;
 use App\Models\User;
 use App\Models\Role;
+use Spatie\Permission\Models\Permission;
 use App\Enums;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -20,7 +21,7 @@ class UsersController extends Controller
     //Users list
     public function list(Request $request) {
 
-        $users = User::select('id','name','last_name','email','phone','tries','last_active','status','role_id')->with('role:id,name')->with('roles:id,name');
+        $users = User::select('id','name','last_name','email','phone','tries','last_active','status','role_id')->with('role:id,name')->with('roles:id,name')->with('permissions:id,name');
 
         if(isset($request->email) && $request->email != '') $users->where('email', 'like', '%'.$request->email.'%');
         if(isset($request->name) && $request->name != '') $users->where('name', 'like', '%'.$request->name.'%');
@@ -324,6 +325,47 @@ class UsersController extends Controller
             'data' => [
                 'Roles actualizados'
             ]
+        ]);
+    }
+
+    //List of permissions for user
+    public function permissions(Request $request, User $user) {
+        $roles = ($user->role->name == 'cliente') ? array() : Permission::all(['id','name']);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'roles' => $roles
+            ]
+        ]);
+    }
+
+    //Save Roles
+    public function save_permissions(Request $request, User $user) {
+        $val = Validator::make($request->all(), [
+            'permissions' => 'array',
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+        if($user->role->name == 'cliente') {
+            return response()->json([
+                'success' => false,
+                'data' => [
+                    'No es posible actualizar los permisos de un usuario con rol de Cliente.'
+                ]
+            ]);
+        }
+
+        $user->permissions()->detach();
+
+        $user->permissions()->attach($request->permissions);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'Permisos actualizados'
+            ],
+            $user->permissions
         ]);
     }
 

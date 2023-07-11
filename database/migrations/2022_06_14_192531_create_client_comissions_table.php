@@ -20,7 +20,7 @@ return new class extends Migration
             $table->decimal('comission_close', 7, 2)->nullable();
             $table->boolean('active')->nullable();
             $table->string('comments', 400);
-            $table->foreignId('updated_by')->constrained('users');
+            $table->foreignId('updated_by')->nullable()->constrained('users');
             $table->timestamps();
         });
     }
