@@ -189,20 +189,21 @@ Route::middleware('encryptresponses')->group(function () {
             Route::POST('invoice/{operation}', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'invoice']);
             Route::PUT('close/{operation}', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'close_operation']);
 
-            Route::PUT('update/{operation}', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'update']);
-            Route::PUT('update-escrow-accounts/{operation}', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'update_escrow_accounts']);
-            Route::PUT('update-client-accounts/{operation}', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'update_client_accounts']);
+            Route::middleware('permission:editar_operacion')->group(function () {
+                Route::PUT('update/{operation}', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'update']);
+                Route::PUT('update-escrow-accounts/{operation}', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'update_escrow_accounts']);
+                Route::PUT('update-client-accounts/{operation}', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'update_client_accounts']);
+            });
+
             Route::GET('escrow-accounts', [\App\Http\Controllers\Clients\InterbankOperationController::class, 'get_escrow_accounts']);
             Route::GET('bank-accounts', [\App\Http\Controllers\Clients\InterbankOperationController::class, 'get_client_bank_accounts']);
-            
 
             Route::GET('download-file', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'download_file']);
 
             ########## Operaciones contravalor recaudado  #############
-            Route::prefix('countervalue')->group(function () {
+            Route::prefix('countervalue')->middleware('permission:firmar_operaciones')->group(function () {
                 Route::GET('list', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'countervalue_list']);
                 Route::POST('sign/{operation}', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'operation_sign']);
-                
             });
 
             ########## Administración de usuarios  #############
@@ -219,8 +220,17 @@ Route::middleware('encryptresponses')->group(function () {
                 Route::DELETE('detach-client/{user}', [\App\Http\Controllers\Admin\Operations\UsersController::class, 'detach_client']);
                 Route::PUT('assign-client/{user}', [\App\Http\Controllers\Admin\Operations\UsersController::class, 'assign_client']);
                 Route::PUT('activate-client/{user}', [\App\Http\Controllers\Admin\Operations\UsersController::class, 'activate_client']);
-                Route::GET('roles/{user}', [\App\Http\Controllers\Admin\Operations\UsersController::class, 'roles']);
-                Route::PUT('roles/{user}', [\App\Http\Controllers\Admin\Operations\UsersController::class, 'save_roles']);
+                
+                Route::group(['middleware' => ['permission:editar_roles']], function () {
+                    Route::GET('roles/{user}', [\App\Http\Controllers\Admin\Operations\UsersController::class, 'roles']);
+                    Route::PUT('roles/{user}', [\App\Http\Controllers\Admin\Operations\UsersController::class, 'save_roles']);
+                });
+
+                Route::group(['middleware' => ['permission:editar_permisos']], function () {
+                    Route::GET('permissions/{user}', [\App\Http\Controllers\Admin\Operations\UsersController::class, 'permissions']);
+                    Route::PUT('permissions/{user}', [\App\Http\Controllers\Admin\Operations\UsersController::class, 'save_permissions']);
+                });
+
                 Route::POST('change-password/{user}', [\App\Http\Controllers\Admin\Operations\UsersController::class, 'change_password']);
 
                 Route::GET('mail-exists', [\App\Http\Controllers\Admin\Operations\UsersController::class, 'mails_exists']);
@@ -241,32 +251,35 @@ Route::middleware('encryptresponses')->group(function () {
                 Route::PUT('bank-account/reject/{bank_account}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'reject_bank_account']);
                 
                 Route::GET('{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'detail']);
-                Route::PUT('{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'edit']);
-
-                Route::DELETE('document/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'delete_document']);
-                Route::POST('document/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'upload_document']);
-                Route::GET('document/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'download_document']);
-                
-                Route::DELETE('associate/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'delete_associate']);
-                Route::POST('associate/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'add_associate']);
-                Route::PUT('associate/{representative}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'edit_associate']);
-
-                Route::DELETE('representative/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'delete_representative']);
-                Route::POST('representative/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'add_representative']);
-                Route::PUT('representative/{representative}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'edit_representative']);
-
-                Route::DELETE('approve/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'approve_client']);
-                Route::DELETE('reject/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'reject_client']);
 
                 Route::GET('user/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'users']);
                 Route::POST('user/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'attach_user']);
                 Route::DELETE('user/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'detach_user']);
                 
-                Route::PUT('evaluation/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'evaluation']);
+
+                Route::PUT('evaluation/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'evaluation'])->middleware('permission:aprobar_clientes');
 
                 Route::GET('comission/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'comission_list']);
                 Route::POST('comission/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'create_comission']);
                 Route::DELETE('comission/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'delete_comission']);
+
+
+                Route::middleware('permission:editar_cliente')->group(function () {
+                    Route::PUT('{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'edit']);
+
+                    Route::DELETE('document/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'delete_document']);
+                    Route::POST('document/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'upload_document']);
+                    Route::GET('document/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'download_document']);
+                    
+                    Route::DELETE('associate/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'delete_associate']);
+                    Route::POST('associate/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'add_associate']);
+                    Route::PUT('associate/{representative}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'edit_associate']);
+
+                    Route::DELETE('representative/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'delete_representative']);
+                    Route::POST('representative/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'add_representative']);
+                    Route::PUT('representative/{representative}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'edit_representative']);
+                        
+                });
                 
             });
 

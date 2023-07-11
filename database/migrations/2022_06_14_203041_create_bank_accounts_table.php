@@ -16,13 +16,13 @@ return new class extends Migration
         Schema::create('bank_accounts', function (Blueprint $table) {
             $table->id();
             $table->foreignIdFor(\App\Models\Client::class)->constrained();
-            $table->string('alias', 50);
+            $table->string('alias', 200);
             $table->foreignIdFor(\App\Models\Bank::class)->constrained();
             $table->string('account_number', 25);
-            $table->string('cci_number', 25);
+            $table->string('cci_number', 25)->nullable();
             $table->boolean('main')->default(false);
             $table->foreignIdFor(\App\Models\BankAccountStatus::class)->constrained();
-            $table->string('comments', 150);
+            $table->string('comments', 150)->nullable();
             $table->foreignIdFor(\App\Models\AccountType::class)->constrained();
             $table->foreignIdFor(\App\Models\Currency::class)->constrained();
             $table->foreignId('updated_by')->nullable()->constrained('users');

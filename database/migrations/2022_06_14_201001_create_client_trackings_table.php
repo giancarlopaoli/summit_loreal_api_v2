@@ -16,9 +16,9 @@ return new class extends Migration
         Schema::create('client_trackings', function (Blueprint $table) {
             $table->id();
             $table->foreignIdFor(\App\Models\Client::class)->constrained();
-            $table->foreignIdFor(\App\Models\TrackingStatus::class)->constrained();
+            $table->enum('tracking_status', ['Bienvenida','Operará','No interesado','No contesta','Datos incorrectos','Seguimiento incumplido','Reasignado'])->nullable();
             $table->foreignIdFor(\App\Models\TrackingForm::class)->constrained();
-            $table->text('comments');
+            $table->text('comments')->nullable();
             $table->foreignId('created_by')->constrained('users');
             $table->timestamps();
         });
