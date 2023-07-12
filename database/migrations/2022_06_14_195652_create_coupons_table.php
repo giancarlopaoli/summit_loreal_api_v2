@@ -24,9 +24,9 @@ return new class extends Migration
             $table->boolean('active');
             $table->integer('limit_total');
             $table->integer('limit_individual');
+            $table->enum('assigned_to', ['PN', 'PJ','Todos']);
             $table->date('start_date');
             $table->date('end_date');
-            $table->enum('assigned_to', ['PN', 'PJ','Todos']);
             $table->timestamps();
         });
     }
