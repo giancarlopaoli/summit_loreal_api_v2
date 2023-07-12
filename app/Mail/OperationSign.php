@@ -82,14 +82,14 @@ class OperationSign extends Mailable
                 "show_image_counterpart" => ($this->sign == 2) ? 'none' : 'inline'
             ]);
 
-        foreach ($this->operation->documents as $document) {
+        /*foreach ($this->operation->documents as $document) {
 
             $tmp = new DailyOperationsController();
 
             $email->attach($tmp->internal_download($document->id), [
                 'as' => 'Instrucciones.pdf',
                 'mime' => 'application/pdf']);
-        }
+        }*/
 
         return $email;
     }
