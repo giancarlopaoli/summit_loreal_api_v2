@@ -26,6 +26,7 @@ use App\Events\AvailableOperations;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\OperationInstructions;
 use App\Mail\OperationSign;
+use App\Http\Controllers\Admin\Operations\DailyOperationsController;
 
 class DailyOperationsController extends Controller
 {
@@ -445,7 +446,99 @@ class DailyOperationsController extends Controller
                 'errors' => 'Error en el archivo adjunto',
             ]);
         }
+    }
 
+    public function upload_document(Request $request) {
+        $val = Validator::make($request->all(), [
+            'operation_id' => 'required|exists:operations,id',
+            'sign' => 'required|in:1,2',
+            'file' => 'required|file'
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+
+        logger('Archivo adjunto: DailyOperationsController@upload_documents', ["operation_id" => $request->operation_id]);
+
+        if($request->hasFile('file')){
+            $file = $request->file('file');
+            $path = env('AWS_ENV').'/operations/';
+
+            try {
+                $extension = strrpos($file->getClientOriginalName(), ".")? (Str::substr($file->getClientOriginalName(), strrpos($file->getClientOriginalName(), ".") , Str::length($file->getClientOriginalName()) -strrpos($file->getClientOriginalName(), ".") +1)): "";
+                
+                $now = Carbon::now();
+                $filename = md5($now->toDateTimeString().$file->getClientOriginalName()).$extension;
+            } catch (\Exception $e) {
+                $filename = $file->getClientOriginalName();
+            }
+
+            try {
+                $s3 = Storage::disk('s3')->putFileAs($path, $file, $filename);
+
+                $insert = OperationDocument::create([
+                    'operation_id' => $request->operation_id,
+                    'type' => $request->sign == 1 ? Enums\DocumentType::Firma1 : Enums\DocumentType::Firma2,
+                    'document_name' => $filename
+                ]);
+
+            } catch (\Exception $e) {
+                // Registrando el el log los datos ingresados
+                logger('ERROR: archivo adjunto: DailyOperationsController@upload_documents', ["error" => $e]);
+            }
+
+            OperationHistory::create(["operation_id" => $request->operation_id,"user_id" => auth()->id(),"action" => "Documento firma ". $request->sign ." cargado", "detail" => 'filename: ' . $filename]);
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'Archivo agregado'
+                ]
+            ]);
+
+        } else{
+            return response()->json([
+                'success' => false,
+                'errors' => 'Error en el archivo adjunto',
+            ]);
+        }
+    }
+
+    public function delete_document(Request $request, OperationDocument $operation_document) {
+        logger('Archivo adjunto: DailyOperationsController@delete_document', ["operation_document" => $operation_document->id]);
+
+        if(is_null($operation_document)){
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'Error en documento enviado'
+                ]
+            ]);
+        }
+
+        if (Storage::disk('s3')->exists(env('AWS_ENV').'/operations/' . $operation_document->document_name)) {
+            $rpta = Storage::disk('s3')->delete(env('AWS_ENV').'/operations/' . $operation_document->document_name);
+
+            $operation_document->delete();
+
+            return response()->json([
+                'success' => true,
+                $rpta,
+                'data' => [
+                    'Documento eliminado exitosamente'
+                ]
+            ]);
+
+        }
+        else{
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'Archivo no encontrado'
+                ]
+            ]);
+        }
+
+        return Storage::disk('s3')->delete(env('AWS_ENV').'/operations/' . $operation_document->name);
     }
 
     public function to_pending_funds(Request $request, Operation $operation) {
@@ -605,9 +698,42 @@ class DailyOperationsController extends Controller
             ]
         ]);
     }
+
+    public function internal_download($document_id) {
+
+        $document = OperationDocument::find($document_id)->first();
+
+        if(is_null($document)){
+            return response()->json([
+                'success' => false,
+                'data' => [
+                    $document->document_name
+                ]
+            ]);
+        }
+
+        if (Storage::disk('s3')->exists(env('AWS_ENV').'/operations/' . $document->document_name)) {
+            return Storage::disk('s3')->download(env('AWS_ENV').'/operations/' . $document->document_name);
+        }
+        else{
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'Archivo no encontrado'
+                ]
+            ]);
+        }
+
+        return Storage::disk('s3')->download(env('AWS_ENV').'/operations/' . $document->name);
+    }
     
     public function download_file(Request $request) {
-        $val = Validator::make($request->all(), [
+
+        $tmp = new DailyOperationsController();
+
+        return $tmp->internal_download($request->document_id);
+
+        /*$val = Validator::make($request->all(), [
             'operation_id' => 'required|exists:operations,id',
             'document_id' => 'required|exists:operation_documents,id'
         ]);
@@ -636,7 +762,7 @@ class DailyOperationsController extends Controller
             ]);
         }
 
-        return Storage::disk('s3')->download(env('AWS_ENV').'/operations/' . $document->name);
+        return Storage::disk('s3')->download(env('AWS_ENV').'/operations/' . $document->name);*/
     }
     
     public function countervalue_list(Request $request) {
@@ -720,13 +846,13 @@ class DailyOperationsController extends Controller
 
 
         /*return response()->json([
-                'data' => [
-                    $operation->matches[0]->client
-                ]
-            ]);*/
+            'data' => [
+                $operation->matched_operation[0]->matches[0]->client->name
+            ]
+        ]);*/
 
 
-        if($request->sign ==1 && $operation->operation_status_id != OperationStatus::wherein('name', ['Pendiente envio fondos'])->first()->id){
+        if($request->sign == 1 && $operation->operation_status_id != OperationStatus::wherein('name', ['Pendiente envio fondos'])->first()->id){
             return response()->json([
                 'success' => false,
                 'errors' => [
@@ -737,7 +863,8 @@ class DailyOperationsController extends Controller
         else{
             
             // Enviar Correo()
-            $rpta_mail = Mail::send(new OperationSign($operation, $request->sign));
+            $created_operation = $operation->matched_operation[0];
+            $rpta_mail = Mail::send(new OperationSign($created_operation, $request->sign));
 
             $operation->sign_date = Carbon::now();
             $operation->save();
@@ -754,6 +881,7 @@ class DailyOperationsController extends Controller
         else{
             
             // Enviar Correo()
+            //$rpta_mail = Mail::send(new OperationSign($operation, $request->sign));
 
             $operation->sign_date = Carbon::now();
             $operation->save();

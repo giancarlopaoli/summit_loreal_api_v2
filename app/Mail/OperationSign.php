@@ -8,6 +8,7 @@ use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
 use App\Models\Configuration;
 use App\Models\Operation;
+use App\Http\Controllers\Admin\Operations\DailyOperationsController;
 
 class OperationSign extends Mailable
 {
@@ -37,7 +38,7 @@ class OperationSign extends Mailable
 
         $counterpart_name = ($this->operation->matches[0]->client->customer_type == 'PJ') ? $this->operation->matches[0]->client->name : $this->operation->matches[0]->client->name . " " . $this->operation->matches[0]->client->last_name . " " . $this->operation->matches[0]->client->mothers_name;
 
-        $phase = ($this->sign == 1) ? '<b>Primera Firma </b>- ' . $client_name : '<b>Segunda Firma </b>- '. $counterpart_name;
+        $phase = ($this->sign == 1) ? "Primera Firma - " . $client_name : 'Segunda Firma - '. $counterpart_name;
 
         $sent_amount = ($this->operation->type == 'Compra') ? (round($this->operation->amount * $this->operation->exchange_rate,2) + $this->operation->comission_amount + $this->operation->igv) : (($this->operation->type == 'Venta') ? $this->operation->amount : (round(round($this->operation->matches[0]->amount + round($this->operation->matches[0]->amount * $this->operation->matches[0]->spread/10000, 2 ), 2) + $this->operation->comission_amount + $this->operation->igv,2)));
 
@@ -47,7 +48,7 @@ class OperationSign extends Mailable
 
         $counterpart_received_amount = ($this->operation->matches[0]->type == 'Venta') ? round($this->operation->matches[0]->amount * $this->operation->matches[0]->exchange_rate,2) - $this->operation->matches[0]->comission_amount - $this->operation->matches[0]->igv : (($this->operation->type == 'Compra') ? $this->operation->matches[0]->amount :  round($this->operation->matches[0]->amount + round($this->operation->matches[0]->amount * $this->operation->matches[0]->spread/10000, 2 ), 2));
 
-        return $this
+        $email = $this
             ->subject('BILLEX | INSTRUCCIÓN DE TRANSFERENCIA')
             ->to(explode(",",Configuration::where('shortname', 'MAILSCORFID')->first()->value))
             ->to(env('MAIL_OPS'))
@@ -80,5 +81,16 @@ class OperationSign extends Mailable
                 "counterpart_escrow_accounts" => $this->operation->matches[0]->escrow_accounts,
                 "show_image_counterpart" => ($this->sign == 2) ? 'none' : 'inline'
             ]);
+
+        foreach ($this->operation->documents as $document) {
+
+            $tmp = new DailyOperationsController();
+
+            $email->attach($tmp->internal_download($document->id), [
+                'as' => 'Instrucciones.pdf',
+                'mime' => 'application/pdf']);
+        }
+
+        return $email;
     }
 }

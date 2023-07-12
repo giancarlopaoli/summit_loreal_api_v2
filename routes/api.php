@@ -184,6 +184,8 @@ Route::middleware('encryptresponses')->group(function () {
             Route::PUT('cancel/{operation}', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'cancel']);
             Route::PUT('confirm-funds/{operation}', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'confirm_funds']);
             Route::POST('upload-voucher', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'upload_voucher']);
+            Route::POST('document', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'upload_document']);
+            
             Route::PUT('to-pending-funds/{operation}', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'to_pending_funds']);
             Route::POST('vendor-instruction/{operation}', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'vendor_instruction']);
             Route::POST('invoice/{operation}', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'invoice']);
@@ -204,6 +206,7 @@ Route::middleware('encryptresponses')->group(function () {
             Route::prefix('countervalue')->middleware('permission:firmar_operaciones')->group(function () {
                 Route::GET('list', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'countervalue_list']);
                 Route::POST('sign/{operation}', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'operation_sign']);
+                Route::DELETE('document/{operation_document}', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'delete_document']);
             });
 
             ########## Administración de usuarios  #############

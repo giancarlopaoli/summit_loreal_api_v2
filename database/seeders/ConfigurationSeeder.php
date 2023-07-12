@@ -108,7 +108,7 @@ class ConfigurationSeeder extends Seeder
         Configuration::create([
             "shortname" => "MAXOPPN",
             "description" => "Monto Máximo PN Sin validación",
-            "value" => 1000,
+            "value" => 10000,
         ]);
 
         Configuration::create([
