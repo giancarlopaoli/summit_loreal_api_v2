@@ -21,6 +21,7 @@ class CurrencySeeder extends Seeder
             'iso_code' => 'PEN',
             'sign' => 'S/',
             'sbs_code' => '',
+            'image' => 'https://bill-upload.s3.amazonaws.com/static/img/pen.png',
             'active' => true
         ]);
 
@@ -29,6 +30,7 @@ class CurrencySeeder extends Seeder
             'iso_code' => 'USD',
             'sign' => '$',
             'sbs_code' => '',
+            'image' => 'https://bill-upload.s3.amazonaws.com/static/img/usd.png',
             'active' => true
         ]);
     }
