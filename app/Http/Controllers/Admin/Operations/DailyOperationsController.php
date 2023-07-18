@@ -698,42 +698,9 @@ class DailyOperationsController extends Controller
             ]
         ]);
     }
-
-    public function internal_download($document_id) {
-
-        $document = OperationDocument::find($document_id)->first();
-
-        if(is_null($document)){
-            return response()->json([
-                'success' => false,
-                'data' => [
-                    $document->document_name
-                ]
-            ]);
-        }
-
-        if (Storage::disk('s3')->exists(env('AWS_ENV').'/operations/' . $document->document_name)) {
-            return Storage::disk('s3')->download(env('AWS_ENV').'/operations/' . $document->document_name);
-        }
-        else{
-            return response()->json([
-                'success' => false,
-                'errors' => [
-                    'Archivo no encontrado'
-                ]
-            ]);
-        }
-
-        return Storage::disk('s3')->download(env('AWS_ENV').'/operations/' . $document->name);
-    }
     
     public function download_file(Request $request) {
-
-        $tmp = new DailyOperationsController();
-
-        return $tmp->internal_download($request->document_id);
-
-        /*$val = Validator::make($request->all(), [
+        $val = Validator::make($request->all(), [
             'operation_id' => 'required|exists:operations,id',
             'document_id' => 'required|exists:operation_documents,id'
         ]);
@@ -762,7 +729,7 @@ class DailyOperationsController extends Controller
             ]);
         }
 
-        return Storage::disk('s3')->download(env('AWS_ENV').'/operations/' . $document->name);*/
+        return Storage::disk('s3')->download(env('AWS_ENV').'/operations/' . $document->name);
     }
     
     public function countervalue_list(Request $request) {
@@ -841,13 +808,10 @@ class DailyOperationsController extends Controller
         ]);
         if($val->fails()) return response()->json($val->messages());
 
-        /*$operation->operation_status_id = OperationStatus::where('name', 'Pendiente envio fondos')->first()->id;
-        $operation->save();*/
-
-
         /*return response()->json([
             'data' => [
-                $operation->matched_operation[0]->matches[0]->client->name
+                $request->sign,
+                $operation
             ]
         ]);*/
 
@@ -860,7 +824,7 @@ class DailyOperationsController extends Controller
                 ]
             ]); 
         }
-        else{
+        elseif($request->sign == 1) {
             
             // Enviar Correo()
             $created_operation = $operation->matched_operation[0];
@@ -878,10 +842,10 @@ class DailyOperationsController extends Controller
                 ]
             ]);
         }
-        else{
+        elseif($request->sign == 2){
             
             // Enviar Correo()
-            //$rpta_mail = Mail::send(new OperationSign($operation, $request->sign));
+            $rpta_mail = Mail::send(new OperationSign($operation, $request->sign));
 
             $operation->sign_date = Carbon::now();
             $operation->save();

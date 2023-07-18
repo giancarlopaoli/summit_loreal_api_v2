@@ -10,10 +10,14 @@ class OperationsAnalyst extends Model
     use HasFactory;
 
     public function user() {
-        return $this->hasOne(User::class, "id");
+        return $this->belongsTo(User::class, "id");
     }
 
     public function operations() {
         return $this->hasMany(Operation::class);
+    }
+
+    public function logs() {
+        return $this->hasMany(OperationsAnalystLog::class);
     }
 }

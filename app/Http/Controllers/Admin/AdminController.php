@@ -13,7 +13,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
- 
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
+use Illuminate\Support\Facades\DB;
+
 use PDF;
 
 class AdminController extends Controller
@@ -96,6 +99,35 @@ class AdminController extends Controller
             'data' => [
                 'role' => Auth::user()->hasRole($request->role)
             ]
+        ]);
+    }
+
+    public function pase_a_produccion(Request $request) {
+        DB::table('model_has_roles')->truncate();
+        DB::table('model_has_permissions')->truncate();
+
+        $users = User::where('role_id', 1);
+        $role = Role::findByName('cliente');
+        $role->users()->attach($users->pluck('id'));
+
+        $users = User::where('role_id', 3);
+        $role = Role::findByName('operaciones');
+        $role->users()->attach($users->pluck('id'));
+
+        $users = User::where('role_id', 4);
+        $role = Role::findByName('proveedor');
+        $role->users()->attach($users->pluck('id'));
+
+        $users = User::where('role_id', 5);
+        $role = Role::findByName('corfid');
+        $role->users()->attach($users->pluck('id'));
+
+        $user = User::where('id',483)->first()->assignRole('administrador');
+
+
+        return response()->json([
+            'success' => true,
+            $role
         ]);
     }
 

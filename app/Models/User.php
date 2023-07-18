@@ -100,7 +100,7 @@ class User extends Authenticatable
     }
 
     public function leads() {
-        return $this->hasMany(Lead::class);
+        return $this->hasMany(Lead::class, "created_by");
     }
 
     public function document_type() {
@@ -122,6 +122,10 @@ class User extends Authenticatable
 
     public function special_exchange_rates_updated() {
         return $this->hasMany(SpecialExchangeRate::class, "updated_by");
+    }
+
+    public function operations_analyst_logs() {
+        return $this->hasMany(OperationsAnalystLog::class, "created_by");
     }
 
     public static function get_authenticated_users() {

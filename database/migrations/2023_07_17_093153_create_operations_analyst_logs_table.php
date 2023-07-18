@@ -13,12 +13,11 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('operations_analysts', function (Blueprint $table) {
+        Schema::create('operations_analyst_logs', function (Blueprint $table) {
             $table->id();
-            $table->enum('status', ['Activo', 'Inactivo']);
-            $table->boolean('online')->default(false);
-            $table->time('start_time');
-            $table->time('end_time');
+            $table->foreignIdFor(\App\Models\OperationsAnalyst::class)->constrained();
+            $table->boolean('online');
+            $table->foreignId('created_by')->nullable()->constrained('users');
             $table->timestamps();
         });
     }
@@ -30,6 +29,6 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('operations_analysts');
+        Schema::dropIfExists('operations_analyst_logs');
     }
 };

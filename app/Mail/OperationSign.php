@@ -82,14 +82,24 @@ class OperationSign extends Mailable
                 "show_image_counterpart" => ($this->sign == 2) ? 'none' : 'inline'
             ]);
 
-        /*foreach ($this->operation->documents as $document) {
-
-            $tmp = new DailyOperationsController();
-
-            $email->attach($tmp->internal_download($document->id), [
-                'as' => 'Instrucciones.pdf',
-                'mime' => 'application/pdf']);
-        }*/
+            if($this->sign == 1){
+                foreach ($this->operation->documents as $document) {
+                    if($document->type == 'Comprobante' || $document->type == '1ra firma'){
+                        $email->attach(env('APP_URL') . "/api/res/download-document-operation?operation_id=".$document->operation_id."&document_id=".$document->id, [
+                            'as' => $document->document_name
+                        ]);
+                    }
+                }
+            }
+            else{
+                foreach ($this->operation->matches[0]->documents as $document) {
+                    if($document->type == '2da firma'){
+                        $email->attach(env('APP_URL') . "/api/res/download-document-operation?operation_id=".$document->operation_id."&document_id=".$document->id, [
+                            'as' => $document->document_name
+                        ]);
+                    }
+                }
+            }
 
         return $email;
     }

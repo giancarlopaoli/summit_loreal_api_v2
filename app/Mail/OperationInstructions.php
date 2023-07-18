@@ -102,7 +102,7 @@ class OperationInstructions extends Mailable
             ->bcc(env('MAIL_OPS'))
             ->bcc(env('MAIL_TI'))
             ->view('operation_instructions')
-            ->attach("http://localhost/billex/apiv22/public/api/res/instruction/".$operation->id,[
+            ->attach(env('APP_URL') . "/api/res/instruction/".$operation->id, [
                 'as' => 'Instrucciones.pdf',
                 'mime' => 'application/pdf',
             ])

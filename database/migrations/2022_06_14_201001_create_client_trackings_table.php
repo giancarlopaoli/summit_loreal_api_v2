@@ -17,7 +17,7 @@ return new class extends Migration
             $table->id();
             $table->foreignIdFor(\App\Models\Client::class)->constrained();
             $table->enum('tracking_status', ['Bienvenida','Operará','No interesado','No contesta','Datos incorrectos','Seguimiento incumplido','Reasignado'])->nullable();
-            $table->foreignIdFor(\App\Models\TrackingForm::class)->constrained();
+            $table->foreignIdFor(\App\Models\TrackingForm::class)->nullable()->constrained();
             $table->text('comments')->nullable();
             $table->foreignId('created_by')->constrained('users');
             $table->timestamps();
