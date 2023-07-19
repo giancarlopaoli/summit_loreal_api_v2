@@ -204,12 +204,30 @@ Route::middleware('encryptresponses')->group(function () {
 
             Route::GET('download-file', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'download_file']);
 
+            Route::GET('operation-analyst', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'operation_analyst']);
+            Route::PUT('operation-analyst', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'analyst_status']);
+            Route::GET('operation-analyst-summary', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'operation_analyst_summary']);
+
+
             ########## Operaciones contravalor recaudado  #############
             Route::prefix('countervalue')->middleware('permission:firmar_operaciones')->group(function () {
                 Route::GET('list', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'countervalue_list']);
                 Route::POST('sign/{operation}', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'operation_sign']);
                 Route::DELETE('document/{operation_document}', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'delete_document']);
             });
+
+
+            ########## Gestión Analistas de Operaciones  #############
+            Route::prefix('analysts')->middleware('permission:analista_operaciones')->group(function () {
+                Route::PUT('{operation}/assign-analyst', [\App\Http\Controllers\Admin\Operations\OperationsAnalystsController::class, 'assign_analyst_to_operation']);
+
+                Route::GET('', [\App\Http\Controllers\Admin\Operations\OperationsAnalystsController::class, 'analyst_list']);
+                Route::POST('', [\App\Http\Controllers\Admin\Operations\OperationsAnalystsController::class, 'add_analyst']);
+                Route::PUT('', [\App\Http\Controllers\Admin\Operations\OperationsAnalystsController::class, 'edit_analyst']);
+                Route::GET('history', [\App\Http\Controllers\Admin\Operations\OperationsAnalystsController::class, 'edit_analyst']);
+                
+            });
+
 
             ########## Administración de usuarios  #############
             Route::prefix('users')->group(function () {

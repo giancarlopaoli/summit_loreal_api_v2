@@ -9,6 +9,8 @@ class OperationsAnalystLog extends Model
 {
     use HasFactory;
 
+    protected $guarded = [];
+
     public function operations_analyst() {
         return $this->belongsTo(OperationsAnalyst::class);
     }
