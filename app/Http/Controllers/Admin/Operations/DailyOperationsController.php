@@ -11,6 +11,8 @@ use App\Models\Client;
 use App\Models\BankAccount;
 use App\Models\EscrowAccount;
 use App\Models\Operation;
+use App\Models\OperationsAnalyst;
+use App\Models\OperationsAnalystLog;
 use App\Models\OperationStatus;
 use App\Models\OperationDocument;
 use App\Models\OperationHistory;
@@ -464,7 +466,7 @@ class DailyOperationsController extends Controller
             $path = env('AWS_ENV').'/operations/';
 
             try {
-                $extension = strrpos($file->getClientOriginalName(), ".")? (Str::substr($file->getClientOriginalName(), strrpos($file->getClientOriginalName(), ".") , Str::length($file->getClientOriginalName()) -strrpos($file->getClientOriginalName(), ".") +1)): "";
+                $extension = strrpos($file->getClientOriginalName(), ".")? (Str::substr($file->getClientOriginalName(), strrpos($file->getClientOriginalName(), "."), Str::length($file->getClientOriginalName()) -strrpos($file->getClientOriginalName(), ".") +1)): "";
                 
                 $now = Carbon::now();
                 $filename = md5($now->toDateTimeString().$file->getClientOriginalName()).$extension;
@@ -522,12 +524,10 @@ class DailyOperationsController extends Controller
 
             return response()->json([
                 'success' => true,
-                $rpta,
                 'data' => [
                     'Documento eliminado exitosamente'
                 ]
             ]);
-
         }
         else{
             return response()->json([
@@ -1236,6 +1236,87 @@ class DailyOperationsController extends Controller
             'success' => true,
             'data' => [
                 'operation' => $operation
+            ]
+        ]);
+    }
+
+
+    ################################################
+    ###### Operation Analyst
+
+
+    public function operation_analyst(Request $request) {
+
+        $analyst = OperationsAnalyst::select('id','online','start_time','end_time')
+            ->selectRaw("(select count(*) from operations where operations.operations_analyst_id = operations_analysts.id and operations.operation_status_id not in (6,7,9,10) and date(operations.operation_date) = date(now())) as ops_in_progress")
+            ->selectRaw("(select count(*) from operations where operations.operations_analyst_id = operations_analysts.id and operations.operation_status_id in (6,7) and date(operations.operation_date) = date(now())) as ops_finished")
+            ->where('id', auth()->id())
+            ->where('status', 'Activo')
+            ->first();
+
+
+        if(is_null($analyst)){
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'El usuario no está registrado como analista de operaciones'
+                ]
+            ]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'analyst' => $analyst,
+            ]
+        ]);
+    }
+
+    public function analyst_status(Request $request) {
+        $analyst = OperationsAnalyst::where('id', auth()->id())
+            ->where('status', 'Activo')
+            ->first();
+
+
+        if(is_null($analyst)){
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'El usuario no está registrado como analista de operaciones o no se encuentra Activo'
+                ]
+            ]);
+        }
+
+        $analyst->online = !$analyst->online;
+        $analyst->updated_at = Carbon::now();
+        $analyst->save();
+
+        OperationsAnalystLog::create([
+            'operations_analyst_id' => auth()->id(),
+            'online' => $analyst->online,
+            'created_by' => auth()->id()
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'analyst' => $analyst,
+            ]
+        ]);
+    }
+
+    public function operation_analyst_summary(Request $request) {
+        $analysts = OperationsAnalyst::select('id','online','start_time','end_time')
+            ->selectRaw("(select count(*) from operations where operations.operations_analyst_id = operations_analysts.id and operations.operation_status_id not in (6,7,9,10) and date(operations.operation_date) = date(now())) as ops_in_progress")
+            ->selectRaw("(select count(*) from operations where operations.operations_analyst_id = operations_analysts.id and operations.operation_status_id in (6,7) and date(operations.operation_date) = date(now())) as ops_finished")
+            ->where('status', 'Activo')
+            ->with('user:id,name,last_name')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'analyst' => $analysts,
             ]
         ]);
     }
