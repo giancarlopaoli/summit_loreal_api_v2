@@ -221,10 +221,11 @@ Route::middleware('encryptresponses')->group(function () {
             Route::prefix('analysts')->middleware('permission:analista_operaciones')->group(function () {
                 Route::PUT('{operation}/assign-analyst', [\App\Http\Controllers\Admin\Operations\OperationsAnalystsController::class, 'assign_analyst_to_operation']);
 
-                Route::GET('', [\App\Http\Controllers\Admin\Operations\OperationsAnalystsController::class, 'analyst_list']);
+                Route::GET('', [\App\Http\Controllers\Admin\Operations\OperationsAnalystsController::class, 'analysts_list']);
+                Route::GET('users', [\App\Http\Controllers\Admin\Operations\OperationsAnalystsController::class, 'users_list']);
                 Route::POST('', [\App\Http\Controllers\Admin\Operations\OperationsAnalystsController::class, 'add_analyst']);
-                Route::PUT('', [\App\Http\Controllers\Admin\Operations\OperationsAnalystsController::class, 'edit_analyst']);
-                Route::GET('history', [\App\Http\Controllers\Admin\Operations\OperationsAnalystsController::class, 'edit_analyst']);
+                Route::PUT('{operations_analyst}', [\App\Http\Controllers\Admin\Operations\OperationsAnalystsController::class, 'edit_analyst']);
+                Route::GET('history', [\App\Http\Controllers\Admin\Operations\OperationsAnalystsController::class, 'analysts_history']);
                 
             });
 
