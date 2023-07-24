@@ -16,7 +16,7 @@ class OperationsAnalyst extends Model
     }
 
     public function operations() {
-        return $this->hasMany(Operation::class);
+        return $this->hasMany(Operation::class,"operations_analyst_id","id");
     }
 
     public function logs() {
