@@ -713,7 +713,7 @@ class DailyOperationsController extends Controller
         ]);
         if($val->fails()) return response()->json($val->messages());
 
-        $document = OperationDocument::find($request->document_id)->where('operation_id', $request->operation_id)->first();
+        $document = OperationDocument::where('id',$request->document_id)->where('operation_id', $request->operation_id)->first();
 
         if(is_null($document)){
             return response()->json([
