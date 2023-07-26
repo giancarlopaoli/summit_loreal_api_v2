@@ -34,7 +34,7 @@ class NewInterbankOperation extends Mailable
 
         return $this
             ->subject('BILLEX | Nueva Operación Interbancaria')
-            ->to($operation->user->email)
+            ->to($this->operation->user->email)
             ->cc($mail_executive)
             ->bcc(env('MAIL_OPS'))
             ->bcc(env('MAIL_TI'))
