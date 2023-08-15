@@ -28,6 +28,7 @@ use App\Events\AvailableOperations;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\OperationInstructions;
 use App\Mail\OperationSign;
+use App\Mail\VendorInstructions;
 use App\Http\Controllers\Admin\Operations\DailyOperationsController;
 
 class DailyOperationsController extends Controller
@@ -406,7 +407,6 @@ class DailyOperationsController extends Controller
         ]);
         if($val->fails()) return response()->json($val->messages());
 
-
         logger('Archivo adjunto: DailyOperationsController@upload_voucher', ["operation_id" => $request->operation_id]);
 
         if($request->hasFile('file')){
@@ -427,7 +427,7 @@ class DailyOperationsController extends Controller
 
                 // eliminando cualquier comprobante anterior
                 $delete = OperationDocument::where('operation_id', $request->operation_id)
-                    ->where('type', Enums\DocumentType::Comprobante,)
+                    ->where('type', Enums\DocumentType::Comprobante)
                     ->delete();
                 $insert = OperationDocument::create([
                     'operation_id' => $request->operation_id,
@@ -815,14 +815,6 @@ class DailyOperationsController extends Controller
         ]);
         if($val->fails()) return response()->json($val->messages());
 
-        /*return response()->json([
-            'data' => [
-                $request->sign,
-                $operation
-            ]
-        ]);*/
-
-
         if($request->sign == 1 && $operation->operation_status_id != OperationStatus::wherein('name', ['Pendiente envio fondos'])->first()->id){
             return response()->json([
                 'success' => false,
@@ -896,8 +888,10 @@ class DailyOperationsController extends Controller
     }
 
     public function vendor_instruction(Request $request, Operation $operation) {
-
-        /**/
+        $val = Validator::make($request->all(), [
+            'file' => 'required|file'
+        ]);
+        if($val->fails()) return response()->json($val->messages());
 
         if($operation->client->type == 'Cliente'){
             return response()->json([
@@ -908,7 +902,53 @@ class DailyOperationsController extends Controller
             ]);
         }
 
+        if($request->hasFile('file')){
+            $file = $request->file('file');
+            $path = env('AWS_ENV').'/operations/';
+
+            try {
+                $extension = strrpos($file->getClientOriginalName(), ".")? (Str::substr($file->getClientOriginalName(), strrpos($file->getClientOriginalName(), ".") , Str::length($file->getClientOriginalName()) -strrpos($file->getClientOriginalName(), ".") +1)): "";
+                
+                $now = Carbon::now();
+                $filename = md5($now->toDateTimeString().$file->getClientOriginalName()).$extension;
+            } catch (\Exception $e) {
+                $filename = $file->getClientOriginalName();
+            }
+
+            try {
+                $s3 = Storage::disk('s3')->putFileAs($path, $file, $filename);
+
+                // eliminando cualquier comprobante anterior
+                $delete = OperationDocument::where('operation_id', $operation->id)
+                    ->where('type', Enums\DocumentType::Comprobante)
+                    ->delete();
+                $insert = OperationDocument::create([
+                    'operation_id' => $operation->id,
+                    'type' => Enums\DocumentType::Comprobante,
+                    'document_name' => $filename
+                ]);
+
+            } catch (\Exception $e) {
+                // Registrando el el log los datos ingresados
+                logger('ERROR: archivo adjunto: DailyOperationsController@upload_voucher', ["error" => $e]);
+
+                return response()->json([
+                    'success' => false,
+                    'errors' => 'Error en el archivo adjunto',
+                ]);
+            }
+
+            OperationHistory::create(["operation_id" => $operation->id,"user_id" => auth()->id(),"action" => "Comprobante cargado", "detail" => 'filename: ' . $filename]);
+
+        } else{
+            return response()->json([
+                'success' => false,
+                'errors' => 'Error en el archivo adjunto',
+            ]);
+        }
+
         // Enviar Correo()
+        $rpta_mail = Mail::send(new VendorInstructions($operation));
 
         if(is_null($operation->mail_instructions)){
             $operation->mail_instructions = Carbon::now();
@@ -932,15 +972,6 @@ class DailyOperationsController extends Controller
             'value' => 'required|numeric'
         ]);
         if($val->fails()) return response()->json($val->messages());
-
-        /*return response()->json([
-            'success' => false,
-            'errors' => [
-                'bank_accounts' => $operation->bank_accounts,
-                'escrow-accounts' => $operation->escrow_accounts[0]->pivot->amount
-
-            ]
-        ]);*/
 
         if(OperationStatus::wherein('name', ['Facturado', 'Finalizado sin factura','Pendiente facturar'])->pluck('id')->contains($operation->operation_status_id)){
             return response()->json([
