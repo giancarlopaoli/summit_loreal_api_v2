@@ -636,6 +636,7 @@ class RegisterController extends Controller
                 'accepted_tyc_at' => $now,
                 'accepts_publicity' => isset($request->client['accepts_publicity']) ? $request->client['accepts_publicity'] : 'false',
                 'executive_id' => $executive_id,
+                'registered_ate' => Carbon::now(),
                 'tracking_phase_id' => null,
                 'tracking_date' => $now,
                 'comission' => $comission
@@ -880,6 +881,7 @@ class RegisterController extends Controller
                 'accepts_publicity' => isset($request->client['accepts_publicity']) ? $request->client['accepts_publicity'] : 'false',
                 'executive_id' => $executive_id,
                 'tracking_phase_id' => null,
+                'registered_ate' => Carbon::now(),
                 'tracking_date' => Carbon::now(),
                 'comission' => $comission
             ]);

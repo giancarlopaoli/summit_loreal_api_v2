@@ -27,6 +27,12 @@ class OperationsTimesController extends Controller
             ->where('type', 'PL')
             ->where('client_status_id', ClientStatus::where('name', 'Activo')->first()->id)
             ->selectRaw("(Select count(*) from operations op where op.client_id = clients.id and MONTH(op.operation_date) = $month and YEAR(op.operation_date) = $year and op.operation_status_id = 7) as num_ops")
+            
+            ->selectRaw("(Select AVG(DATEDIFF(minute, op.FechaCorreoPL, op2.FecDeposito)) from Operacion op 
+                inner join OperacionEmparejar on OperacionEmparejar.OperacionEmparejado = op.OperacionId
+                inner join Operacion op2 on op2.OperacionId = OperacionEmparejar.OperacionEmparejador
+                where op2.ClienteId = Cliente.ClienteId and MONTH(op.FechaOperacion) = $month and YEAR(op.FechaOperacion) = $year and op.EstadoId in ('FAC','FSF','PFA') and op.FechaOperacion >='2022-09-12') as tiempo_promedio")
+
             ->get();
 
         /*$tablero = DB::table('Cliente')
