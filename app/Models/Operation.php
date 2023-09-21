@@ -60,6 +60,6 @@ class Operation extends Model
     }
 
     public function operations_analyst() {
-        return $this->belongsTo(OperationsAnalyst::class);
+        return $this->belongsTo(OperationsAnalyst::class, 'operations_analyst_id');
     }
 }
