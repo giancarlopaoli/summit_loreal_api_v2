@@ -205,16 +205,17 @@ class LeadsController extends Controller
     }
 
     public function list(Request $request) {
-        $val = Validator::make($request->all(), [
+        /*$val = Validator::make($request->all(), [
             'contact_type' => 'nullable|in:Natural,Juridica',
             'lead_contact_type_id' => 'nullable|exists:lead_contact_types,id',
             'document_type_id' => 'nullable|exists:document_types,id',
+            'document_number' => 'nullable|string',
             'region_id' => 'nullable|exists:regions,id',
             "sector_id" => 'nullable|exists:sectors,id',
             "lead_status_id" => 'nullable|exists:lead_statuses,id',
             "company_name" => 'nullable|string'
         ]);
-        if($val->fails()) return response()->json($val->messages());
+        if($val->fails()) return response()->json($val->messages());*/
 
         $leads = Lead::where('executive_id', auth()->id())
             ->with('document_type:id,name')
@@ -446,7 +447,6 @@ class LeadsController extends Controller
         if($val->fails()) return response()->json($val->messages());
 
         $lead->update([
-              'company_name' => $request->company_name,
               'region_id' => is_null($request->region_id) ? null: $request->region_id,
               'sector_id' => is_null($request->sector_id) ? null: $request->sector_id,
               'lead_contact_type_id' => is_null($request->lead_contact_type_id) ? null: $request->lead_contact_type_id,
