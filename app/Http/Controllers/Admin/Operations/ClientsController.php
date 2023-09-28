@@ -156,8 +156,13 @@ class ClientsController extends Controller
 
     //Reject Bank Account
     public function reject_bank_account(Request $request, BankAccount $bank_account) {
+        $val = Validator::make($request->all(), [
+            'comments' => 'required|string'
+        ]);
+        if($val->fails()) return response()->json($val->messages());
 
         $bank_account->bank_account_status_id = BankAccountStatus::where('name','Rechazado')->first()->id;
+        $bank_account->comments = $request->comments;
         $bank_account->save();
 
         return response()->json([
@@ -235,6 +240,24 @@ class ClientsController extends Controller
             ]);
         }
 
+    }
+
+    // Downloading client document
+    public function download_bank_account_receipt(Request $request, BankAccountReceipt $bank_account_receipt) {
+
+        if (Storage::disk('s3')->exists(env('AWS_ENV').'/bank_accounts/' . $bank_account_receipt->name)) {
+            return Storage::disk('s3')->download(env('AWS_ENV').'/bank_accounts/' . $bank_account_receipt->name);
+        }
+        else{
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'Archivo no encontrado'
+                ]
+            ]);
+        }
+
+        return Storage::disk('s3')->download(env('AWS_ENV').'/bank_accounts/' . $bank_account_receipt->name);
     }
 
 
