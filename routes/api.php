@@ -271,6 +271,7 @@ Route::middleware('encryptresponses')->group(function () {
                 Route::POST('bank-account/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'add_bank_account']);
                 Route::DELETE('bank-account/{bank_account}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'delete_bank_account']);
                 Route::POST('bank-account/receipt/{bank_account}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'upload_bank_account_receipt']);
+                Route::GET('bank-account/receipt/{bank_account_receipt}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'download_bank_account_receipt']);
                 Route::PUT('bank-account/approve/{bank_account}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'approve_bank_account']);
                 Route::PUT('bank-account/reject/{bank_account}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'reject_bank_account']);
                 
