@@ -57,7 +57,10 @@ class MyOperationsController extends Controller
             'bank_accounts.bank:id,name,shortname,image',
             'escrow_accounts:id,bank_id,account_number,cci_number,currency_id',
             'escrow_accounts.currency:id,name,sign',
-            'escrow_accounts.bank:id,name,shortname,image'
+            'escrow_accounts.bank:id,name,shortname,image',
+            'vendor_bank_accounts:id,bank_id,currency_id,account_number,cci_number',
+            'vendor_bank_accounts.currency:id,name,sign',
+            'vendor_bank_accounts.bank:id,name,shortname,image',
         );
 
         return response()->json([
@@ -81,7 +84,7 @@ class MyOperationsController extends Controller
         }
 
         $operation = $client->operations()
-            ->select('id','client_id','code','class','type','user_id','amount','currency_id','exchange_rate','comission_amount','igv','operation_status_id','transfer_number','invoice_url','coupon_id','coupon_code','coupon_type','coupon_value','operation_date','funds_confirmation_date','deposit_date','spread','comission_spread','canceled_at')
+            ->select('id','client_id','code','class','type','user_id','use_escrow_account','amount','currency_id','exchange_rate','comission_amount','igv','operation_status_id','transfer_number','invoice_url','coupon_id','coupon_code','coupon_type','coupon_value','operation_date','funds_confirmation_date','deposit_date','spread','comission_spread','canceled_at')
             ->selectRaw("if(type = 3, round(amount + round(amount * spread/10000, 2), 2), round(amount * exchange_rate, 2)) as conversion_amount")
             ->where('code', $operation_id)
             ->where('client_id', $request->client_id)
@@ -125,13 +128,17 @@ class MyOperationsController extends Controller
             'client:id,name,last_name,mothers_name,customer_type,type',
             'currency:id,name,sign',
             'status:id,name',
-            'bank_accounts:id,bank_id,currency_id,account_number,cci_number',
+            'bank_accounts:id,client_id,bank_id,currency_id,account_number,cci_number',
             'bank_accounts.currency:id,name,sign',
             'bank_accounts.bank:id,name,shortname,image',
             'escrow_accounts:id,bank_id,account_number,cci_number,currency_id',
             'escrow_accounts.currency:id,name,sign',
             'escrow_accounts.bank:id,name,shortname,image',
-            'documents:id,operation_id,type'
+            'vendor_bank_accounts:id,client_id,bank_id,currency_id,account_number,cci_number',
+            'vendor_bank_accounts.currency:id,name,sign',
+            'vendor_bank_accounts.bank:id,name,shortname,image',
+            'documents:id,operation_id,type',
+            
         );
 
         return response()->json([

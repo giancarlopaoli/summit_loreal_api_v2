@@ -429,6 +429,7 @@ Route::middleware('encryptresponses')->group(function () {
                 Route::GET('tracking-forms', [\App\Http\Controllers\Admin\Executives\LeadsController::class, 'tracking_forms']);
                 Route::GET('tracking-statuses', [\App\Http\Controllers\Admin\Executives\LeadsController::class, 'tracking_statuses']);
                 Route::GET('financial-vendors', [\App\Http\Controllers\Admin\Executives\ClientsController::class, 'vendors']);
+                Route::GET('no-escrow-vendors', [\App\Http\Controllers\Admin\Executives\ClientsController::class, 'no_escrow_vendors']);
                 Route::GET('escrow-accounts', [\App\Http\Controllers\Clients\InterbankOperationController::class, 'get_escrow_accounts']);
                 Route::GET('{client}/follow', [\App\Http\Controllers\Admin\Executives\ClientsController::class, 'client_follows']);
                 Route::POST('{client}/follow', [\App\Http\Controllers\Admin\Executives\ClientsController::class, 'register_follow']);

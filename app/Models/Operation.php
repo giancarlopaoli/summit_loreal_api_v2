@@ -23,6 +23,10 @@ class Operation extends Model
         return $this->belongsToMany(BankAccount::class)->withPivot("amount", "comission_amount");
     }
 
+    public function vendor_bank_accounts() {
+        return $this->belongsToMany(BankAccount::class,'vendor_bank_account_operation','operation_id','bank_account_id')->withPivot("amount", "comission_amount");
+    }
+
     public function coupon() {
         return $this->belongsTo(Coupon::class);
     }

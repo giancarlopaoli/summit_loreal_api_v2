@@ -634,11 +634,11 @@ class RegisterController extends Controller
                 'pep_position' => isset($request->client['pep_position']) ? $request->client['pep_position'] : null,
                 'registered_at' => $now,
                 'accepted_tyc_at' => $now,
-                'accepts_publicity' => isset($request->client['accepts_publicity']) ? $request->client['accepts_publicity'] : 'false',
                 'executive_id' => $executive_id,
                 'tracking_phase_id' => null,
                 'tracking_date' => $now,
-                'comission' => $comission
+                'comission' => $comission,
+                'use_bank_accounts' => false
             ]);
 
             
@@ -675,7 +675,7 @@ class RegisterController extends Controller
                     if ($user) {
                         // Creando Cliente/Usuario
                         try {
-                            $client->users()->attach($user->id, ['status' => Enums\ClientUserStatus::Activo]);
+                            $client->users()->attach($user->id, ['status' => Enums\ClientUserStatus::Asignado]);
                         } catch (\Exception $e) {
                             logger('Error: Register Person - attaching user: RegisterController@register_person', ["error" => $e]);
                             $error = true;
@@ -699,6 +699,7 @@ class RegisterController extends Controller
                             'password' => Hash::make($request->client['password']),
                             'role_id' => Role::where('name', 'cliente')->first()->id,
                             'status' => Enums\UserStatus::Activo,
+                            'accepts_publicity' => isset($request->client['accepts_publicity']) ? $request->client['accepts_publicity'] : 'false',
                         ]);
 
                         $user->assignRole('cliente');
@@ -877,12 +878,12 @@ class RegisterController extends Controller
                 'funds_comments' => isset($request->client['funds_comments']) ? $request->client['funds_comments']: null,
                 'other_funds_comments' => isset($request->client['other_funds_comments']) ? $request->client['other_funds_comments']: null,
                 'accepted_tyc_at' => $now,
-                'accepts_publicity' => isset($request->client['accepts_publicity']) ? $request->client['accepts_publicity'] : 'false',
                 'executive_id' => $executive_id,
                 'tracking_phase_id' => null,
                 'registered_at' => Carbon::now(),
                 'tracking_date' => Carbon::now(),
-                'comission' => $comission
+                'comission' => $comission,
+                'use_bank_accounts' => false
             ]);
 
             $mensaje = 'El registro se realizó de manera exitosa.';
@@ -987,7 +988,8 @@ class RegisterController extends Controller
                             'phone' => $request->client['phone'],
                             'password' => Hash::make($request->client['password']),
                             'role_id' => Role::where('name', 'cliente')->first()->id,
-                            'status' => Enums\UserStatus::Activo
+                            'status' => Enums\UserStatus::Activo,
+                            'accepts_publicity' => isset($request->client['accepts_publicity']) ? $request->client['accepts_publicity'] : 'false',
                         ]);
 
                         $user->assignRole('cliente');
