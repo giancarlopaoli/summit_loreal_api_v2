@@ -29,7 +29,8 @@ class User extends Authenticatable
         'status',
         'document_type_id',
         'document_number',
-        'role_id'
+        'role_id',
+        'accepts_publicity'
     ];
 
     /**

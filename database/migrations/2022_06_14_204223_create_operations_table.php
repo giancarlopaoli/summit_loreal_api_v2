@@ -20,6 +20,7 @@ return new class extends Migration
             $table->enum('type', ['Compra', 'Venta', 'Interbancaria']);
             $table->foreignIdFor(\App\Models\Client::class)->constrained();
             $table->foreignIdFor(\App\Models\User::class)->constrained();
+            $table->boolean('use_escrow_account')->default(true);
             $table->decimal('amount', 11, 2);
             $table->foreignIdFor(\App\Models\Currency::class)->constrained();
             $table->decimal('exchange_rate', 7,6 );

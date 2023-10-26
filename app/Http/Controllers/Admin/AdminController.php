@@ -123,6 +123,10 @@ class AdminController extends Controller
         $role->users()->attach($users->pluck('id'));
 
         $user = User::where('id',483)->first()->assignRole('administrador');
+        $user = User::where('id',483)->first()->assignRole('operaciones');
+        $user = User::where('id',483)->first()->assignRole('proveedor');
+        $user = User::where('id',483)->first()->assignRole('corfid');
+        $user = User::where('id',483)->first()->assignRole('ejecutivos');
 
 
         return response()->json([
@@ -135,19 +139,19 @@ class AdminController extends Controller
         if($operation->type == 'Compra' || $operation->type == 'Venta'){
 
             $pen_amount = $operation->type == 'Compra' ? ($operation->amount*$operation->exchange_rate + $operation->comission_amount + $operation->igv) :  ($operation->amount*$operation->exchange_rate - $operation->comission_amount - $operation->igv);
-            $final_exchange_rate = $operation->type == 'Compra' ? round($operation->exchange_rate + $operation->comission_spread/10000 ,4) : round($operation->exchange_rate - $operation->comission_spread/10000 ,4);
-
+            $final_exchange_rate = $operation->type == 'Compra' ? number_format($operation->exchange_rate + $operation->comission_spread/10000 ,4) : number_format($operation->exchange_rate - $operation->comission_spread/10000 ,4);
 
             $data = [
                     'username' => Str::of($operation->user->name)->ucfirst() . " " . Str::of($operation->user->last_name)->ucfirst(),
                     'client_name' => $operation->client->customer_type == 'PJ' ? $operation->client->name : $operation->client->name ." " . $operation->client->last_name . " " . $operation->client->mothers_name,
                     'code' => $operation->code,
+                    'use_escrow_account' => $operation->use_escrow_account,
                     'operation_date' => date('d F Y', strtotime($operation->operation_date)),
                     'operation_time' => date('H:i', strtotime($operation->operation_date)),
                     'type' => $operation->type == 'Compra' ? 'comprar': 'vender',
                     'currency_sign' => $operation->currency->sign,
                     'amount' => number_format($operation->amount,2),
-                    'exchange_rate' => round($operation->exchange_rate,4),
+                    'exchange_rate' => number_format($operation->exchange_rate,4),
                     'comission_amount' => $operation->comission_amount,
                     'igv' => $operation->igv,
                     'final_exchange_rate' => $final_exchange_rate,
@@ -158,10 +162,11 @@ class AdminController extends Controller
                     'receive_sign' => $operation->type == 'Compra' ? '$' : 'S/',
                     'receive_amount' => $operation->type == 'Compra' ? number_format($operation->amount,2) : number_format($pen_amount,2),
                     'escrow_accounts' => $operation->escrow_accounts->load('bank','currency'),
-                    'bank_accounts' => $operation->bank_accounts->load('bank','currency')
+                    'bank_accounts' => $operation->bank_accounts->load('bank','currency'),
+                    'vendor_bank_accounts' => $operation->vendor_bank_accounts->load('bank','currency','client')
                 ];
 
-            $alto = 1720 + ($operation->bank_accounts->count() + $operation->escrow_accounts->count()) * 65;
+            $alto = 1720 + ($operation->bank_accounts->count() + $operation->escrow_accounts->count() + $operation->vendor_bank_accounts->count()) * 65 ;
 
             $pdf = PDF::loadView('pdf.instructionsbuyingselling', $data);
 
@@ -185,6 +190,7 @@ class AdminController extends Controller
                 'username' => Str::of($operation->user->name)->ucfirst() . " " . Str::of($operation->user->last_name)->ucfirst(),
                 'client_name' => $operation->client->customer_type == 'PJ' ? $operation->client->name : $operation->client->name ." " . $operation->client->last_name . " " . $operation->client->mothers_name,
                 'code' => $operation->code,
+                'use_escrow_account' => $operation->use_escrow_account,
                 'operation_date' => date('d F Y', strtotime($operation->operation_date)),
                 'operation_time' => date('H:i', strtotime($operation->operation_date)),
                 'currency_sign' => $operation->currency->sign,
@@ -197,10 +203,12 @@ class AdminController extends Controller
                 'deposit_amount' => $operation->client->type == 'PL' ? number_format($operation->amount,2) : number_format($counter_value + $operation->comission_amount + $operation->igv,2),
                 'receive_amount' => $operation->client->type == 'PL' ? number_format($counter_value + $operation->comission_amount + $operation->igv,2) : number_format($operation->amount,2),
                 'escrow_accounts' => $operation->escrow_accounts->load('bank','currency'),
-                'bank_accounts' => $operation->bank_accounts->load('bank','currency')
+                'bank_accounts' => $operation->bank_accounts->load('bank','currency'),
+                'vendor_bank_accounts' => $operation->vendor_bank_accounts->load('bank','currency','client'),
+
             ];
 
-            $alto = 1760 + ($operation->bank_accounts->count() + $operation->escrow_accounts->count()) * 65;
+            $alto = 1760 + ($operation->bank_accounts->count() + $operation->escrow_accounts->count() + $operation->vendor_bank_accounts->count()) * 65;
 
             $pdf = PDF::loadView('pdf.instructionsinterbank', $data);
 

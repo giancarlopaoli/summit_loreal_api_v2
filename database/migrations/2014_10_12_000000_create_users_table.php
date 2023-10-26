@@ -25,6 +25,7 @@ return new class extends Migration
             $table->string('password');
             $table->timestamp('last_active')->nullable();
             $table->enum('status', \App\Enums\UserStatus::asArray());
+            $table->boolean('accepts_publicity')->nullable()->default(false);
             $table->timestamps();
         });
     }

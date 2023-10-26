@@ -135,6 +135,22 @@ class ClientsController extends Controller
         ]);
     }
 
+    public function no_escrow_vendors(Request $request) {
+        
+        $vendors = Client::select('id','name','last_name')
+            ->where('type', 'PL')
+            ->where('use_bank_accounts', true)
+            ->where('client_status_id', ClientStatus::where('name','Activo')->first()->id)
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                "vendors" => $vendors
+            ]
+        ]);
+    }
+
     public function escrow_accounts(Request $request) {
         
         $vendors = Client::select('id','name','last_name')

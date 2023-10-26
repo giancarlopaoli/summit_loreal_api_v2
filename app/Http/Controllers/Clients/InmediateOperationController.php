@@ -657,7 +657,8 @@ class InmediateOperationController extends Controller
             'igv' => 'required|numeric',
             'spread' => 'required|numeric',
             'bank_accounts' => 'required|array',
-            'escrow_accounts' => 'required|array',
+            'escrow_accounts' => 'nullable|array',
+            'vendor_bank_accounts' => 'nullable|array',
             'special_exchange_rate_id' => 'nullable|exists:special_exchange_rates,id'
         ]);
 
@@ -736,8 +737,9 @@ class InmediateOperationController extends Controller
 
         $bank_accounts = [];
         $total_amount_bank = 0;
-        $total_amount_scrow = 0;
+        $total_amount_escrow = 0;
         $total_comission = round($request->comission_amount + $request->igv,2);
+        $use_escrow_account = (isset($request->use_escrow_account)) ? $request->use_escrow_account : 1;
 
         // Calculando detracción
         $detraction_percentage = Configuration::where('shortname', 'DETRACTION')->first()->value;
@@ -799,67 +801,135 @@ class InmediateOperationController extends Controller
             $bank_accounts[] = $bank_account;
         }
 
+        if($use_escrow_account == 1){
+            //Validating Escrow Accounts
+            $escrow_accounts = [];
+            foreach ($request->escrow_accounts as $escrow_account_data) {
+                $escrow_account = EscrowAccount::where('id', $escrow_account_data['id'])
+                    ->where('active', true)
+                    ->first();
 
-        //Validating Escrow Accounts
-        $escrow_accounts = [];
-        foreach ($request->escrow_accounts as $escrow_account_data) {
-            $escrow_account = EscrowAccount::where('id', $escrow_account_data['id'])
-                ->where('active', true)
-                ->first();
+                if(is_null($escrow_account)) {
+                    return response()->json([
+                        'success' => false,
+                        'errors' => [
+                            'La cuenta fideicomiso ' . $escrow_account_data['id'] . ' no es valida'
+                        ]
+                    ]);
+                }
 
-            if(is_null($escrow_account)) {
-                return response()->json([
-                    'success' => false,
-                    'errors' => [
-                        'La cuenta fideicomiso ' . $escrow_account_data['id'] . ' no es valida'
-                    ]
-                ]);
+                if($request->type == 'compra') {
+                    if($escrow_account->currency_id != $soles_id) {
+                        return response()->json([
+                            'success' => false,
+                            'errors' => [
+                                'La cuenta fideicomiso ' . $escrow_account->id . ' no tiene la divisa valida'
+                            ]
+                        ]);
+                    }
+
+                    if($escrow_account_data['amount'] >= $total_comission){
+                        $escrow_account->comission_amount = $total_comission;
+                        $total_comission = 0;
+                    }
+                    else{
+                        $escrow_account->comission_amount = $escrow_account_data['amount'];
+                        $total_comission = $total_comission -  $escrow_account_data['amount'];
+                    }
+
+                } else {
+                    if($escrow_account->currency_id != $dolares_id) {
+                        return response()->json([
+                            'success' => false,
+                            'errors' => [
+                                'La cuenta fideicomiso ' . $escrow_account->id . ' no tiene la divisa valida'
+                            ]
+                        ]);
+                    }
+
+                    $escrow_account->comission_amount = 0;
+                }
+
+                $escrow_account->amount = $escrow_account_data['amount'];
+                $total_amount_escrow += $escrow_account_data['amount'];
+                $escrow_accounts[] = $escrow_account;
+                $destiny_accounts_text = "fideicomiso";
             }
-
+            
+            //Validating amounts in accounts
             if($request->type == 'compra') {
-                if($escrow_account->currency_id != $soles_id) {
-                    return response()->json([
-                        'success' => false,
-                        'errors' => [
-                            'La cuenta fideicomiso ' . $escrow_account->id . ' no tiene la divisa valida'
-                        ]
-                    ]);
-                }
-
-                if($escrow_account_data['amount'] >= $total_comission){
-                    $escrow_account->comission_amount = $total_comission;
-                    $total_comission = 0;
-                }
-                else{
-                    $escrow_account->comission_amount = $escrow_account_data['amount'];
-                    $total_comission = $total_comission -  $escrow_account_data['amount'];
-                }
-
+                $envia = round($request->amount * $request->exchange_rate + $request->comission_amount + $request->igv,2);
+                $recibe = $request->amount;
             } else {
-                if($escrow_account->currency_id != $dolares_id) {
+                $envia = $request->amount;
+                $recibe = round($request->amount * $request->exchange_rate - $request->comission_amount - $request->igv,2);
+            }
+        }
+        // If not Escrow accounts are used, we use vendor bank accounts
+        else{
+            //Validating Vendor Accounts
+            $vendor_bank_accounts = [];
+            foreach ($request->vendor_bank_accounts as $vendor_bank_account_data) {
+                $vendor_bank_account = BankAccount::where('id', $vendor_bank_account_data['id'])
+                    ->where('client_id', $request->vendor_id)
+                    ->where('bank_account_status_id', BankAccountStatus::Activo)
+                    ->first();
+
+                if(is_null($vendor_bank_account)) {
                     return response()->json([
                         'success' => false,
                         'errors' => [
-                            'La cuenta fideicomiso ' . $escrow_account->id . ' no tiene la divisa valida'
+                            'La cuenta de destino del Proveedor ' . $vendor_bank_account_data['id'] . ' no es valida'
                         ]
                     ]);
                 }
 
-                $escrow_account->comission_amount = 0;
-            }
+                if($request->type == 'compra') {
+                    if($vendor_bank_account->currency_id != $soles_id) {
+                        return response()->json([
+                            'success' => false,
+                            'errors' => [
+                                'La cuenta fideicomiso ' . $vendor_bank_account->id . ' no tiene la divisa valida'
+                            ]
+                        ]);
+                    }
 
-            $escrow_account->amount = $escrow_account_data['amount'];
-            $total_amount_scrow += $escrow_account_data['amount'];
-            $escrow_accounts[] = $escrow_account;
-        }
-        
-        //Validating amounts in accounts
-        if($request->type == 'compra') {
-            $envia = round($request->amount * $request->exchange_rate + $request->comission_amount + $request->igv,2);
-            $recibe = $request->amount;
-        } else {
-            $envia = $request->amount;
-            $recibe = round($request->amount * $request->exchange_rate - $request->comission_amount - $request->igv,2);
+                    if($vendor_bank_account_data['amount'] >= $total_comission){
+                        $vendor_bank_account->comission_amount = $total_comission;
+                        $total_comission = 0;
+                    }
+                    else{
+                        $vendor_bank_account->comission_amount = $vendor_bank_account_data['amount'];
+                        $total_comission = $total_comission -  $vendor_bank_account_data['amount'];
+                    }
+
+                } else {
+                    if($vendor_bank_account->currency_id != $dolares_id) {
+                        return response()->json([
+                            'success' => false,
+                            'errors' => [
+                                'La cuenta fideicomiso ' . $vendor_bank_account->id . ' no tiene la divisa valida'
+                            ]
+                        ]);
+                    }
+
+                    $vendor_bank_account->comission_amount = 0;
+                }
+
+                $vendor_bank_account->amount = $vendor_bank_account_data['amount'];
+                $total_amount_escrow += $vendor_bank_account_data['amount'];
+                $vendor_bank_accounts[] = $vendor_bank_account;
+                $destiny_accounts_text = "destino del proveedor";
+            }
+            
+            //Validating amounts in accounts
+            if($request->type == 'compra') {
+                $envia = round($request->amount * $request->exchange_rate + $request->comission_amount + $request->igv,2);
+                $recibe = $request->amount;
+            } else {
+                $envia = $request->amount;
+                $recibe = round($request->amount * $request->exchange_rate - $request->comission_amount - $request->igv,2);
+            }
         }
 
         if( $recibe != $total_amount_bank){
@@ -871,11 +941,11 @@ class InmediateOperationController extends Controller
             ]);
         }
 
-        if( $envia != $total_amount_scrow){
+        if( $envia != $total_amount_escrow){
             return response()->json([
                 'success' => false,
                 'errors' => [
-                    'La suma de montos enviados en las cuentas de fideicomiso es incorrecto = ' . $total_amount_scrow . '. Debería ser ' . $envia 
+                    'La suma de montos enviados en las cuentas de '.$destiny_accounts_text.' es incorrecto = ' . $total_amount_escrow . '. Debería ser ' . $envia 
                 ]
             ]);
         }
@@ -890,6 +960,7 @@ class InmediateOperationController extends Controller
             'type' => $request->type,
             'client_id' => $request->client_id,
             'user_id' => auth()->id(),
+            'use_escrow_account' =>$use_escrow_account,
             'amount' => $request->amount,
             'currency_id' => $dolares_id,
             'exchange_rate' => $request->exchange_rate,
@@ -911,15 +982,28 @@ class InmediateOperationController extends Controller
         foreach ($bank_accounts as $bank_account_data) {
             $operation->bank_accounts()->attach($bank_account_data['id'], [
                 'amount' => $bank_account_data['amount'],
-                'comission_amount' => $bank_account_data['comission_amount']
+                'comission_amount' => $bank_account_data['comission_amount'],
+                'created_at' => Carbon::now()
             ]);
         }
 
-        foreach ($escrow_accounts as $escrow_account_data) {
-            $operation->escrow_accounts()->attach($escrow_account_data['id'], [
-                'amount' => $escrow_account_data['amount'],
-                'comission_amount' => $escrow_account_data['comission_amount']
-            ]);
+        if($use_escrow_account == 1){
+            foreach ($escrow_accounts as $escrow_account_data) {
+                $operation->escrow_accounts()->attach($escrow_account_data['id'], [
+                    'amount' => $escrow_account_data['amount'],
+                    'comission_amount' => $escrow_account_data['comission_amount'],
+                    'created_at' => Carbon::now()
+                ]);
+            }
+        }
+        else{
+            foreach ($vendor_bank_accounts as $bank_account_data) {
+                $operation->vendor_bank_accounts()->attach($bank_account_data['id'], [
+                    'amount' => $bank_account_data['amount'],
+                    'comission_amount' => $bank_account_data['comission_amount'],
+                    'created_at' => Carbon::now()
+                ]);
+            }
         }
         
         OperationHistory::create(["operation_id" => $operation->id,"user_id" => auth()->id(),"action" => "Operación creada"]);
@@ -946,7 +1030,7 @@ class InmediateOperationController extends Controller
     }
 
     public function match_operation_vendor($operation_id, $vendor_id, $vendor_escrow_accounts=null) {
-        $operation = Operation::find($operation_id)->load('bank_accounts','escrow_accounts');
+        $operation = Operation::find($operation_id)->load('bank_accounts','escrow_accounts','vendor_bank_accounts');
 
         ####### Validating operation is not previusly matched ##########
         $operation_match = DB::table('operation_matches')
@@ -977,6 +1061,7 @@ class InmediateOperationController extends Controller
             'type' => ($operation->type == "Compra") ? 'Venta' : ($operation->type == "Venta" ? 'Compra' : 'Interbancaria'),
             'client_id' => $vendor_id,
             'user_id' => auth()->id(),
+            'use_escrow_account' => $operation->use_escrow_account,
             'amount' => $operation->amount,
             'currency_id' => $operation->currency_id,
             'exchange_rate' => $operation->exchange_rate,
@@ -993,64 +1078,117 @@ class InmediateOperationController extends Controller
 
         if($matched_operation){
             try {
-                
-                foreach ($operation->bank_accounts as $bank_account_data) {
-                    
-                    if(!is_null($vendor_escrow_accounts)){
-                        foreach ($vendor_escrow_accounts as $vendor_escrow_account) {
+                // If Escrow Account is used
+                if($operation->use_escrow_account == 1){
+                    foreach ($operation->bank_accounts as $bank_account_data) {
+                        
+                        if(!is_null($vendor_escrow_accounts)){
+                            foreach ($vendor_escrow_accounts as $vendor_escrow_account) {
 
-                            if($bank_account_data->id == $vendor_escrow_account['id'] && $bank_account_data->pivot->amount*1.0 == $vendor_escrow_account['amount']){
-                                $escrow_account = EscrowAccount::find($vendor_escrow_account['vendor_escrow_account_id']);
+                                if($bank_account_data->id == $vendor_escrow_account['id'] && $bank_account_data->pivot->amount*1.0 == $vendor_escrow_account['amount']){
+                                    $escrow_account = EscrowAccount::find($vendor_escrow_account['vendor_escrow_account_id']);
 
+                                }
                             }
                         }
-                    }
-                    else{
-                        $escrow_account = EscrowAccount::where('bank_id',$bank_account_data->bank_id)
-                            ->where('currency_id', $bank_account_data->currency_id)
-                            ->first();
+                        else{
+                            $escrow_account = EscrowAccount::where('bank_id',$bank_account_data->bank_id)
+                                ->where('currency_id', $bank_account_data->currency_id)
+                                ->first();
+                        }
+
+                        if(!is_null($escrow_account)){
+                            $matched_operation->escrow_accounts()->attach($escrow_account->id, [
+                                'amount' => $bank_account_data->pivot->amount + $bank_account_data->pivot->comission_amount,
+                                'comission_amount' => 0,
+                                'created_at' => Carbon::now()
+                            ]);
+                        }
+                        else{
+                            return response()->json([
+                                'success' => false,
+                                'errors' => [
+                                    'Error en cuenta bancaria'
+                                ]
+                            ], 404);
+                        }
                     }
 
-                    if(!is_null($escrow_account)){
-                        $matched_operation->escrow_accounts()->attach($escrow_account->id, [
-                            'amount' => $bank_account_data->pivot->amount + $bank_account_data->pivot->comission_amount,
-                            'comission_amount' => 0,
-                            'created_at' => Carbon::now()
-                        ]);
-                    }
-                    else{
-                        return response()->json([
-                            'success' => false,
-                            'errors' => [
-                                'Error en cuenta bancaria'
-                            ]
-                        ], 404);
+                    foreach ($operation->escrow_accounts as $escrow_account_data) {
+                        
+                        $bank_account = BankAccount::where('bank_id',$escrow_account_data->bank_id)
+                            ->where('client_id', $vendor_id)
+                            ->where('currency_id', $escrow_account_data->currency_id)
+                            ->first();
+
+                        if(!is_null($bank_account)){
+                            $matched_operation->bank_accounts()->attach($bank_account->id, [
+                                'amount' => $escrow_account_data->pivot->amount - $escrow_account_data->pivot->comission_amount,
+                                'comission_amount' => 0,
+                                'created_at' => Carbon::now()
+                            ]);
+                        }
+                        else{
+                            return response()->json([
+                                'success' => false,
+                                'errors' => [
+                                    'Error en cuenta bancaria'
+                                ]
+                            ], 404);
+                        }
+
                     }
                 }
+                // If Escrow Account is NOT Used
+                else{
+                    foreach ($operation->bank_accounts as $bank_account_data) {
 
-                foreach ($operation->escrow_accounts as $escrow_account_data) {
-                    
-                    $bank_account = BankAccount::where('bank_id',$escrow_account_data->bank_id)
-                        ->where('client_id', $vendor_id)
-                        ->where('currency_id', $escrow_account_data->currency_id)
-                        ->first();
+                        $bank_account = BankAccount::where('id', $bank_account_data->id)
+                            ->where('currency_id', $bank_account_data->currency_id)
+                            ->first();
 
-                    if(!is_null($bank_account)){
-                        $matched_operation->bank_accounts()->attach($bank_account->id, [
-                            'amount' => $escrow_account_data->pivot->amount - $escrow_account_data->pivot->comission_amount,
-                            'comission_amount' => 0,
-                            'created_at' => Carbon::now()
-                        ]);
+
+                        if(!is_null($bank_account)){
+                            $matched_operation->vendor_bank_accounts()->attach($bank_account->id, [
+                                'amount' => $bank_account_data->pivot->amount + $bank_account_data->pivot->comission_amount,
+                                'comission_amount' => 0,
+                                'created_at' => Carbon::now()
+                            ]);
+                        }
+                        else{
+                            return response()->json([
+                                'success' => false,
+                                'errors' => [
+                                    'Error en cuenta bancaria Destino'
+                                ]
+                            ], 404);
+                        }
                     }
-                    else{
-                        return response()->json([
-                            'success' => false,
-                            'errors' => [
-                                'Error en cuenta bancaria'
-                            ]
-                        ], 404);
-                    }
 
+                    foreach ($operation->vendor_bank_accounts as $vendor_bank_account_data) {
+                        
+                        $bank_account = BankAccount::where('bank_id',$vendor_bank_account_data->bank_id)
+                            ->where('client_id', $vendor_id)
+                            ->where('currency_id', $vendor_bank_account_data->currency_id)
+                            ->first();
+
+                        if(!is_null($bank_account)){
+                            $matched_operation->bank_accounts()->attach($bank_account->id, [
+                                'amount' => $vendor_bank_account_data->pivot->amount - $vendor_bank_account_data->pivot->comission_amount,
+                                'comission_amount' => 0,
+                                'created_at' => Carbon::now()
+                            ]);
+                        }
+                        else{
+                            return response()->json([
+                                'success' => false,
+                                'errors' => [
+                                    'Error en cuenta bancaria Proveedor'
+                                ]
+                            ], 404);
+                        }
+
+                    }
                 }
             } catch (\Exception $e) {
                 logger('ERROR: archivo adjunto: match_operation_vendor@InmediateOperationController', ["error" => $e]);
@@ -1072,7 +1210,7 @@ class InmediateOperationController extends Controller
 
         AvailableOperations::dispatch();
 
-         return response()->json([
+        return response()->json([
             "vendor_id" => $vendor_id,
             "operacion" => $operation
         ]);

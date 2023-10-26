@@ -421,36 +421,64 @@
             </td>
             <td></td>
           </tr>
-          <tr class="details_item">
-            <td class="details_item_left" colspan="2">
-              <p><b>Beneficiario:</b> Intercambio Corfid - Fideicomiso Bill</p>
-            </td>
-          </tr>
-          <tr>
-            <td colspan="2">
-              <div class="details_line_deposit"></div>
-            </td>
-          </tr>
 
-          @foreach ($escrow_accounts as $escrow_account)
+          @if ( $use_escrow_account == 1)
+            <tr class="details_item">
+              <td class="details_item_left" colspan="2">
+                <p><b>Beneficiario:</b> Intercambio Corfid - Fideicomiso Bill</p>
+              </td>
+            </tr>
+            <tr>
+              <td colspan="2">
+                <div class="details_line_deposit"></div>
+              </td>
+            </tr>
 
-          <tr class="details_item account">
-            <td class="details_item_left account" style="display: inline-block;" colspan="1">
-              <img style="display: inline-block;vertical-align: middle;" src="{{ $escrow_account->bank->image }}" alt="">
-              <div class="account_info" style="display: inline-block;vertical-align: middle;">
-                <p>{{ $escrow_account->bank->shortname }}</p>
-                <p>{{ $escrow_account->account_number }}</p>
-              </div>
-            </td>
-            <td class="details_item_right" colspan="1">
-              <p style="width: 200px; display: inline-block; text-align: right;"> {{ $escrow_account->currency->sign }} {{ number_format($escrow_account->pivot->amount,2)}} </p>
-            </td>
-          </tr>
+            @foreach ($escrow_accounts as $escrow_account)
 
+            <tr class="details_item account">
+              <td class="details_item_left account" style="display: inline-block;" colspan="1">
+                <img style="display: inline-block;vertical-align: middle;" src="{{ $escrow_account->bank->image }}" alt="">
+                <div class="account_info" style="display: inline-block;vertical-align: middle;">
+                  <p>{{ $escrow_account->bank->shortname }}</p>
+                  <p>{{ $escrow_account->account_number }}</p>
+                </div>
+              </td>
+              <td class="details_item_right" colspan="1">
+                <p style="width: 200px; display: inline-block; text-align: right;"> {{ $escrow_account->currency->sign }} {{ number_format($escrow_account->pivot->amount,2)}} </p>
+              </td>
+            </tr>
 
+            @endforeach
+          @else
+            <tr class="details_item">
+              <td class="details_item_left" colspan="2">
+                <p><b>Beneficiario:</b> {{ $vendor_bank_accounts[0]->client->name }}</p>
+              </td>
+            </tr>
+            <tr>
+              <td colspan="2">
+                <div class="details_line_deposit"></div>
+              </td>
+            </tr>
 
-          @endforeach
+            @foreach ($vendor_bank_accounts as $vendor_bank_account)
 
+            <tr class="details_item account">
+              <td class="details_item_left account" style="display: inline-block;" colspan="1">
+                <img style="display: inline-block;vertical-align: middle;" src="{{ $vendor_bank_account->bank->image }}" alt="">
+                <div class="account_info" style="display: inline-block;vertical-align: middle;">
+                  <p>{{ $vendor_bank_account->bank->shortname }}</p>
+                  <p>{{ $vendor_bank_account->account_number }}</p>
+                </div>
+              </td>
+              <td class="details_item_right" colspan="1">
+                <p style="width: 200px; display: inline-block; text-align: right;"> {{ $vendor_bank_account->currency->sign }} {{ number_format($vendor_bank_account->pivot->amount,2)}} </p>
+              </td>
+            </tr>
+
+            @endforeach
+          @endif
 
           <tr>
             <td colspan="2">

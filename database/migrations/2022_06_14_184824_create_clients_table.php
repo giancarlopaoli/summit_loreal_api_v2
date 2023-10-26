@@ -42,6 +42,7 @@ return new class extends Migration
             $table->integer('corfid_id')->nullable();
             $table->string('corfid_message', 255)->nullable();
             $table->foreignIdFor(\App\Models\Association::class)->nullable()->constrained();
+            $table->boolean('use_bank_accounts')->default(false)->nullable();
             $table->timestamp('registered_at')->nullable();
             $table->timestamp('billex_approved_at')->nullable();
             $table->timestamp('corfid_approved_at')->nullable();
@@ -53,7 +54,6 @@ return new class extends Migration
             $table->date('comission_start_date')->nullable();
             $table->decimal('comission', 5, 4)->nullable();
             $table->unsignedInteger("invoice_to")->nullable();
-            $table->boolean('accepts_publicity')->nullable()->default(false);
             $table->boolean('validated')->nullable()->default(false);
             $table->timestamps();
         });
