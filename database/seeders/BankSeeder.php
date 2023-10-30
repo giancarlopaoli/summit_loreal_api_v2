@@ -43,6 +43,7 @@ class BankSeeder extends Seeder
         ]);
 
         Bank::create([
+            'id' => 5,
             'name' => 'Scotiabank Perú',
             'shortname' => 'SCOTIABANK',
             'corfid_id' => 41,
@@ -52,6 +53,7 @@ class BankSeeder extends Seeder
         ]);
 
         Bank::create([
+            'id' => 6,
             'name' => 'Banco Interamericano de Finanzas',
             'shortname' => 'BANBIF',
             'corfid_id' => 38,
@@ -61,6 +63,7 @@ class BankSeeder extends Seeder
         ]);
 
         Bank::create([
+            'id' => 7,
             'name' => 'Banco Pichincha',
             'shortname' => 'Pichincha',
             'corfid_id' => 35,
@@ -70,6 +73,7 @@ class BankSeeder extends Seeder
         ]);
 
         Bank::create([
+            'id' => 10,
             'name' => 'Banco de Comercio',
             'shortname' => 'Banco de Comercio',
             'corfid_id' => 23,
@@ -79,6 +83,7 @@ class BankSeeder extends Seeder
         ]);
 
         Bank::create([
+            'id' => 12,
             'name' => 'Banco de la Nación',
             'shortname' => 'Nación',
             'corfid_id' => 0,

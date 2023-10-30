@@ -191,13 +191,15 @@ class InterbankOperationController extends Controller
         $val = Validator::make($request->all(), [
             'client_id' => 'required|exists:clients,id',
             'bank_account_id' => 'required|exists:bank_accounts,id',
-            'escrow_account_id' => 'required|exists:escrow_accounts,id',
+            'escrow_account_id' => 'nullable|exists:escrow_accounts,id',
             'amount' => 'required|numeric',
             'comission' => 'required|numeric',
             'igv' => 'required|numeric',
             'currency_id' => 'required|numeric',
             'exchange_rate' => 'required|numeric',
             'financial_expenses' => 'required|numeric',
+            'use_escrow_account' => 'required|boolean',
+            'vendor_bank_account_id' => 'nullable|exists:bank_accounts,id'
         ]);
         if($val->fails()) return response()->json($val->messages());
 
@@ -229,14 +231,6 @@ class InterbankOperationController extends Controller
             $bank_account_list = array();
             array_push($bank_account_list,$bank_account_operation);
 
-            // Validating escrow account
-            $escrow_accounts = EscrowAccount::where('id', $request->escrow_account_id)
-                ->where('currency_id', $request->currency_id)
-                ->where('active', true)
-                ->where('bank_id', '<>', $bank_accounts[0]->bank_id)
-                ->get();
-
-            if($escrow_accounts->count() == 0) return response()->json(['success' => false,'data' => ['Error en la cuenta de fideicomiso seleccionada']]);
 
             $igv_porcentaje = round((float) Configuration::where('shortname', 'IGV')->first()->value / 100, 2);
 
@@ -260,14 +254,42 @@ class InterbankOperationController extends Controller
             $now = Carbon::now();
             $code = $now->format('YmdHisv') . rand(0, 9);
 
-            $escrow_account_operation = array(
-                "escrow_account_id" => $request->escrow_account_id,
-                "amount" => $request->amount + round($request->amount * $spread/10000, 2) + $request->comission + $request->igv,
-                "comission_amount" => $request->comission + $request->igv
-            );
-            $escrow_account_list = array();
-            array_push($escrow_account_list,$escrow_account_operation);
+            if($request->use_escrow_account == 1){
+                // Validating escrow account
+                $escrow_accounts = EscrowAccount::where('id', $request->escrow_account_id)
+                    ->where('currency_id', $request->currency_id)
+                    ->where('active', true)
+                    ->where('bank_id', '<>', $bank_accounts[0]->bank_id)
+                    ->get();
 
+                if($escrow_accounts->count() == 0) return response()->json(['success' => false,'data' => ['Error en la cuenta de fideicomiso seleccionada']]);
+
+                $escrow_account_operation = array(
+                    "escrow_account_id" => $request->escrow_account_id,
+                    "amount" => $request->amount + round($request->amount * $spread/10000, 2) + $request->comission + $request->igv,
+                    "comission_amount" => $request->comission + $request->igv
+                );
+                $escrow_account_list = array();
+                array_push($escrow_account_list,$escrow_account_operation);
+            }
+            else{
+                //Validating Vendor Accounts
+                $vendor_bank_accounts = BankAccount::where('client_id', $request->vendor_id)
+                    ->where('id', $request->vendor_bank_account_id)
+                    ->where('currency_id', $request->currency_id)
+                    ->whereRelation('status', 'name', 'Activo')
+                    ->get();
+
+                if($vendor_bank_accounts->count() == 0) return response()->json(['success' => false,'data' => ['Error en la cuenta de destino de PL seleccionada.']]);
+
+                $vendor_bank_account_operation = array(
+                    "bank_account_id" => $request->vendor_bank_account_id,
+                    "amount" => $request->amount + round($request->amount * $spread/10000, 2) + $request->comission + $request->igv,
+                    "comission_amount" => $request->comission + $request->igv
+                );
+                $vendor_bank_account_list = array();
+                array_push($vendor_bank_account_list,$vendor_bank_account_operation);
+            }
 
             $operation = Operation::create([
                 'code' => $code,
@@ -286,11 +308,17 @@ class InterbankOperationController extends Controller
                 'detraction_percentage' => $detraction_percentage,
                 'operation_status_id' => OperationStatus::where('name', 'Disponible')->first()->id,
                 'operation_date' => $now->toDateTimeString(),
-                'post' => false
+                'post' => false,
+                'use_escrow_account' => $request->use_escrow_account
             ]);
 
             $operation->bank_accounts()->attach($bank_account_list);
-            $operation->escrow_accounts()->attach($escrow_account_list);
+            if($request->use_escrow_account == 1){
+                $operation->escrow_accounts()->attach($escrow_account_list);
+            }
+            else{
+                $operation->vendor_bank_accounts()->attach($vendor_bank_account_list);
+            }
 
             // Matching with vendor
             if(isset($request->vendor_id)){
@@ -336,7 +364,7 @@ class InterbankOperationController extends Controller
     }
 
     public function match_operation_vendor($operation_id, $vendor_id) {
-        $operation = Operation::find($operation_id)->load('bank_accounts','escrow_accounts');
+        $operation = Operation::find($operation_id)->load('bank_accounts','escrow_accounts','vendor_bank_accounts');
 
         ####### Validating operation is not previusly matched ##########
         $operation_match = DB::table('operation_matches')
@@ -378,44 +406,79 @@ class InterbankOperationController extends Controller
             'spread' => ($operation->type == "Interbancaria") ? $operation->spread : 0,
             'operation_status_id' => $status_id,
             'operation_date' => Carbon::now(),
-            'post' => false
+            'post' => false,
+            'use_escrow_account' => $operation->use_escrow_account
         ]);
 
         if($matched_operation){
             try {
+                if($operation->use_escrow_account == 1){
+                    // Getting Vendor bank account
+                    $vendor_bank_account = BankAccount::where('client_id', $vendor_id)
+                        ->where('bank_account_status_id', Enums\BankAccountStatus::Activo)
+                        ->where('bank_id', $operation->escrow_accounts[0]->bank_id)
+                        ->where('currency_id', $operation->escrow_accounts[0]->currency_id )
+                        ->first();
 
-                // Getting Vendor bank account
-                $vendor_bank_account = BankAccount::where('client_id', $vendor_id)
-                    ->where('bank_account_status_id', Enums\BankAccountStatus::Activo)
-                    ->where('bank_id', $operation->escrow_accounts[0]->bank_id)
-                    ->where('currency_id', $operation->escrow_accounts[0]->currency_id )
-                    ->first();
+                    if(is_null($vendor_bank_account)) return response()->json(['error' => true,'data' => ['Error en la cuenta de destino del proveedor de liquidez.']]);
 
-                if(is_null($vendor_bank_account)) return response()->json(['error' => true,'data' => ['Error en la cuenta de destino del proveedor de liquidez.']]);
+                    $financial_expenses =  round(round($matched_operation->spread / 10000, 6) * $matched_operation->amount,2);
 
-                $financial_expenses =  round(round($matched_operation->spread / 10000, 6) * $matched_operation->amount,2);
+                    $matched_operation->bank_accounts()->attach($vendor_bank_account->id, [
+                        'amount' => $matched_operation->amount + $financial_expenses,
+                        'comission_amount' => 0,
+                        'created_at' => Carbon::now()
+                    ]);
+                    
 
-                $matched_operation->bank_accounts()->attach($vendor_bank_account->id, [
-                    'amount' => $matched_operation->amount + $financial_expenses,
-                    'comission_amount' => 0,
-                    'created_at' => Carbon::now()
-                ]);
-                
+                    // Getting Vendor Escrow Accont
+                    $vendor_escrow_account = EscrowAccount::where('active', true)
+                        ->where('bank_id', $operation->bank_accounts[0]->bank_id)
+                        ->where('currency_id', $operation->bank_accounts[0]->currency_id)
+                        ->first();
 
-                // Getting Vendor Escrow Accont
-                $vendor_escrow_account = EscrowAccount::where('active', true)
-                    ->where('bank_id', $operation->bank_accounts[0]->bank_id)
-                    ->where('currency_id', $operation->bank_accounts[0]->currency_id)
-                    ->first();
+                    if(is_null($vendor_escrow_account)) return response()->json(['error' => true,'data' => ['Error en la cuenta de fideicomiso del proveedor de liquidez.']]);
 
-                if(is_null($vendor_escrow_account)) return response()->json(['error' => true,'data' => ['Error en la cuenta de fideicomiso del proveedor de liquidez.']]);
+                    $matched_operation->escrow_accounts()->attach($vendor_escrow_account->id, [
+                        'amount' => $matched_operation->amount,
+                        'comission_amount' => 0,
+                        'created_at' => Carbon::now()
+                    ]);
+                }
+                else{
+                    // If use escrow account = 0
+                    // Getting Vendor bank account
+                    $vendor_bank_account = BankAccount::where('client_id', $vendor_id)
+                        ->where('bank_account_status_id', Enums\BankAccountStatus::Activo)
+                        ->where('bank_id', $operation->vendor_bank_accounts[0]->bank_id)
+                        ->where('currency_id', $operation->vendor_bank_accounts[0]->currency_id )
+                        ->first();
 
-                $matched_operation->escrow_accounts()->attach($vendor_escrow_account->id, [
-                    'amount' => $matched_operation->amount,
-                    'comission_amount' => 0,
-                    'created_at' => Carbon::now()
-                ]);
-                
+                    if(is_null($vendor_bank_account)) return response()->json(['error' => true,'data' => ['Error en la cuenta de destino del proveedor de liquidez.']]);
+
+                    $financial_expenses =  round(round($matched_operation->spread / 10000, 6) * $matched_operation->amount,2);
+
+                    $matched_operation->bank_accounts()->attach($vendor_bank_account->id, [
+                        'amount' => $matched_operation->amount + $financial_expenses,
+                        'comission_amount' => 0,
+                        'created_at' => Carbon::now()
+                    ]);
+                    
+                    // Getting Vendor Escrow Accont
+                    $final_client_bank_account = BankAccount::where('client_id', $operation->client_id)
+                        ->where('bank_account_status_id', Enums\BankAccountStatus::Activo)
+                        ->where('bank_id', $operation->bank_accounts[0]->bank_id)
+                        ->where('currency_id', $operation->bank_accounts[0]->currency_id )
+                        ->first();
+
+                    if(is_null($final_client_bank_account)) return response()->json(['error' => true,'data' => ['Error en la cuenta de destino de cliente.']]);
+
+                    $matched_operation->vendor_bank_accounts()->attach($final_client_bank_account->id, [
+                        'amount' => $matched_operation->amount,
+                        'comission_amount' => 0,
+                        'created_at' => Carbon::now()
+                    ]);
+                }
             } catch (\Exception $e) {
                 logger('ERROR: archivo adjunto: match_operation_vendor@InmediateOperationController', ["error" => $e]);
 
