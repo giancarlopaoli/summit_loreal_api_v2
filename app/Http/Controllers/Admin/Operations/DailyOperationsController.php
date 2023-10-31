@@ -87,7 +87,7 @@ class DailyOperationsController extends Controller
             ->orderByRaw('day(operation_date)')
             ->get();
 
-        $pending_operations = Operation::select('id','code','class','type','client_id','user_id','amount','currency_id','exchange_rate','comission_spread','comission_amount','igv','spread','operation_status_id','post','operation_date')
+        $pending_operations = Operation::select('id','code','class','type','client_id','user_id','use_escrow_account','amount','currency_id','exchange_rate','comission_spread','comission_amount','igv','spread','operation_status_id','post','operation_date')
             ->selectRaw("if(type = 'Interbancaria', round(amount + round(amount * spread/10000, 2 ), 2), round(amount * exchange_rate, 2)) as conversion_amount")
             ->selectRaw("if(type = 'Compra', round(exchange_rate + comission_spread/10000, 4), if(type = 'Venta', round(exchange_rate - comission_spread/10000, 4), round(exchange_rate * (1 + spread/10000),4))) as final_exchange_rate")
             ->selectRaw("if(type = 'Compra', round(round(amount * exchange_rate, 2) + comission_amount + igv, 2), if(type = 'Venta', round(round(amount * exchange_rate, 2) - comission_amount - igv, 2), round(amount + round(amount * spread/10000, 2 ) + comission_amount + igv, 2)) ) as counter_value")
@@ -104,6 +104,9 @@ class DailyOperationsController extends Controller
             ->with('escrow_accounts:id,bank_id,currency_id,account_number,cci_number')
             ->with('escrow_accounts.currency:id,name,sign')
             ->with('escrow_accounts.bank:id,name,shortname,image')
+            ->with('vendor_bank_accounts:id,bank_id,currency_id,client_id,account_number,cci_number')
+            ->with('vendor_bank_accounts.currency:id,name,sign')
+            ->with('vendor_bank_accounts.bank:id,name,shortname,image')
             ->with('documents:id,operation_id,type')
             ->get();
 
@@ -119,7 +122,7 @@ class DailyOperationsController extends Controller
         $matched_operations->each(function ($item, $key) {
 
             $item->created_operation = Operation::where('id',$item->operation_id)
-                ->select('operations.id','code','class','type','client_id','user_id','amount','currency_id','exchange_rate','comission_spread','comission_amount','igv','spread','operation_status_id','post','operation_date','funds_confirmation_date', 'sign_date', 'mail_instructions', 'invoice_url','operations_analyst_id')
+                ->select('operations.id','code','class','type','client_id','user_id','use_escrow_account','amount','currency_id','exchange_rate','comission_spread','comission_amount','igv','spread','operation_status_id','post','operation_date','funds_confirmation_date', 'sign_date', 'mail_instructions', 'invoice_url','operations_analyst_id')
                 ->selectRaw("if(type = 'Interbancaria', round(amount + round(amount * spread/10000, 2 ), 2), round(amount * exchange_rate, 2)) as conversion_amount")
                 ->selectRaw("if(type = 'Compra', round(exchange_rate + comission_spread/10000, 4), if(type = 'Venta', round(exchange_rate - comission_spread/10000, 4), round(exchange_rate * (1 + spread/10000),4))) as final_exchange_rate")
                 ->selectRaw("if(type = 'Compra', round(round(amount * exchange_rate, 2) + comission_amount + igv, 2), if(type = 'Venta', round(round(amount * exchange_rate, 2) - comission_amount - igv, 2), round(amount + round(amount * spread/10000, 2 ) + comission_amount + igv, 2)) ) as counter_value")
@@ -136,11 +139,14 @@ class DailyOperationsController extends Controller
                 ->with('escrow_accounts:id,bank_id,currency_id,account_number,cci_number')
                 ->with('escrow_accounts.currency:id,name,sign')
                 ->with('escrow_accounts.bank:id,name,shortname,image')
+                ->with('vendor_bank_accounts:id,bank_id,currency_id,client_id,account_number,cci_number')
+                ->with('vendor_bank_accounts.currency:id,name,sign')
+                ->with('vendor_bank_accounts.bank:id,name,shortname,image')
                 ->with('documents:id,operation_id,type')
                 ->first();
 
             $item->matched_operation = Operation::where('id',$item->matched_id)
-                ->select('operations.id','code','class','type','client_id','user_id','amount','currency_id','exchange_rate','comission_spread','comission_amount','igv','spread','operation_status_id','post','operation_date','funds_confirmation_date', 'sign_date', 'mail_instructions', 'invoice_url','operations_analyst_id')
+                ->select('operations.id','code','class','type','client_id','user_id','use_escrow_account','amount','currency_id','exchange_rate','comission_spread','comission_amount','igv','spread','operation_status_id','post','operation_date','funds_confirmation_date', 'sign_date', 'mail_instructions', 'invoice_url','operations_analyst_id')
                 ->selectRaw("if(type = 'Interbancaria', round(amount + round(amount * spread/10000, 2 ), 2), round(amount * exchange_rate, 2)) as conversion_amount")
                 ->selectRaw("if(type = 'Compra', round(exchange_rate + comission_spread/10000, 4), if(type = 'Venta', round(exchange_rate - comission_spread/10000, 4), round(exchange_rate * (1 + spread/10000),4))) as final_exchange_rate")
                 ->selectRaw("if(type = 'Compra', round(round(amount * exchange_rate, 2) + comission_amount + igv, 2), if(type = 'Venta', round(round(amount * exchange_rate, 2) - comission_amount - igv, 2), round(amount + round(amount * spread/10000, 2 ) + comission_amount + igv, 2)) ) as counter_value")
@@ -157,6 +163,9 @@ class DailyOperationsController extends Controller
                 ->with('escrow_accounts:id,bank_id,currency_id,account_number,cci_number')
                 ->with('escrow_accounts.currency:id,name,sign')
                 ->with('escrow_accounts.bank:id,name,shortname,image')
+                ->with('vendor_bank_accounts:id,bank_id,currency_id,client_id,account_number,cci_number')
+                ->with('vendor_bank_accounts.currency:id,name,sign')
+                ->with('vendor_bank_accounts.bank:id,name,shortname,image')
                 ->with('documents:id,operation_id,type')
                 ->first();
         });
@@ -223,6 +232,7 @@ class DailyOperationsController extends Controller
             'type' => ($operation->type == "Compra") ? 'Venta' : ($operation->type == "Venta" ? 'Compra' : 'Interbancaria'),
             'client_id' => $request->client_id,
             'user_id' => auth()->id(),
+            'use_escrow_account' => $operation->use_escrow_account,
             'amount' => $operation->amount,
             'currency_id' => $operation->currency_id,
             'exchange_rate' => $operation->exchange_rate,
