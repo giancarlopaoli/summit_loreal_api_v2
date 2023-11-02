@@ -50,6 +50,7 @@ class PRDSeeder extends Seeder
         Permission::create(['name' => 'comisiones_ejecutivos']);
         Permission::create(['name' => 'editar_permisos']);
         Permission::create(['name' => 'detracciones']);
+        Permission::create(['name' => 'analista_operaciones']);
 
         $role = Role::findByName('administrador');
         $role->givePermissionTo(Permission::all());
