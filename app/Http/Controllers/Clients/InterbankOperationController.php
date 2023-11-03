@@ -198,7 +198,7 @@ class InterbankOperationController extends Controller
             'currency_id' => 'required|numeric',
             'exchange_rate' => 'required|numeric',
             'financial_expenses' => 'required|numeric',
-            'use_escrow_account' => 'required|boolean',
+            'use_escrow_account' => 'nullable|boolean',
             'vendor_bank_account_id' => 'nullable|exists:bank_accounts,id'
         ]);
         if($val->fails()) return response()->json($val->messages());
