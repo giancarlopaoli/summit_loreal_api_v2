@@ -21,8 +21,10 @@ class MyBankAccountsController extends Controller
         }
 
         $accounts = $client->bank_accounts()->select('id','client_id','bank_id','account_number','cci_number','main','bank_account_status_id','comments','currency_id')
-            ->whereRelation('status', 'name', 'Activo')
-            ->orWhereRelation('status', 'name','Pendiente')
+            ->where(function ($query) {
+               $query->whereRelation('status', 'name', 'Activo')
+                    ->orWhereRelation('status', 'name','Pendiente');
+                })
             ->with([
             'bank:id,name,shortname,active,image',
             'account_type:id,name,shortname',
