@@ -214,6 +214,8 @@ class InterbankOperationController extends Controller
                 ], 404);
             }
 
+            $use_escrow_account = (isset($request->use_escrow_account)) ? $request->use_escrow_account : 1;
+
             // Validating client accounts
             $bank_accounts = $client->bank_accounts()
                 ->where('id', $request->bank_account_id)
@@ -254,7 +256,7 @@ class InterbankOperationController extends Controller
             $now = Carbon::now();
             $code = $now->format('YmdHisv') . rand(0, 9);
 
-            if($request->use_escrow_account == 1){
+            if($use_escrow_account == 1){
                 // Validating escrow account
                 $escrow_accounts = EscrowAccount::where('id', $request->escrow_account_id)
                     ->where('currency_id', $request->currency_id)
@@ -309,11 +311,11 @@ class InterbankOperationController extends Controller
                 'operation_status_id' => OperationStatus::where('name', 'Disponible')->first()->id,
                 'operation_date' => $now->toDateTimeString(),
                 'post' => false,
-                'use_escrow_account' => $request->use_escrow_account
+                'use_escrow_account' => $use_escrow_account
             ]);
 
             $operation->bank_accounts()->attach($bank_account_list);
-            if($request->use_escrow_account == 1){
+            if($use_escrow_account == 1){
                 $operation->escrow_accounts()->attach($escrow_account_list);
             }
             else{
