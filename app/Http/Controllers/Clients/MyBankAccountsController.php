@@ -20,7 +20,7 @@ class MyBankAccountsController extends Controller
             ], 404);
         }
 
-        $accounts = $client->bank_accounts()->select('id','client_id','bank_id','account_number','cci_number','main','bank_account_status_id','comments','currency_id')
+        $accounts = $client->bank_accounts()->select('id','client_id','bank_id','alias','account_number','cci_number','main','bank_account_status_id','comments','currency_id','account_type_id')
             ->where(function ($query) {
                $query->whereRelation('status', 'name', 'Activo')
                     ->orWhereRelation('status', 'name','Pendiente');
@@ -28,7 +28,8 @@ class MyBankAccountsController extends Controller
             ->with([
             'bank:id,name,shortname,active,image',
             'account_type:id,name,shortname',
-            'currency:id,name,sign,image'
+            'currency:id,name,sign,image',
+            'account_type'
         ])->get();
 
         if($accounts->isEmpty()) {
