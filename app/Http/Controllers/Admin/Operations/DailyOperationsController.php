@@ -427,7 +427,7 @@ class DailyOperationsController extends Controller
                 $extension = strrpos($file->getClientOriginalName(), ".")? (Str::substr($file->getClientOriginalName(), strrpos($file->getClientOriginalName(), ".") , Str::length($file->getClientOriginalName()) -strrpos($file->getClientOriginalName(), ".") +1)): "";
                 
                 $now = Carbon::now();
-                $filename = md5($now->toDateTimeString().$file->getClientOriginalName()).$extension;
+                $filename = md5($now->toDateTimeString().$file->getClientOriginalName()).".".$extension;
             } catch (\Exception $e) {
                 $filename = $file->getClientOriginalName();
             }
