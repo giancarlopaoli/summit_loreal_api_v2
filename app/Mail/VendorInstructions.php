@@ -36,7 +36,12 @@ class VendorInstructions extends Mailable
 
         $received_amount = ($this->operation->type == 'Venta') ? round($this->operation->amount * $this->operation->exchange_rate,2) - $this->operation->comission_amount - $this->operation->igv : $this->operation->amount;
 
-        $document = OperationDocument::where('operation_id', $this->operation->id)->where('type', Enums\DocumentType::Comprobante)->first();
+        if($this->operation->use_escrow_account == 1){
+            $document = OperationDocument::where('operation_id', $this->operation->id)->where('type', Enums\DocumentType::Comprobante)->first();
+        }
+        else{
+            $document = OperationDocument::where('operation_id', $this->operation->matched_operation[0]->id)->where('type', Enums\DocumentType::Comprobante)->first();
+        }
 
         return $this
             ->subject('BILLEX | CONSTANCIA DE LA TRANSFERENCIA - ' . $this->operation->type . ' ' . $this->operation->amount . ' - OP ' . $this->operation->code)

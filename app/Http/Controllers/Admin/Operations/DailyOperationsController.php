@@ -304,6 +304,7 @@ class DailyOperationsController extends Controller
 
         // Enviar correo instrucciones ()
         $rpta_mail = Mail::send(new OperationInstructions($operation->id));
+        $rpta_mail = Mail::send(new OperationInstructions($matched_operation->id));
 
         OperationHistory::create(["operation_id" => $operation->id,"user_id" => auth()->id(),"action" => "Operación emparejada"]);
 
@@ -344,62 +345,87 @@ class DailyOperationsController extends Controller
             ], 404);
         }
 
-        if($operation->matches->count() > 0) { // Si es operación creadora
-            if($operation->matches[0]->operation_status_id == OperationStatus::where('name', 'Pendiente envio fondos')->first()->id){
-                $operation->operation_status_id = OperationStatus::where('name', 'Pendiente fondos contraparte')->first()->id;
-                $operation->funds_confirmation_date = Carbon::now();
-                $operation->save();
-            }
-            elseif($operation->matches[0]->operation_status_id == OperationStatus::where('name', 'Pendiente fondos contraparte')->first()->id){
-                $operation->operation_status_id = OperationStatus::where('name', 'Contravalor recaudado')->first()->id;
-                $operation->funds_confirmation_date = Carbon::now();
-                $operation->save();
-
-                $operation->matches[0]->operation_status_id = OperationStatus::where('name', 'Contravalor recaudado')->first()->id;
-                $operation->matches[0]->save();
-            }
-            else{
-                return response()->json([
-                    'success' => false,
-                    'errors' => [
-                        'Error en el estado de la operación emparejadora'
-                    ]
-                ], 404);
-            }
-        }
-        elseif ($operation->matched_operation->count() > 0) { // Si es operación emparejadora
-            if($operation->matched_operation[0]->operation_status_id == OperationStatus::where('name', 'Pendiente envio fondos')->first()->id){
-                $operation->operation_status_id = OperationStatus::where('name', 'Pendiente fondos contraparte')->first()->id;
-                $operation->funds_confirmation_date = Carbon::now();
-                $operation->save();
-            }
-            elseif($operation->matched_operation[0]->operation_status_id == OperationStatus::where('name', 'Pendiente fondos contraparte')->first()->id){
-                
-                if($operation->client->type == 'PL'){
-                    $operation->operation_status_id = OperationStatus::where('name', 'Fondos enviados')->first()->id;
-                    $operation->deposit_date = Carbon::now();
+        if($operation->use_escrow_account == 1){
+            if($operation->matches->count() > 0) { // Si es operación creadora
+                if($operation->matches[0]->operation_status_id == OperationStatus::where('name', 'Pendiente envio fondos')->first()->id){
+                    $operation->operation_status_id = OperationStatus::where('name', 'Pendiente fondos contraparte')->first()->id;
+                    $operation->funds_confirmation_date = Carbon::now();
+                    $operation->save();
                 }
-                else{
+                elseif($operation->matches[0]->operation_status_id == OperationStatus::where('name', 'Pendiente fondos contraparte')->first()->id){
                     $operation->operation_status_id = OperationStatus::where('name', 'Contravalor recaudado')->first()->id;
                     $operation->funds_confirmation_date = Carbon::now();
-                }
-                
-                
-                $operation->save();
+                    $operation->save();
 
-                $operation->matched_operation[0]->operation_status_id = OperationStatus::where('name', 'Contravalor recaudado')->first()->id;
-                $operation->matched_operation[0]->save();
+                    $operation->matches[0]->operation_status_id = OperationStatus::where('name', 'Contravalor recaudado')->first()->id;
+                    $operation->matches[0]->save();
+                }
+                else{
+                    return response()->json([
+                        'success' => false,
+                        'errors' => [
+                            'Error en el estado de la operación emparejadora'
+                        ]
+                    ], 404);
+                }
             }
-            else{
-                return response()->json([
-                    'success' => false,
-                    'errors' => [
-                        'Error en el estado de la operación emparejadora'
-                    ]
-                ], 404);
+            elseif ($operation->matched_operation->count() > 0) { // Si es operación emparejadora
+                if($operation->matched_operation[0]->operation_status_id == OperationStatus::where('name', 'Pendiente envio fondos')->first()->id){
+                    $operation->operation_status_id = OperationStatus::where('name', 'Pendiente fondos contraparte')->first()->id;
+                    $operation->funds_confirmation_date = Carbon::now();
+                    $operation->save();
+                }
+                elseif($operation->matched_operation[0]->operation_status_id == OperationStatus::where('name', 'Pendiente fondos contraparte')->first()->id){
+                    
+                    if($operation->client->type == 'PL'){
+                        $operation->operation_status_id = OperationStatus::where('name', 'Fondos enviados')->first()->id;
+                        $operation->deposit_date = Carbon::now();
+                    }
+                    else{
+                        $operation->operation_status_id = OperationStatus::where('name', 'Contravalor recaudado')->first()->id;
+                        $operation->funds_confirmation_date = Carbon::now();
+                    }
+                    
+                    
+                    $operation->save();
+
+                    $operation->matched_operation[0]->operation_status_id = OperationStatus::where('name', 'Contravalor recaudado')->first()->id;
+                    $operation->matched_operation[0]->save();
+                }
+                else{
+                    return response()->json([
+                        'success' => false,
+                        'errors' => [
+                            'Error en el estado de la operación emparejadora'
+                        ]
+                    ], 404);
+                }
+            }
+        }
+        else{
+            if($operation->matches->count() > 0) { // Si es operación creadora
+                if($operation->matches[0]->operation_status_id == OperationStatus::where('name', 'Pendiente envio fondos')->first()->id){
+                    $operation->operation_status_id = OperationStatus::where('name', 'Pendiente fondos contraparte')->first()->id;
+                    $operation->funds_confirmation_date = Carbon::now();
+                    $operation->save();
+
+                    $operation->matches[0]->operation_status_id = OperationStatus::where('name', 'Fondos enviados')->first()->id;
+                    $operation->matches[0]->save();
+
+                    // Enviar correo PL
+                }
+                else{
+                    return response()->json([
+                        'success' => false,
+                        'errors' => [
+                            'Error en el estado de la operación emparejadora'
+                        ]
+                    ], 404);
+                }
             }
         }
 
+            
         OperationHistory::create(["operation_id" => $operation->id,"user_id" => auth()->id(),"action" => "Fondos confirmados"]);
 
         return response()->json([
@@ -887,6 +913,10 @@ class DailyOperationsController extends Controller
             $operation->save();
         }
 
+        if($operation->use_escrow_account==0){
+            $this->operation->matched_operation[0]->operation_status_id = OperationStatus::where('name', 'Contravalor recaudado')->first()->id;
+        }
+
         OperationHistory::create(["operation_id" => $operation->id,"user_id" => auth()->id(),"action" => "Operación Finalizada"]);
 
         return response()->json([
@@ -898,64 +928,67 @@ class DailyOperationsController extends Controller
     }
 
     public function vendor_instruction(Request $request, Operation $operation) {
-        $val = Validator::make($request->all(), [
-            'file' => 'required|file'
-        ]);
-        if($val->fails()) return response()->json($val->messages());
-
-        if($operation->client->type == 'Cliente'){
-            return response()->json([
-                'success' => false,
-                'errors' => [
-                    'El cliente de la operación no es un Proveedor de Liquidez'
-                ]
+        if($operation->use_escrow_account == 1){
+            $val = Validator::make($request->all(), [
+                'file' => 'required|file'
             ]);
-        }
+            if($val->fails()) return response()->json($val->messages());
 
-        if($request->hasFile('file')){
-            $file = $request->file('file');
-            $path = env('AWS_ENV').'/operations/';
-
-            try {
-                $extension = strrpos($file->getClientOriginalName(), ".")? (Str::substr($file->getClientOriginalName(), strrpos($file->getClientOriginalName(), ".") , Str::length($file->getClientOriginalName()) -strrpos($file->getClientOriginalName(), ".") +1)): "";
-                
-                $now = Carbon::now();
-                $filename = md5($now->toDateTimeString().$file->getClientOriginalName()).$extension;
-            } catch (\Exception $e) {
-                $filename = $file->getClientOriginalName();
+            if($operation->client->type == 'Cliente'){
+                return response()->json([
+                    'success' => false,
+                    'errors' => [
+                        'El cliente de la operación no es un Proveedor de Liquidez'
+                    ]
+                ]);
             }
 
-            try {
-                $s3 = Storage::disk('s3')->putFileAs($path, $file, $filename);
+            if($request->hasFile('file')){
+                $file = $request->file('file');
+                $path = env('AWS_ENV').'/operations/';
 
-                // eliminando cualquier comprobante anterior
-                $delete = OperationDocument::where('operation_id', $operation->id)
-                    ->where('type', Enums\DocumentType::Comprobante)
-                    ->delete();
-                $insert = OperationDocument::create([
-                    'operation_id' => $operation->id,
-                    'type' => Enums\DocumentType::Comprobante,
-                    'document_name' => $filename
-                ]);
+                try {
+                    $extension = strrpos($file->getClientOriginalName(), ".")? (Str::substr($file->getClientOriginalName(), strrpos($file->getClientOriginalName(), ".") , Str::length($file->getClientOriginalName()) -strrpos($file->getClientOriginalName(), ".") +1)): "";
+                    
+                    $now = Carbon::now();
+                    $filename = md5($now->toDateTimeString().$file->getClientOriginalName()).$extension;
+                } catch (\Exception $e) {
+                    $filename = $file->getClientOriginalName();
+                }
 
-            } catch (\Exception $e) {
-                // Registrando el el log los datos ingresados
-                logger('ERROR: archivo adjunto: DailyOperationsController@upload_voucher', ["error" => $e]);
+                try {
+                    $s3 = Storage::disk('s3')->putFileAs($path, $file, $filename);
 
+                    // eliminando cualquier comprobante anterior
+                    $delete = OperationDocument::where('operation_id', $operation->id)
+                        ->where('type', Enums\DocumentType::Comprobante)
+                        ->delete();
+                    $insert = OperationDocument::create([
+                        'operation_id' => $operation->id,
+                        'type' => Enums\DocumentType::Comprobante,
+                        'document_name' => $filename
+                    ]);
+
+                } catch (\Exception $e) {
+                    // Registrando el el log los datos ingresados
+                    logger('ERROR: archivo adjunto: DailyOperationsController@upload_voucher', ["error" => $e]);
+
+                    return response()->json([
+                        'success' => false,
+                        'errors' => 'Error en el archivo adjunto',
+                    ]);
+                }
+
+                OperationHistory::create(["operation_id" => $operation->id,"user_id" => auth()->id(),"action" => "Comprobante cargado", "detail" => 'filename: ' . $filename]);
+
+            } else{
                 return response()->json([
                     'success' => false,
                     'errors' => 'Error en el archivo adjunto',
                 ]);
             }
-
-            OperationHistory::create(["operation_id" => $operation->id,"user_id" => auth()->id(),"action" => "Comprobante cargado", "detail" => 'filename: ' . $filename]);
-
-        } else{
-            return response()->json([
-                'success' => false,
-                'errors' => 'Error en el archivo adjunto',
-            ]);
         }
+            
 
         // Enviar Correo()
         $rpta_mail = Mail::send(new VendorInstructions($operation));
