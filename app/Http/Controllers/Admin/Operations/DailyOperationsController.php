@@ -914,7 +914,8 @@ class DailyOperationsController extends Controller
         }
 
         if($operation->use_escrow_account==0){
-            $this->operation->matched_operation[0]->operation_status_id = OperationStatus::where('name', 'Contravalor recaudado')->first()->id;
+            $operation->matched_operation[0]->operation_status_id = OperationStatus::where('name', 'Contravalor recaudado')->first()->id;
+            $operation->matched_operation[0]->save();
         }
 
         OperationHistory::create(["operation_id" => $operation->id,"user_id" => auth()->id(),"action" => "Operación Finalizada"]);
