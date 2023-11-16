@@ -412,7 +412,7 @@ class DailyOperationsController extends Controller
                     $operation->matches[0]->operation_status_id = OperationStatus::where('name', 'Fondos enviados')->first()->id;
                     $operation->matches[0]->save();
 
-                    // Enviar correo PL
+                    DailyOperationsController::vendor_instruction($request, Operation::where('id', $operation->matches[0]->id)->first());
                 }
                 else{
                     return response()->json([
