@@ -170,6 +170,7 @@ class UsersController extends Controller
             'success' => true,
             'data' => [
                 'clients' => Client::select('id', 'name', 'last_name', 'mothers_name','customer_type','type')
+                    ->selectRaw("concat(id) as value, if(customer_type='PJ', name, CONCAT(name,' ',last_name,' ',mothers_name)) as label")
                     ->where('type', 'Cliente')
                     ->whereNotIn('id', $user->clients
                     ->pluck('id'))

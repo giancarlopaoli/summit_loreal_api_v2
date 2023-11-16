@@ -390,7 +390,7 @@
           </tr>
           <tr class="details_item">
             <td class="details_item_left deposit">
-              <p>Vas a depositar</p>
+              <p>Vas a transferir</p>
             </td>
             <td class="details_item_right total">
               <p>{{$currency_sign}} {{$deposit_amount}}</p>
@@ -409,7 +409,7 @@
         <table style="width: 100%; margin-top: 20px; margin-bottom: 0px; padding: 20px;" class="table_accounts">
           <tr class="details_item">
             <td class="details_item_left">
-              <p style="font-size: 18px; font-weight: 600; color: #001489;">Depositarás</p>
+              <p style="font-size: 18px; font-weight: 600; color: #001489;">Transferirás</p>
             </td>
             <td class="details_item_right">
               <p style="font-size: 18px; color: #2C54DC;">{{$currency_sign}} {{$deposit_amount}}</p>
