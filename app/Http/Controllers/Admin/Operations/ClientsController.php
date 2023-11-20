@@ -35,17 +35,22 @@ class ClientsController extends Controller
 
         $client = Client::select('id','name','last_name','mothers_name','document_type_id','document_number','phone','email','address','birthdate','customer_type','type','client_status_id','billex_approved_at','corfid_approved_at','registered_at','updated_at as last_update')
             ->with('document_type:id,name','status:id,name')
-            ->with('documents')
-            ->with('bank_accounts:id,client_id,bank_id,account_number,cci_number,bank_account_status_id,currency_id','bank_accounts.bank:id,shortname,image','bank_accounts.currency:id,name,sign','bank_accounts.status:id,name')
-            ->with('users:id,name,last_name,phone,status');
+            ->with('documents');
         
         if($request->type == 'pending'){
+            $client = $client->with('bank_accounts:id,client_id,bank_id,account_number,cci_number,bank_account_status_id,currency_id','bank_accounts.bank:id,shortname,image','bank_accounts.currency:id,name,sign','bank_accounts.status:id,name');
+            $client = $client->with('users:id,name,last_name,phone,status');
+
             $client = $client->whereIn('client_status_id', ClientStatus::whereIn('name', ['Registrado','Aprobado Billex','Rechazo parcial'])->get()->pluck('id'));
         }
         elseif($request->type == 'approved'){
+            $client = $client->with('bank_accounts:id,client_id,bank_id,account_number,cci_number,bank_account_status_id,currency_id','bank_accounts.bank:id,shortname,image','bank_accounts.currency:id,name,sign','bank_accounts.status:id,name');
+            $client = $client->with('users:id,name,last_name,phone,status');
             $client = $client->whereIn('client_status_id', ClientStatus::whereIn('name', ['Activo','Pendiente Aprobacion'])->get()->pluck('id'));
         }
         elseif($request->type == 'canceled'){
+            $client = $client->with('bank_accounts:id,client_id,bank_id,account_number,cci_number,bank_account_status_id,currency_id','bank_accounts.bank:id,shortname,image','bank_accounts.currency:id,name,sign','bank_accounts.status:id,name');
+            $client = $client->with('users:id,name,last_name,phone,status');
             $client = $client->whereIn('client_status_id', ClientStatus::whereIn('name', ['Rechazado'])->get()->pluck('id'));
         }
         elseif($request->type == 'corfid'){
@@ -54,7 +59,7 @@ class ClientsController extends Controller
 
         if(isset($request->customer_type)) $client = $client->where('customer_type', $request->customer_type);
 
-        if($request->company_name != "") $client = $client->whereRaw("CONCAT(name,' ',last_name,' ',mothers_name) like "."'%"."$request->company_name"."%'");
+        if($request->company_name != "") $client = $client->whereRaw("CONCAT(name,' ',coalesce(last_name,''),' ',coalesce(mothers_name,'')) like "."'%"."$request->company_name"."%'");
 
         if($request->document_number != "")  $client = $client->where('document_number', 'like', "%".$request->document_number."%");
 
@@ -685,7 +690,7 @@ class ClientsController extends Controller
     //Evaluation
     public function evaluation(Request $request, Client $client) {
         $val = Validator::make($request->all(), [
-            'action' => 'required|in:approve,reject',
+            'action' => 'required|in:approve,reject,parcial-reject',
             'agent' => 'required|in:billex,corfid',
             'comments' => 'nullable|string'
         ]);
@@ -717,6 +722,7 @@ class ClientsController extends Controller
 
                     $client->client_status_id = ClientStatus::where('name', 'Aprobado Billex')->first()->id;
                     $client->comments .= " - ".(!is_null($request->comments) ? $request->comments : null);
+                    $client->updated_by = auth()->id();
                     $client->save();
 
 
@@ -743,6 +749,7 @@ class ClientsController extends Controller
                 if($client->status->name == 'Registrado' || $client->status->name == 'Rechazo parcial'){
                     $client->client_status_id = ClientStatus::where('name', 'Rechazado')->first()->id;
                     $client->comments .= " - ".(!is_null($request->comments) ? $request->comments : null);
+                    $client->updated_by = auth()->id();
                     $client->save();
 
                     return response()->json([
@@ -761,6 +768,48 @@ class ClientsController extends Controller
                     ]);
                 }
             }
+        }
+        //Si Agent = Corfid
+        elseif ($request->agent == 'corfid') {
+            
+            if($client->status->name == 'Aprobado Billex'){
+
+                if($request->action == 'approve'){
+                    $client->client_status_id = ClientStatus::where('name', 'Activo')->first()->id;
+                    $rtpa = "aprobado";
+                }
+                elseif($request->action == 'parcial-reject'){
+                    $client->client_status_id = ClientStatus::where('name', 'Rechazo parcial')->first()->id;
+                    $rtpa = "rechazado parcialmente";
+                }
+                elseif($request->action == 'reject'){
+                    $client->client_status_id = ClientStatus::where('name', 'Rechazado')->first()->id;
+                    $rtpa = "rechazado";
+                }
+                $client->comments .= " - ".(!is_null($request->comments) ? $request->comments : null);
+                $client->updated_by = auth()->id();
+                $client->save();
+
+
+                // Envío de correo()
+
+                return response()->json([
+                    'success' => true,
+                    'data' => [
+                        'Cliente '.$rtpa.' exitosamente.'
+                    ]
+                ]);
+            }
+            else{
+                return response()->json([
+                    'success' => false,
+                    'errors' => [
+                        'El cliente debe encontrarse en estado Aprobado Billex ser aprobado o rechazado'
+                    ]
+                ]);
+            }
+
+
         }
 
         return response()->json([

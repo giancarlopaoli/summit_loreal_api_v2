@@ -929,6 +929,11 @@ class DailyOperationsController extends Controller
     }
 
     public function vendor_instruction(Request $request, Operation $operation) {
+        /*return response()->json([
+                    'success' => 'test',
+                    'object' => $operation->vendor_bank_accounts->load('client:id,name,last_name,mothers_name,customer_type'),
+                ]);*/
+
         if($operation->use_escrow_account == 1){
             $val = Validator::make($request->all(), [
                 'file' => 'required|file'
@@ -989,7 +994,17 @@ class DailyOperationsController extends Controller
                 ]);
             }
         }
-            
+        else{
+            $document = OperationDocument::where('operation_id', $operation->matched_operation[0]->id)->where('type', Enums\DocumentType::Comprobante)->first();
+
+            if(is_null($document)){
+                return response()->json([
+                    'success' => false,
+                    'document' => $document,
+                    'errors' => 'Error: no se encontró el comprobante de transferencia del cliente',
+                ]);
+            }
+        }
 
         // Enviar Correo()
         $rpta_mail = Mail::send(new VendorInstructions($operation));

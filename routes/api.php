@@ -455,6 +455,16 @@ Route::middleware('encryptresponses')->group(function () {
 
         });
 
+        ########## Módulo CORFID  #############
+        Route::prefix('corfid')->middleware('role:corfid')->group(function () {
+
+            Route::GET('clients-list', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'list']);
+            Route::GET('client/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'detail']);
+            Route::PUT('evaluation/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'evaluation']);
+
+        });
+
+
     });
 
     Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
