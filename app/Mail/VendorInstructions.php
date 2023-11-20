@@ -43,6 +43,13 @@ class VendorInstructions extends Mailable
             $document = OperationDocument::where('operation_id', $this->operation->matched_operation[0]->id)->where('type', Enums\DocumentType::Comprobante)->first();
         }
 
+        if($this->operation->use_escrow_account){
+            $deposit_account = $this->operation->escrow_accounts;
+        }
+        else{
+            $deposit_account = $this->operation->vendor_bank_accounts->load('client:id,name,last_name,mothers_name,customer_type');
+        }
+
         return $this
             ->subject('BILLEX | CONSTANCIA DE LA TRANSFERENCIA - ' . $this->operation->type . ' ' . $this->operation->amount . ' - OP ' . $this->operation->code)
             //->to($operation->user->email)
@@ -56,13 +63,14 @@ class VendorInstructions extends Mailable
                 'name' => $this->operation->client->name,
                 'codigo' => $this->operation->code,
                 'type' => $this->operation->type,
+                'use_escrow_account' => $this->operation->use_escrow_account,
                 "sent_currency" => ($this->operation->type == 'Compra') ? 'S/': (($this->operation->type == 'Venta') ? '$' : $this->operation->currency->sign),
                 "sent_amount" => number_format($sent_amount, 2),
                 "received_currency" => ($this->operation->type == 'Venta') ? 'S/': (($this->operation->type == 'Compra') ? '$' : $this->operation->currency->sign),
                 "received_amount" => number_format($received_amount, 2),
                 'exchange_rate' => $this->operation->exchange_rate,
                 "bank_accounts" => $this->operation->bank_accounts,
-                "escrow_accounts" => $this->operation->escrow_accounts
+                "escrow_accounts" => $deposit_account
             ]);
     }
 }

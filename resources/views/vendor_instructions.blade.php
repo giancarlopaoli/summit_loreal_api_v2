@@ -148,15 +148,28 @@
             <tr><td><b>Importe recibido</b></td><td> {{ $received_currency }} {{ $received_amount }} </td></tr>
             <tr><td><b>Tipo de Cambio</b></td><td>{{ $exchange_rate }}</td></tr>
 
-            <tr><td><b>Banco envío fondos</b></td><td><table border = 1 style="width: 100%;"><tr><th>Banco</th><th>Cuenta</th><th>Monto</th></tr>
-            @foreach ($escrow_accounts as $escrow_account)
-            <tr>
-              <td><img src="{{$escrow_account->bank->image}}" width="30"> {{$escrow_account->bank->shortname}}</td>
-              <td>Nro: {{$escrow_account->account_number}} <br>CCI: {{$escrow_account->cci_number}}</td>
-              <td>{{ $sent_currency }}{{number_format($escrow_account->pivot->amount,2)}}</td>
-            </tr>
-            @endforeach
-            </table></td></tr>
+            <tr><td><b>Banco envío fondos</b></td><td><table border = 1 style="width: 100%;"><tr><th>Banco</th><th>Cuenta</th><th>Monto</th><th>Beneficiario</th></tr>
+
+            @if ($use_escrow_account == 1)
+              @foreach ($escrow_accounts as $escrow_account)
+              <tr>
+                <td><img src="{{$escrow_account->bank->image}}" width="30"> {{$escrow_account->bank->shortname}}</td>
+                <td>Nro: {{$escrow_account->account_number}} <br>CCI: {{$escrow_account->cci_number}}</td>
+                <td>{{ $sent_currency }}{{number_format($escrow_account->pivot->amount,2)}}</td>
+                <td>{{$escrow_account->beneficiary_name}}</td>
+              </tr>
+              @endforeach
+            @else
+              @foreach ($escrow_accounts as $bank_account)
+              <tr>
+                <td><img src="{{$bank_account->bank->image}}" width="30"> {{$bank_account->bank->shortname}}</td>
+                <td>Nro: {{$bank_account->account_number}} <br>CCI: {{$bank_account->cci_number}}</td>
+                <td>{{ $received_currency }}{{number_format($bank_account->pivot->amount,2)}}</td>
+                <td>@if ($bank_account->client->customer_type =='PJ') {{$bank_account->client->name}} @else {{$bank_account->client->name}} {{$bank_account->client->last_name}} {{$bank_account->client->mothers_name}}@endif</td>
+              </tr>
+              @endforeach
+            @endif
+              </table></td></tr>
 
             <tr><td><b>Banco recepción fondos</b></td><td><table border = 1 style="width: 100%;"><tr><th>Banco</th><th>Cuenta</th><th>Monto</th></tr>
             @foreach ($bank_accounts as $bank_account)
