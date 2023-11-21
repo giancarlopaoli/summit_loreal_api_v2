@@ -722,6 +722,7 @@ class ClientsController extends Controller
 
                     $client->client_status_id = ClientStatus::where('name', 'Aprobado Billex')->first()->id;
                     $client->comments .= " - ".(!is_null($request->comments) ? $request->comments : null);
+                    $client->billex_approved_at = Carbon::now();
                     $client->updated_by = auth()->id();
                     $client->save();
 
@@ -749,6 +750,7 @@ class ClientsController extends Controller
                 if($client->status->name == 'Registrado' || $client->status->name == 'Rechazo parcial'){
                     $client->client_status_id = ClientStatus::where('name', 'Rechazado')->first()->id;
                     $client->comments .= " - ".(!is_null($request->comments) ? $request->comments : null);
+                    $client->billex_approved_at = Carbon::now();
                     $client->updated_by = auth()->id();
                     $client->save();
 
@@ -787,6 +789,7 @@ class ClientsController extends Controller
                     $rtpa = "rechazado";
                 }
                 $client->comments .= " - ".(!is_null($request->comments) ? $request->comments : null);
+                $client->corfid_approved_at = Carbon::now();
                 $client->updated_by = auth()->id();
                 $client->save();
 
