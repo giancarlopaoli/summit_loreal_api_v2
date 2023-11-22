@@ -148,7 +148,18 @@ class ClientsController extends Controller
             ]);
         }
 
+        if($bank_account->cci_number == '' || is_null($bank_account->cci_number)){
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'El CCI de la cuenta es inválido'
+                ]
+            ]);
+        }
+
         $bank_account->bank_account_status_id = BankAccountStatus::where('name','Activo')->first()->id;
+        $bank_account->updated_by = auth()->id();
+        $bank_account->updated_at = Carbon::now();
         $bank_account->save();
 
         return response()->json([
