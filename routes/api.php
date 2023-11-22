@@ -163,6 +163,7 @@ Route::middleware('encryptresponses')->group(function () {
 
         Route::GET('person-document-types', [\App\Http\Controllers\Admin\MasterTablesController::class, 'person_document_types']);
         Route::GET('associate-document-types', [\App\Http\Controllers\Admin\MasterTablesController::class, 'associate_document_types']);
+        Route::GET('clients-document-types', [\App\Http\Controllers\Admin\MasterTablesController::class, 'clients_document_types']);
         Route::GET('roles', [\App\Http\Controllers\Admin\MasterTablesController::class, 'roles']);
         Route::GET('contact-type', [\App\Http\Controllers\Admin\MasterTablesController::class, 'lead_contact_type']);
         Route::GET('regions', [\App\Http\Controllers\Admin\MasterTablesController::class, 'regions']);
