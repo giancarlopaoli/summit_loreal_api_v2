@@ -16,6 +16,7 @@ use App\Models\EscrowAccount;
 use App\Models\ExchangeRate;
 use App\Models\Operation;
 use App\Models\OperationStatus;
+use App\Models\OperationsAnalyst;
 use App\Models\Quotation;
 use App\Models\Range;
 use App\Models\Client;
@@ -1213,6 +1214,46 @@ class InmediateOperationController extends Controller
         return response()->json([
             "vendor_id" => $vendor_id,
             "operacion" => $operation
+        ]);
+    }
+
+    public function assign_analyst_to_operation(Request $request) {
+
+        $operation_id = $request->operation_id;
+        $operation = Operation::find($operation_id);
+        
+        if($operation->client->type == 'PL'){
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'No se puede asignar un analista a una operación de Proveedor',
+                ]
+            ]);
+        }
+
+        $analysts = OperationsAnalyst::select('id')
+            ->where('status','Activo')
+            ->where('online',1)
+            ->selectRaw("(select count(*) from operations where operations.operations_analyst_id = operations_analysts.id and operations.operation_status_id not in (6,7,8,9,10) and date(operations.operation_date) = date(now())) as ops_in_progress")
+            ->selectRaw("(select count(*) from operations where operations.operations_analyst_id = operations_analysts.id and operations.operation_status_id in (6,7) and date(operations.operation_date) = date(now())) as ops_finished")
+            ->orderByRaw('ops_in_progress, ops_finished')
+            ->get();
+
+        if($analysts->count() == 0){
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'No se encontró ningún analista disponible',
+                ]
+            ]);
+        }
+
+        /*$operation->operations_analyst_id = $analysts[0]->id;
+        $operation->save();*/
+
+
+        return response()->json([
+            "operacion" => $analysts
         ]);
     }
 

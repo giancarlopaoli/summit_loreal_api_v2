@@ -44,6 +44,7 @@ Route::middleware('encryptresponses')->group(function () {
             Route::GET('quote', [\App\Http\Controllers\Clients\InmediateOperationController::class, 'quote_operation']);
             Route::GET('validate-coupon', [\App\Http\Controllers\Clients\InmediateOperationController::class, 'validate_coupon']);
             Route::POST('', [\App\Http\Controllers\Clients\InmediateOperationController::class, 'create_operation']);
+            Route::PUT('assign-analyst', [\App\Http\Controllers\Clients\InmediateOperationController::class, 'assign_analyst_to_operation']);
         });
 
         Route::prefix('my-operations')->group(function () {
