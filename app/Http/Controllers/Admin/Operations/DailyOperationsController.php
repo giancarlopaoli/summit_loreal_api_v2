@@ -851,13 +851,21 @@ class DailyOperationsController extends Controller
         ]);
         if($val->fails()) return response()->json($val->messages());
 
-        if($request->sign == 1 && $operation->operation_status_id != OperationStatus::wherein('name', ['Pendiente envio fondos'])->first()->id){
+        if($request->sign == 1 && $operation->operation_status_id != OperationStatus::wherein('name', ['Pendiente envio fondos'])->first()->id && $operation->client->type == 'PL'){
             return response()->json([
                 'success' => false,
                 'errors' => [
                     'La operación debe encontrarse en estado Pendiente envio fondos.'
                 ]
-            ]); 
+            ]);
+        }
+        elseif($request->sign == 1 && $operation->operation_status_id != OperationStatus::wherein('name', ['Contravalor recaudado'])->first()->id && $operation->client->type == 'Cliente'){
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'La operación debe encontrarse en estado Pendiente envio fondos.'
+                ]
+            ]);
         }
         elseif($request->sign == 1) {
             
