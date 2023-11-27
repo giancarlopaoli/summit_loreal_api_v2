@@ -36,7 +36,8 @@ class DailyOperationsController extends Controller
     public function daily_operations(Request $request) {
         $val = Validator::make($request->all(), [
             'date' => 'date',
-            'status' => 'required|in:Todas,Pendientes,Finalizadas'
+            'status' => 'required|in:Todas,Pendientes,Finalizadas',
+            'operations_analyst_id' => 'nullable|exists:operations_analysts,id',
         ]);
         if($val->fails()) return response()->json($val->messages());
 
@@ -50,6 +51,7 @@ class DailyOperationsController extends Controller
         $finalizadas = OperationStatus::wherein('name', ['Facturado','Finalizado sin factura'])->get()->pluck('id');
         $todas = OperationStatus::get()->pluck('id');
 
+        ############### Status Filter #############
 
         if($request->status == 'Pendientes'){
             $status = $pendientes;
@@ -62,6 +64,16 @@ class DailyOperationsController extends Controller
         else{
             $status = $todas;
             $status_str = "(1)";
+        }
+
+        ############### Operations Analyst Filter #############
+
+        if(is_null($request->operations_analyst_id) || $request->operations_analyst_id==''){
+            $operations_analyst = "(1)";
+        }
+
+        else{
+            $operations_analyst = "op1.operations_analyst_id = " . $request->operations_analyst_id;
         }
 
         #############################################
@@ -116,6 +128,7 @@ class DailyOperationsController extends Controller
             ->join('operations as op2', 'op2.id', "=", "operation_matches.matched_id")
             ->whereRaw("date(operation_matches.created_at) = '$date'")
             ->whereRaw("$status_str")
+            ->whereRaw($operations_analyst)
             ->get();
 
 
@@ -453,7 +466,8 @@ class DailyOperationsController extends Controller
                 $extension = strrpos($file->getClientOriginalName(), ".")? (Str::substr($file->getClientOriginalName(), strrpos($file->getClientOriginalName(), ".") , Str::length($file->getClientOriginalName()) -strrpos($file->getClientOriginalName(), ".") +1)): "";
                 
                 $now = Carbon::now();
-                $filename = md5($now->toDateTimeString().$file->getClientOriginalName()).".".$extension;
+                $filename = md5($now->toDateTimeString().$file->getClientOriginalName()).$extension;
+
             } catch (\Exception $e) {
                 $filename = $file->getClientOriginalName();
             }
