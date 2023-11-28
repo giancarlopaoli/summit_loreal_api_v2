@@ -32,9 +32,9 @@ class VendorInstructions extends Mailable
      */
     public function build()
     {
-        $sent_amount = ($this->operation->type == 'Compra') ? (round($this->operation->amount * $this->operation->exchange_rate,2) + $this->operation->comission_amount + $this->operation->igv) : (($this->operation->type == 'Venta') ? $this->operation->amount : (round(round($this->operation->matches[0]->amount + round($this->operation->matches[0]->amount * $this->operation->matches[0]->spread/10000, 2 ), 2) + $this->operation->comission_amount + $this->operation->igv,2)));
+        $sent_amount = ($this->operation->type == 'Compra') ? (round($this->operation->amount * $this->operation->exchange_rate,2) + $this->operation->comission_amount + $this->operation->igv) : $this->operation->amount;
 
-        $received_amount = ($this->operation->type == 'Venta') ? round($this->operation->amount * $this->operation->exchange_rate,2) - $this->operation->comission_amount - $this->operation->igv : $this->operation->amount;
+        $received_amount = ($this->operation->type == 'Venta') ? round($this->operation->amount * $this->operation->exchange_rate,2) - $this->operation->comission_amount - $this->operation->igv : (($this->operation->type == 'Venta') ? $this->operation->amount : round($this->operation->amount *(1 + $this->operation->spread/10000), 2 ));
 
         if($this->operation->use_escrow_account == 1){
             $document = OperationDocument::where('operation_id', $this->operation->id)->where('type', Enums\DocumentType::Comprobante)->first();
@@ -68,7 +68,7 @@ class VendorInstructions extends Mailable
                 "sent_amount" => number_format($sent_amount, 2),
                 "received_currency" => ($this->operation->type == 'Venta') ? 'S/': (($this->operation->type == 'Compra') ? '$' : $this->operation->currency->sign),
                 "received_amount" => number_format($received_amount, 2),
-                'exchange_rate' => $this->operation->exchange_rate,
+                'exchange_rate' => number_format($this->operation->exchange_rate,4),
                 "bank_accounts" => $this->operation->bank_accounts,
                 "escrow_accounts" => $deposit_account
             ]);
