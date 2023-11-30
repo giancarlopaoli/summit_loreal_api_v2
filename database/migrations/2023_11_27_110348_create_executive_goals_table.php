@@ -13,8 +13,9 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('sales_goals', function (Blueprint $table) {
+        Schema::create('executive_goals', function (Blueprint $table) {
             $table->id();
+            $table->foreignIdFor(\App\Models\Executive::class)->constrained();
             $table->integer('month');
             $table->integer('year');
             $table->double('goal');
@@ -30,6 +31,6 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('sales_goals');
+        Schema::dropIfExists('executive_goals');
     }
 };

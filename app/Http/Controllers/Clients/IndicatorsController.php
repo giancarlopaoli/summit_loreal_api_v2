@@ -29,14 +29,13 @@ class IndicatorsController extends Controller
             ->first();
 
         $graphs = Operation::selectRaw('month(operation_date) as month, year(operation_date) as year')
-            ->selectRaw("(select coalesce(sum(op.amount),0) from operations op where op.client_id = operations.client_id and month(op.operation_date) = month(operations.operation_date) and year(op.operation_date) = year(operations.operation_date) and op.operation_status_id in (6,7,8) and op.client_id = ".$request->client_id.") as amount")
-            ->selectRaw("(select coalesce(sum(round(op.amount * $pips_save /10000,2)),0) from operations op where op.client_id = operations.client_id and month(op.operation_date) = month(operations.operation_date) and year(op.operation_date) = year(operations.operation_date) and op.operation_status_id in (6,7,8) and op.client_id = ".$request->client_id.") as saved")
+            ->selectRaw("(select coalesce(sum(op.amount),0) from operations op where month(op.operation_date) = month(operations.operation_date) and year(op.operation_date) = year(operations.operation_date) and op.operation_status_id in (6,7,8) and op.client_id = ".$request->client_id.") as amount")
+            ->selectRaw("(select coalesce(sum(round(op.amount * $pips_save /10000,2)),0) from operations op where month(op.operation_date) = month(operations.operation_date) and year(op.operation_date) = year(operations.operation_date) and op.operation_status_id in (6,7,8) and op.client_id = ".$request->client_id.") as saved")
             ->whereIn('operation_status_id', OperationStatus::wherein('name', ['Facturado','Finalizado sin factura', 'Pendiente facturar'])->get()->pluck('id'))
             ->whereRaw('((year(operation_date)-2000)*12 + MONTH(operation_date)) >= ((year(CURRENT_TIMESTAMP)-2000)*12 + MONTH(CURRENT_TIMESTAMP)-12)')
             ->groupByRaw('month(operation_date), year(operation_date)')
             ->orderByRaw('year(operation_date), month(operation_date)')
             ->get();
-
 
         return response()->json([
             'success' => true,
