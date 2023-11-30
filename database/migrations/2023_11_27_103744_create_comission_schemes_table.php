@@ -13,12 +13,11 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('sales_goals', function (Blueprint $table) {
+        Schema::create('comission_schemes', function (Blueprint $table) {
             $table->id();
-            $table->integer('month');
-            $table->integer('year');
-            $table->double('goal');
-            $table->double('daily_goal');
+            $table->decimal("min_range", 10, 4);
+            $table->decimal("max_range", 10, 4);
+            $table->decimal("comission", 5, 4);
             $table->timestamps();
         });
     }
@@ -30,6 +29,6 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('sales_goals');
+        Schema::dropIfExists('comission_schemes');
     }
 };

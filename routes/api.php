@@ -400,6 +400,12 @@ Route::middleware('encryptresponses')->group(function () {
         ########## Módulo de Ejecutivos  #############
         Route::prefix('executives')->middleware('role:ejecutivos')->group(function () {
 
+            ########## dashboard  #############
+            Route::prefix('dashboard')->group(function () {
+                Route::GET('', [\App\Http\Controllers\Admin\Executives\DashboardController::class, 'dashboard']);
+
+            });
+
             ########## Leads  #############
             Route::prefix('leads')->group(function () {
                 Route::GET('exists-company', [\App\Http\Controllers\Admin\Executives\LeadsController::class, 'exists_company']);

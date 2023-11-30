@@ -18,8 +18,8 @@ return new class extends Migration
             $table->foreignIdFor(\App\Models\Client::class)->constrained();
             $table->string('alias', 200);
             $table->foreignIdFor(\App\Models\Bank::class)->constrained();
-            $table->string('account_number', 25);
-            $table->string('cci_number', 25)->nullable();
+            $table->string('account_number', 30);
+            $table->string('cci_number', 35)->nullable();
             $table->boolean('main')->default(false);
             $table->foreignIdFor(\App\Models\BankAccountStatus::class)->constrained();
             $table->string('comments', 150)->nullable();
