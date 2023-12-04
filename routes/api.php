@@ -320,6 +320,7 @@ Route::middleware('encryptresponses')->group(function () {
             ########## Tiempos de Atención #############
             Route::prefix('times')->group(function () {
                 Route::GET('dashboard', [\App\Http\Controllers\Admin\Operations\OperationsTimesController::class, 'dashboard']);
+                Route::GET('daily-times', [\App\Http\Controllers\Admin\Operations\OperationsTimesController::class, 'daily_times']);
             });
 
             ########## Administración de Rangos de operación  #############
@@ -403,7 +404,7 @@ Route::middleware('encryptresponses')->group(function () {
             ########## dashboard  #############
             Route::prefix('dashboard')->group(function () {
                 Route::GET('', [\App\Http\Controllers\Admin\Executives\DashboardController::class, 'dashboard']);
-
+                Route::GET('daily-times', [\App\Http\Controllers\Admin\Operations\OperationsTimesController::class, 'daily_times']);
             });
 
             ########## Leads  #############
