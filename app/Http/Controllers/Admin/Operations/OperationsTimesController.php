@@ -144,7 +144,7 @@ class OperationsTimesController extends Controller
             })
             ->with('status:id,name')
             ->with('currency:id,name,sign')
-            ->with('matches:id,client_id','matches.client:id,name,last_name,mothers_name,type,customer_type')
+            ->with('matches:id,client_id,operation_status_id','matches.client:id,name,last_name,mothers_name,type,customer_type','matches.status:id,name')
             ->join('clients', 'clients.id', '=','operations.client_id')
             ->join('operation_matches', 'operation_matches.operation_id', '=', 'operations.id')
             ->join('operations as op2', 'op2.id', '=', 'operation_matches.matched_id')
