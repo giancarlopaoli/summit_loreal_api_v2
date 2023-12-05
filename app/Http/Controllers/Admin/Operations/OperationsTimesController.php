@@ -134,7 +134,7 @@ class OperationsTimesController extends Controller
             $status = $todas;
         }
 
-        $report = Operation::select('operations.id','operations.code','operations.class','operations.type','operations.client_id','operations.user_id','operations.amount','operations.currency_id','operations.operation_status_id','operations.operation_date')
+        $report = Operation::select('operations.id','operations.code','operations.class','operations.type','operations.client_id','operations.user_id','operations.amount','operations.currency_id','operations.operation_status_id','operations.operation_date','operations.sign_date')
             ->whereIn('operations.operation_status_id', $status)
             ->whereRaw("date(operations.operation_date) = date(now())")
             ->with('client:id,name,last_name,mothers_name,type,customer_type,executive_id','client.executive:id,type','client.executive.user:id,name,last_name')
@@ -144,7 +144,7 @@ class OperationsTimesController extends Controller
             })
             ->with('status:id,name')
             ->with('currency:id,name,sign')
-            ->with('matches:id,client_id,operation_status_id','matches.client:id,name,last_name,mothers_name,type,customer_type','matches.status:id,name')
+            ->with('matches:id,client_id,operation_status_id,sign_date','matches.client:id,name,last_name,mothers_name,type,customer_type','matches.status:id,name')
             ->join('clients', 'clients.id', '=','operations.client_id')
             ->join('operation_matches', 'operation_matches.operation_id', '=', 'operations.id')
             ->join('operations as op2', 'op2.id', '=', 'operation_matches.matched_id')
