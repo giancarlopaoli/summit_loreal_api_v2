@@ -63,5 +63,11 @@ class DocumentTypeSeeder extends Seeder
             'size' => null
         ]);
 
+        DocumentType::create([
+            'name' => 'Ficticio',
+            'active' => true,
+            'size' => null
+        ]);
+
     }
 }

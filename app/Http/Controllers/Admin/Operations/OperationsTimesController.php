@@ -134,11 +134,12 @@ class OperationsTimesController extends Controller
             $status = $todas;
         }
 
-        $report = Operation::select('operations.id','operations.code','operations.class','operations.type','operations.client_id','operations.user_id','operations.amount','operations.currency_id','operations.operation_status_id','operations.operation_date','operations.sign_date')
+        $report = Operation::select('operations.id','operations.code','operations.class','operations.type','operations.client_id','operations.user_id','operations.operations_analyst_id','operations.amount','operations.currency_id','operations.operation_status_id','operations.operation_date','operations.sign_date')
             ->whereIn('operations.operation_status_id', $status)
             ->whereRaw("date(operations.operation_date) = date(now())")
             ->with('client:id,name,last_name,mothers_name,type,customer_type,executive_id','client.executive:id,type','client.executive.user:id,name,last_name')
             ->with('documents:id,operation_id,type')
+            ->with('operations_analyst:id','operations_analyst.user:id,name,last_name')
             ->whereHas('client', function ($query) {
                 $query->where('type', 'Cliente');
             })
@@ -155,7 +156,7 @@ class OperationsTimesController extends Controller
             ->selectRaw("TIMESTAMPDIFF(MINUTE,op2.deposit_date,op2.funds_confirmation_date) as vendor_funds_time")
             ->selectRaw("TIMESTAMPDIFF(MINUTE,op2.funds_confirmation_date,operations.sign_date) as ops_second_sign_time")
             ->selectRaw("TIMESTAMPDIFF(MINUTE,operations.sign_date,operations.deposit_date) as corfid_second_sign_time")
-            ->selectRaw("TIMESTAMPDIFF(MINUTE,operations.operation_date,operations.deposit_date) as total_time")
+            ->selectRaw("TIMESTAMPDIFF(MINUTE,(select od.created_at from operation_documents od where od.operation_id = operations.id and od.type = 'Comprobante' order by id limit 1 ),operations.deposit_date) as total_time")
             ->selectRaw("if(operations.operation_status_id = 2 && (select od.created_at from operation_documents od where od.operation_id = operations.id and od.type = 'Comprobante' order by id limit 1) is null,
                 TIMESTAMPDIFF(MINUTE,operations.operation_date,now()),
                 if(operations.operation_status_id = 2 && (select od.created_at from operation_documents od where od.operation_id = operations.id and od.type = 'Comprobante' order by id limit 1) is not null,

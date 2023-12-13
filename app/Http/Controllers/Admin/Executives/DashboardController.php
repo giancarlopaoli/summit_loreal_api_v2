@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Client;
 use App\Models\ExecutiveGoal;
 use App\Models\Lead;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
@@ -161,6 +162,41 @@ class DashboardController extends Controller
                 ],
                 'cumplimiento_meta' => $cumplimiento_meta,
                 //'spreads' => $spreads_pl
+            ]
+        ]);
+    }
+
+    public function goal_progress(Request $request) {
+        $month = (isset($request->month)) ? $request->month : Carbon::now()->month;
+        $year = (isset($request->year)) ? $request->year : Carbon::now()->year;
+
+
+        $goal_progress = DB::table('goals_achievement')
+            ->select('operation_executive_id','operation_month', 'operation_year','progress','goal')
+            ->selectRaw(" round(achievement,4) as achievement, if( ((operation_executive_id = 2801 or operation_executive_id = 2811) and $year = 2023),0.05, comission_achieved ) as comission_achieved")
+            ->selectRaw("(select sum(round( ov.comission_amount*ov.executive_comission ,2))  from operations_view ov where ov.executive_id = goals_achievement.operation_executive_id and month(ov.operation_date) = goals_achievement.operation_month and year(ov.operation_date) = goals_achievement.operation_year) as comission_earned")
+            ->selectRaw("(select concat(name,' ',last_name) from users where users.id = goals_achievement.operation_executive_id) as executive_name")
+            ->where('operation_executive_id','!=',null)
+            ->whereRaw(" operation_month = $month and operation_year = $year")
+            ->get();
+
+        /*$cumplimiento_meta_mensual = DB::connection('mysql')->table('goals_achievement')
+            ->select('operation_executive_id','operation_month', 'operation_year','avance','goal')
+            ->selectRaw(" round(cumplimiento,4) as cumplimiento, if( ((operation_executive_id = 2801 or operation_executive_id = 2811) and $year = 2023),0.05, comission_achieved ) as comission_achieved")
+            ->selectRaw("(select sum(round( ov.comission*ov.executive_comission ,2))  from operations_view ov where ov.executive_id = goals_achievement.operation_executive_id and month(ov.creation_date) = goals_achievement.operation_month and year(ov.creation_date) = goals_achievement.operation_year) as comission_earned")
+            ->whereRaw(" operation_month = $month and operation_year = $year")
+            ->orderByRaw('operation_year asc, operation_month')
+            ->get();
+
+        $users = DB::table('Usuario')
+            ->whereIn('UsuarioId', $cumplimiento_meta_mensual->pluck('operation_executive_id'))
+            ->select('UsuarioId as executive_id', 'Nombres', 'Apellidos')
+            ->get();*/
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'cumplimiento_meta' => $goal_progress
             ]
         ]);
     }
