@@ -210,6 +210,10 @@ Route::middleware('encryptresponses')->group(function () {
             Route::PUT('operation-analysts', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'analyst_status']);
             Route::GET('operation-analyst-summary', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'operation_analyst_summary']);
 
+            ########## WS CORFID  #############
+            Route::prefix('wscorfid')->group(function () {
+                Route::POST('register-operation/{operation}', [\App\Http\Controllers\Admin\Operations\WsCorfidController::class, 'register_operation']);
+            });
 
             ########## Operaciones contravalor recaudado  #############
             Route::prefix('countervalue')->middleware('permission:firmar_operaciones')->group(function () {
@@ -228,7 +232,6 @@ Route::middleware('encryptresponses')->group(function () {
                 Route::POST('', [\App\Http\Controllers\Admin\Operations\OperationsAnalystsController::class, 'add_analyst']);
                 Route::PUT('{operations_analyst}', [\App\Http\Controllers\Admin\Operations\OperationsAnalystsController::class, 'edit_analyst']);
                 Route::GET('history', [\App\Http\Controllers\Admin\Operations\OperationsAnalystsController::class, 'analysts_history']);
-                
             });
 
 
@@ -405,6 +408,8 @@ Route::middleware('encryptresponses')->group(function () {
             Route::prefix('dashboard')->group(function () {
                 Route::GET('', [\App\Http\Controllers\Admin\Executives\DashboardController::class, 'dashboard']);
                 Route::GET('daily-times', [\App\Http\Controllers\Admin\Operations\OperationsTimesController::class, 'daily_times']);
+                Route::GET('goal-progress', [\App\Http\Controllers\Admin\Executives\DashboardController::class, 'goal_progress']);
+
             });
 
             ########## Leads  #############

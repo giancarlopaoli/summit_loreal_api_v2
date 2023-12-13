@@ -25,9 +25,9 @@ return new class extends Migration
             $table->foreignIdFor(\App\Models\Currency::class)->constrained();
             $table->decimal('exchange_rate', 7,6 );
             $table->decimal('comission_spread', 7,2 );
-            $table->decimal('comission_amount', 8,2 );
-            $table->decimal('igv', 6,2 );
-            $table->decimal('spread', 7,2 );
+            $table->decimal('comission_amount', 9,2 );
+            $table->decimal('igv', 9,2 );
+            $table->decimal('spread', 7,2);
             $table->foreignIdFor(\App\Models\OperationStatus::class)->constrained();
             $table->boolean('post')->default(true);
             $table->string('transfer_number', 45)->nullable();
