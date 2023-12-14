@@ -675,7 +675,7 @@ class RegisterController extends Controller
                     if ($user) {
                         // Creando Cliente/Usuario
                         try {
-                            $client->users()->attach($user->id, ['status' => Enums\ClientUserStatus::Asignado]);
+                            $client->users()->attach($user->id, ['status' => Enums\ClientUserStatus::Activo]);
                         } catch (\Exception $e) {
                             logger('Error: Register Person - attaching user: RegisterController@register_person', ["error" => $e]);
                             $error = true;
@@ -704,7 +704,7 @@ class RegisterController extends Controller
 
                         $user->assignRole('cliente');
 
-                        $client->users()->attach($user->id, ['status' => Enums\ClientUserStatus::Activo,]);
+                        $client->users()->attach($user->id, ['status' => Enums\ClientUserStatus::Asignado,]);
 
                     } catch (\Exception $e) {
                         logger('Register Person Usuario: RegisterController@register_person', ["error" => $e]);
