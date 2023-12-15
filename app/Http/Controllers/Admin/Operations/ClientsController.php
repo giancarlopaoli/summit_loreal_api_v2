@@ -646,6 +646,20 @@ class ClientsController extends Controller
         ]);
     }
 
+    //Current users assigned
+    public function assigned_users(Request $request, Client $client) {
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'users' => User::select('id', 'name', 'last_name')
+                    ->where('role_id', Role::where('name', 'Cliente')->first()->id)
+                    ->whereIn('id', $client->users->pluck('id'))
+                    ->get()
+            ]
+        ]);
+    }
+
     //Attach client to user
     public function attach_user(Request $request, Client $client) {
         $val = Validator::make($request->all(), [
