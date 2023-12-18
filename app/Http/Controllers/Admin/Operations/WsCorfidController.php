@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Operation;
 use App\Models\OperationDocument;
+use Illuminate\Support\Facades\Http;
 
 class WsCorfidController extends Controller
 {
@@ -15,19 +16,19 @@ class WsCorfidController extends Controller
         // Error si la operación ya fue enviada con mensaje satisfactorio
         if($operation->corfid_id == 1) return response()->json(['success' => false, 'data' => 'La operación ya fue enviada a corfid']);
 
-
-        if($operation->type == 'Compra' || $operation->type == 'Venta'){
+        if(($operation->type == 'Compra' || $operation->type == 'Venta') && $operation->matches->count() > 0){
             if($operation->client->type == 'Cliente' && $operation->matches[0]->client->type == 'Cliente'){
                 $type = 3;
+                $registro = WsCorfidController::operation_type_3($request, $operation);
             }
             elseif($operation->client->type == 'Cliente' && $operation->matches[0]->client->type == 'PL'){
                 $type = 4;
-                $registro = WsCorfidController::operacion_type_4($request, $operation);
+                $registro = WsCorfidController::operation_type_4_6($request, $operation);
             }
         }
-        elseif ($operation->type == 'Interbancaria') {
-                $type = 6;
-            // code...
+        elseif ($operation->type == 'Interbancaria' && $operation->matches->count() > 0) {
+            $type = 6;
+            $registro = WsCorfidController::operation_type_4_6($request, $operation);
         }
         else{
             return response()->json([
@@ -38,14 +39,14 @@ class WsCorfidController extends Controller
             ]);
         }
 
-
         return response()->json(
             $registro->getData()
         );
     }
 
     // Registro Operaciones en WS Corfid
-    public function operacion_type_4(Request $request, Operation $operation) {
+    ##### Operacion tipo 3 (Cliente con cliente)
+    public function operation_type_3(Request $request, Operation $operation) {
 
         // Obteniendo archivo de voucher de transferencia
         $document = OperationDocument::select('id')
@@ -86,7 +87,7 @@ class WsCorfidController extends Controller
             "modep01" => ($operation->type == 'Compra') ? round(round($operation->amount*$operation->exchange_rate,2) + round($operation->comission_amount + $operation->igv, 2),2) : $operation->amount,
             
             "tmret01" => ($operation->type == 'Compra') ? 2 : 1,
-            "moret01" => ($operation->type == 'Compra') ? $operation->Monto : round(round($operation->amount*$operation->exchange_rate,2) - round($operation->comission_amount - $operation->igv, 2),2),
+            "moret01" => ($operation->type == 'Compra') ? $operation->amount : round(round($operation->amount*$operation->exchange_rate,2) - round($operation->comission_amount - $operation->igv, 2),2),
 
             "nrefr01" => "",
             "tdefi01" => "",
@@ -105,170 +106,137 @@ class WsCorfidController extends Controller
 
         foreach ($operation->escrow_accounts as $key => $value) {
 
-            if(isset($request->json)){
-                return response()->json([
-                    'success' => true,
-                    'key' => $key,
-                    'value' => $value,
-                ]);
-            }
-
             $deposit = array(
                 "tmdep01" => ($operation->type == 'Compra') ? 1 : 2,
                 "modep01" => $value->pivot->amount,
-                "idcbdep01" => $operation->cuenta_fideicomiso->Corfid,
-                "nrooperacion" => (!is_null($operation->NumeroTransferencia)) ? $operation->NumeroTransferencia : "na",
-                "voucher" => "https://billex.pe",
+                "idcbdep01" => $value->corfid_id,
+                "nrooperacion" => (!is_null($operation->transfer_number)) ? $operation->transfer_number : "na",
+                "voucher" => $url,
                 "mocoed01" => 0,
-                "mocofd01" => ($operation->TipoOperacionId == 1) ? round($operation->Comision + $operation->IGVmonto, 2): 0
+                "mocofd01" => $value->pivot->comission_amount,
             );
-            array_push($deposit_list,$deposit);
+            array_push($deposit_list, $deposit);
         }
 
-            
         
         // Retribución
-        /*$listadoRetribucion = array();
+        $retribution_list = array();
 
-        $retribucion = array(
-            "tmret01" => ($operation->TipoOperacionId == 1) ? 2 : 1,
-            "moret01" => ($operation->TipoOperacionId == 2) ? round(round($operation->Monto*$operation->TipoCambio,2) - round($operation->Comision + $operation->IGVmonto, 2),2) : $operation->Monto,
-            "idbret01" => $operation->cuenta_cliente->banco->Corfid,
-            "ncret01" => $operation->cuenta_cliente->NroCuenta,
-            "cciret01" => $operation->cuenta_cliente->CCI,
-            "mocoer01" => 0,
-            "mocofr01" => ($operation->TipoOperacionId == 2) ? round($operation->Comision + $operation->IGVmonto, 2): 0,
-            "idcbret01" => $operation2->cuenta_fideicomiso->Corfid,
-        );
-        
-        array_push($listadoRetribucion,$retribucion);*/
+        foreach ($operation->bank_accounts as $key => $value) {
 
-        $params["deposit_list"] = $deposit_list;
-        //$params["listadoRetribucion"] = $listadoRetribucion;
+            $banco_pago_al_cliente = null;
+
+            if($operation->matches[0]->escrow_accounts->count() == 1){
+                $banco_pago_al_cliente = $operation->matches[0]->escrow_accounts[0]->corfid_id;
+            }
+            else{
+                foreach ($operation->matches[0]->escrow_accounts as $key1 => $value1) {
+                    
+                    if(($value->pivot->amount + $value->pivot->comission_amount) == ($value1->pivot->amount + $value1->pivot->comission_amount)){
+                        $banco_pago_al_cliente = $value1->corfid_id;
+                        break;
+                    }
+                }
+            }
+
+            $retribution = array(
+                "tmret01" => ($operation->type == 'Compra') ? 2 : 1,
+                "moret01" => $value->pivot->amount,
+                "idbret01" => $value->bank->corfid_id,
+                "ncret01" => $value->account_number,
+                "cciret01" => $value->cci_number,
+                "mocoer01" => 0,
+                "mocofr01" => $value->pivot->comission_amount,
+                "idcbret01" => $banco_pago_al_cliente,
+            );
+            
+            array_push($retribution_list, $retribution);
+        }
+
+        $params["listadoDeposito"] = $deposit_list;
+        $params["listadoRetribucion"] = $retribution_list;
 
         if(isset($request->json)){
+
+            $match = WsCorfidController::match_operation_type_3($operation, $request->json);
+
             return response()->json([
                 'success' => true,
                 'params' => $params,
+                'match' => $match->getData()
             ]);
         }
 
-        /*$corfid = Http::withHeaders(['Authorization' => 'Basic '.env('TOKEN_WSCORFID')])->post(env('URL_WSCORFID').'/fintechWSOperacion/WSCFDOPE-01', $params);
+        $corfid = Http::withHeaders(['Authorization' => 'Basic '.env('TOKEN_WSCORFID')])->post(env('URL_WSCORFID').'/fintechWSOperacion/WSCFDOPE-01', $params);
 
-        $rpta_json = json_decode($corfid);*/
+        $rpta_json = json_decode($corfid);
 
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'op tipo 4'
-            ]
-        ]);
+        if(is_object($rpta_json)){
+            if(isset($rpta_json->{'WSr-resultado'})){
+
+                $operation->corfid_id = $rpta_json->{'WSr-resultado'};
+                $operation->corfid_message = $rpta_json->{'WSr-Mensaje'};
+                $operation->save();
+
+                // si la respuesta fue satisfactoria
+                if($rpta_json->{'WSr-resultado'} ==  1){
+                    WsCorfidController::match_operation_type_3($operation);
+                }
+            }
+        }
+
+        return response()->json($rpta_json);
     }
 
-
-    // Registro Operaciones en WS Corfid
-    public function wscorfidop(Request $request) {
-        $val = Validator::make($request->all(), [
-            'operation_id' => 'required|numeric'
-        ]);
-        if($val->fails()) return response()->json($val->messages());
-
-        $operation = Operacion::
-            //select('*')
-            select('ClienteId','OperacionId','OperacionCodigo','Monto','TipoCambio','DivisaId','ClaseOperacionId','TipoOperacionId','FechaOperacion','ComisionPorcentaje','Comision','IGVmonto','CuentaClienteId','CuentafideicomisoId','NumeroTransferencia','EstadoCorfidId')
-            ->where('OperacionId', $request->operation_id)
-            ->with('cliente:ClienteId,NonmbresRazonSocial,TipodocumentoId,NroDocumento','cuenta_cliente:CuentasBancariasId,BancoId,NroCuenta,CCI','cuenta_cliente.banco:BancoId,Corfid','cuenta_fideicomiso:CuentaFideicomisoId,BancoId,NroCuenta,CCI,Corfid','cuenta_fideicomiso.banco:BancoId,Corfid')
-            ->first();
-
-        // Error si no se encuentra la operación
-        if(is_null($operation)) return response()->json(['success' => false, 'data' => 'Operación no encontrada']);
+    public function match_operation_type_3(Operation $operation, $json=null) {
+        
+        if($operation->matches->count() == 0) return response()->json(['success' => false, 'data' => 'Operación no encontrada']);
 
         // Error si la operación ya fue enviada con mensaje satisfactorio
-        if($operation->EstadoCorfidId == 1) return response()->json(['success' => false, 'data' => 'La operación ya fue enviada a corfid']);
+        if($operation->matches[0]->corfid_id == 1) return response()->json(['success' => false, 'data' => 'La operación ya fue enviada a corfid']);
 
-        if($operation->cliente->count() == 0) {
-            $clienteup = DB::table('Operacion')->where('OperacionId', $operation->OperacionId)->update([
-                'EstadoCorfidId' => 3,
-                'MensajeCorfi' => 'Información de cliente no encontrada'
-            ]);
-            return response()->json(['success' => false, 'data' => 'Información de cliente no encontrada']);
-        }
-
-        // Error si no se encuentra en la tabla de operaciones emparejadas
-        $operationEmparejada = DB::table('OperacionEmparejar')->where('OperacionEmparejado',$request->operation_id)->first();
-
-        if(is_null($operationEmparejada)) {
-            $clienteup = DB::table('Operacion')->where('OperacionId', $operation->OperacionId)->update([
-                'EstadoCorfidId' => 3,
-                'MensajeCorfi' => 'No se encontró la operación emparejada'
-            ]);
-            return response()->json(['success' => false, 'data' => 'No se encontró la operación emparejada']);
-        }
-
-        // Obteniendo información de la operación contraparte
-        $operation2 = Operacion::
-            select('ClienteId','OperacionId','OperacionCodigo','Monto','CuentafideicomisoId')
-            ->where('OperacionId', $operationEmparejada->OperacionEmparejador)
-            ->with('cliente:ClienteId,NonmbresRazonSocial,TipodocumentoId,NroDocumento,TipoEmpresaId','cuenta_fideicomiso:CuentaFideicomisoId,BancoId,NroCuenta,CCI,Corfid')
-            ->first();
-
-        // Error si no se encuentra operación de contraparte
-        if(is_null($operation2)) {
-            $clienteup = DB::table('Operacion')->where('OperacionId', $operation->OperacionId)->update([
-                'EstadoCorfidId' => 3,
-                'MensajeCorfi' => 'Operación contraparte no encontrada'
-            ]);
-            return response()->json(['success' => false, 'data' => 'Operación contraparte no encontrada']);
-        }
-
-        // Error si el cliente contraparte es un proveedor de liquidez
-        if($operation2->cliente->TipoEmpresaId == 2) {
-            $clienteup = DB::table('Operacion')->where('OperacionId', $operation->OperacionId)->update([
-                'EstadoCorfidId' => 3,
-                'MensajeCorfi' => 'Operación contraparte es con proveedor de liquidez y debería ser cliente regular'
-            ]);
-            return response()->json(['success' => false, 'data' => 'Operación contraparte es con proveedor de liquidez y debería ser cliente regular']);
-        }
-
-        // Obteniendo archivo de voucher de transferencia desde S3
-        $documento = DB::table('DocumentoOperacion')
-            ->select('Nombre')
-            ->where('OperacionId', $request->operation_id)
+        // Obteniendo archivo de voucher de transferencia
+        $document = OperationDocument::select('id')
+            ->where('operation_id', $operation->id)
+            ->where('type', 'Comprobante')
             ->first();
 
         // Error si no se encuentra documento
-        if(is_null($documento)) {
-            $clienteup = DB::table('Operacion')->where('OperacionId', $operation->OperacionId)->update([
-                'EstadoCorfidId' => 3,
-                'MensajeCorfi' => 'Voucher de operación no encontrado'
+        if(is_null($document)) {
+            $client_update = Operation::where('id', $operation->id)->update([
+                'corfid_id' => 3,
+                'corfid_message' => 'Voucher de operación no encontrado'
             ]);
-            return response()->json(['success' => false, 'data' => 'Voucher de operación no encontrado']);
+            return response()->json(['success' => false, 'errors' => ['Voucher de operación no encontrado']]);
         }
 
-        $url = env('APIBILLEX_URL').'/Json/ComprobantesPago?Nombre='.$documento->Nombre;
+         $url = env('APP_URL').'/api/res/download-document-operation?operation_id='.$operation->id.'&document_id='.$document->id;
 
         $params = array(
             "coper01" => "3",
-            "nref01" => $operation->OperacionCodigo, //substr($operation->OperacionCodigo,0,Str::length($operation->OperacionCodigo)),
+            "nref01" => $operation->matches[0]->code,
             "urlvo01" => $url,
             "postidofo01" => "10", // origen de fondos
             "otrof01" => "otro origen de fondo", // origen de fondos
 
-            "tope01" => ($operation->TipoOperacionId == 1) ? 'C' : 'V',
-            "tmone01" => ($operation->TipoOperacionId == 1) ? 1 : 2,
-            "mont01" => $operation->Monto,
-            "tcamb01" => $operation->TipoCambio,
+            "tope01" => ($operation->matches[0]->type == 'Compra') ? 'C' : 'V',
+            "tmone01" => ($operation->matches[0]->type == 'Compra') ? 1 : 2,
+            "mont01" => $operation->matches[0]->amount,
+            "tcamb01" => $operation->matches[0]->exchange_rate,
 
-            //"tdocc01" => ($operation->cliente->TipodocumentoId == 1) ? 6 : ($operation->cliente->TipodocumentoId == 2 ? 1 : ($operation->cliente->TipodocumentoId == 3 ? 2 : ($operation->cliente->TipodocumentoId == 4 ? 9 : ($operation->cliente->TipodocumentoId == 9 ? 5 : ($operation->cliente->TipodocumentoId == 10 ? 8 : ($operation->cliente->TipodocumentoId == 11 ? 2 : $operation->cliente->TipodocumentoId == 12 ? 10 : 4)))))),
-            "ndocc01" => $operation->cliente->NroDocumento,
+            "tdocc01" => $operation->matches[0]->client->document_type_id == 1 ? 6 : ($operation->matches[0]->client->document_type_id == 2 ? 1 : 
+                ($operation->matches[0]->client->document_type_id == 3 ? 2 : ($operation->matches[0]->client->document_type_id == 4 ? 9 : 
+                ($operation->matches[0]->client->document_type_id == 9 ? 5 : ($operation->matches[0]->client->document_type_id == 10 ? 8 : 
+                ($operation->matches[0]->client->document_type_id == 11 ? 2 : ($operation->matches[0]->client->document_type_id == 12 ? 10 : 4))))))) ,
+            "ndocc01" => $operation->matches[0]->client->document_number,
             
-            "tmdep01" => ($operation->TipoOperacionId == 1) ? 1 : 2,
-            "modep01" => ($operation->TipoOperacionId == 1) ? round(round($operation->Monto*$operation->TipoCambio,2) + round($operation->Comision + $operation->IGVmonto, 2),2) : $operation->Monto,
+            "tmdep01" => ($operation->matches[0]->type == 'Compra') ? 1 : 2,
+            "modep01" => ($operation->matches[0]->type == 'Compra') ? round(round($operation->matches[0]->amount*$operation->matches[0]->exchange_rate,2) + round($operation->matches[0]->comission_amount + $operation->matches[0]->igv, 2),2) : $operation->matches[0]->amount,
             
-            "tmret01" => ($operation->TipoOperacionId == 1) ? 2 : 1,
-            "moret01" => ($operation->TipoOperacionId == 1) ? $operation->Monto : (round(round($operation->Monto*$operation->TipoCambio,2) - round($operation->Comision + $operation->IGVmonto, 2),2)),
-
-            "nrefr01" => "",
+            "tmret01" => ($operation->matches[0]->type == 'Compra') ? 2 : 1,
+            "moret01" => ($operation->matches[0]->type == 'Compra') ? $operation->matches[0]->amount : round(round($operation->matches[0]->amount*$operation->matches[0]->exchange_rate,2) - round($operation->matches[0]->comission_amount - $operation->matches[0]->igv, 2),2),
+            
+            "nrefr01" => $operation->code,
             "tdefi01" => "",
             "ndefi01" => "",
             "nrcefi01" => "",
@@ -277,41 +245,208 @@ class WsCorfidController extends Controller
             "tmcoe01" => "0",
             "mocoe01" => "0",
             "tmcof01" => 1,
-            "mocof01" => round($operation->Comision + $operation->IGVmonto, 2)
+            "mocof01" => round($operation->matches[0]->comission_amount + $operation->matches[0]->igv, 2)
         );
 
         // Deposito
-        $listadoDeposito = array();
+        $deposit_list = array();
 
-        $deposito = array(
-            "tmdep01" => ($operation->TipoOperacionId == 1) ? 1 : 2,
-            "modep01" => ($operation->TipoOperacionId == 1) ? round(round($operation->Monto*$operation->TipoCambio,2) + round($operation->Comision + $operation->IGVmonto, 2),2) : $operation->Monto,
-            "idcbdep01" => $operation->cuenta_fideicomiso->Corfid,
-            "nrooperacion" => (!is_null($operation->NumeroTransferencia)) ? $operation->NumeroTransferencia : "na",
-            "voucher" => "https://billex.pe",
-            "mocoed01" => 0,
-            "mocofd01" => ($operation->TipoOperacionId == 1) ? round($operation->Comision + $operation->IGVmonto, 2): 0
-        );
-        array_push($listadoDeposito,$deposito);
+        foreach ($operation->matches[0]->escrow_accounts as $key => $value) {
+
+            $deposit = array(
+                "tmdep01" => ($operation->matches[0]->type == 'Compra') ? 1 : 2,
+                "modep01" => $value->pivot->amount,
+                "idcbdep01" => $value->corfid_id,
+                "nrooperacion" => (!is_null($operation->matches[0]->transfer_number)) ? $operation->matches[0]->transfer_number : "na",
+                "voucher" => $url,
+                "mocoed01" => 0,
+                "mocofd01" => $value->pivot->comission_amount,
+            );
+            array_push($deposit_list, $deposit);
+        }
+
         
         // Retribución
-        $listadoRetribucion = array();
+        $retribution_list = array();
 
-        $retribucion = array(
-            "tmret01" => ($operation->TipoOperacionId == 1) ? 2 : 1,
-            "moret01" => ($operation->TipoOperacionId == 2) ? round(round($operation->Monto*$operation->TipoCambio,2) - round($operation->Comision + $operation->IGVmonto, 2),2) : $operation->Monto,
-            "idbret01" => $operation->cuenta_cliente->banco->Corfid,
-            "ncret01" => $operation->cuenta_cliente->NroCuenta,
-            "cciret01" => $operation->cuenta_cliente->CCI,
-            "mocoer01" => 0,
-            "mocofr01" => ($operation->TipoOperacionId == 2) ? round($operation->Comision + $operation->IGVmonto, 2): 0,
-            "idcbret01" => $operation2->cuenta_fideicomiso->Corfid,
-        );
+        foreach ($operation->matches[0]->bank_accounts as $key => $value) {
+
+            $banco_pago_al_cliente = null;
+
+            if($operation->escrow_accounts->count() == 1){
+                $banco_pago_al_cliente = $operation->escrow_accounts[0]->corfid_id;
+            }
+            else{
+                foreach ($operation->escrow_accounts as $key1 => $value1) {
+                    
+                    if(($value->pivot->amount + $value->pivot->comission_amount) == ($value1->pivot->amount + $value1->pivot->comission_amount)){
+                        $banco_pago_al_cliente = $value1->corfid_id;
+                        break;
+                    }
+                }
+            }
+
+            $retribution = array(
+                "tmret01" => ($operation->matches[0]->type == 'Compra') ? 2 : 1,
+                "moret01" => $value->pivot->amount,
+                "idbret01" => $value->bank->corfid_id,
+                "ncret01" => $value->account_number,
+                "cciret01" => $value->cci_number,
+                "mocoer01" => 0,
+                "mocofr01" => $value->pivot->comission_amount,
+                "idcbret01" => $banco_pago_al_cliente,
+            );
+            
+            array_push($retribution_list, $retribution);
+        }
+
+        $params["listadoDeposito"] = $deposit_list;
+        $params["listadoRetribucion"] = $retribution_list;
+
+        return response()->json([
+            'success' => true,
+            'data' => $params
+        ]);
+
+        /*
+        $corfid = Http::withHeaders(['Authorization' => 'Basic '.env('TOKEN_WSCORFID')])->post(env('URL_WSCORFID').'/fintechWSOperacion/WSCFDOPE-01', $params);
+
+        $rpta_json = json_decode($corfid);
+
+        if(is_object($rpta_json)){
+            if(isset($rpta_json->{'WSr-resultado'})){
+                $opupdated = DB::table('Operacion')->where('OperacionId', $operacion->OperacionId)->update([
+                    'EstadoCorfidId' => $rpta_json->{'WSr-resultado'},
+                    'MensajeCorfi' => $rpta_json->{'WSr-Mensaje'},
+                    //'EstadoId' => 'FSF'
+                ]);
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $rpta_json
+        ]);*/
+    }
+
+
+    ##### Operacion tipo 4 (Cliente con PL)
+    public function operation_type_4_6(Request $request, Operation $operation) {
         
-        array_push($listadoRetribucion,$retribucion);
+        // Obteniendo archivo de voucher de transferencia
+        $document = OperationDocument::select('id')
+            ->where('operation_id', $operation->id)
+            ->where('type', 'Comprobante')
+            ->first();
 
-        $params["listadoDeposito"] = $listadoDeposito;
-        $params["listadoRetribucion"] = $listadoRetribucion;
+        // Error si no se encuentra documento
+        if(is_null($document)) {
+            $client_update = Operation::where('id', $operation->id)->update([
+                'corfid_id' => 3,
+                'corfid_message' => 'Voucher de operación no encontrado'
+            ]);
+            return response()->json(['success' => false, 'errors' => ['Voucher de operación no encontrado']]);
+        }
+
+        $url = env('APP_URL').'/api/res/download-document-operation?operation_id='.$operation->id.'&document_id='.$document->id;
+
+        $gastos_financieros = ($operation->type == 'Interbancaria') ? (round($operation->amount * $operation->spread,2)) : 0;
+
+        $params = array(
+            "coper01" => ($operation->type == 'Interbancaria') ? "6" : "4",
+            "nref01" => $operation->code,
+            "urlvo01" => $url,
+            "postidofo01" => "10", // origen de fondos
+            "otrof01" => "otro origen de fondo", // origen de fondos
+
+            // Operación
+            "tope01" => ($operation->type == 'Compra') ? 'C' : ($operation->type == 'Venta' ? 'V' : 'T'),
+            "tmone01" => ($operation->type == 'Compra') ? 1 : ($operation->type == 'Venta' ? 2 : $operation->currency_id),
+            "mont01" => $operation->amount,
+            "tcamb01" => $operation->exchange_rate,
+
+            // Cliente
+            "tdocc01" => $operation->client->document_type_id == 1 ? 6 : ($operation->client->document_type_id == 2 ? 1 : 
+                ($operation->client->document_type_id == 3 ? 2 : ($operation->client->document_type_id == 4 ? 9 : 
+                ($operation->client->document_type_id == 9 ? 5 : ($operation->client->document_type_id == 10 ? 8 : 
+                ($operation->client->document_type_id == 11 ? 2 : ($operation->client->document_type_id == 12 ? 10 : 4))))))) ,
+            "ndocc01" => $operation->client->document_number,
+            
+            //Depósito
+            "tmdep01" => ($operation->type == 'Compra') ? 1 : (($operation->type == 'Venta') ? 2 : $operation->currency_id),
+            "modep01" => ($operation->type == 'Compra') ? round(round($operation->amount*$operation->exchange_rate,2) + round($operation->comission_amount + $operation->igv, 2),2) : round(($operation->type == 'Venta') ? $operation->amount : ($operation->amount + round($operation->amount*$operation->spread,2) + round($operation->comission_amount,2)),2 ),
+            
+            // Retribución
+            "tmret01" => ($operation->type == 'Compra') ? 2 : (($operation->type == 'Venta') ? 1 : $operation->currency_id),
+            "moret01" => ($operation->type == 'Compra' || $operation->type == 'Interbancaria') ? $operation->amount : (round(round($operation->amount*$operation->exchange_rate,2) - round($operation->comission_amount + $operation->igv, 2),2)),
+
+            "nrefr01" => "",
+            "tdefi01" => "6",
+            "ndefi01" => $operation->matches[0]->client->document_number, //"20379902996",
+            "nrcefi01" => $operation->matches[0]->bank_accounts[0]->account_number,
+            "cciefi01" => $operation->matches[0]->bank_accounts[0]->cci_number,
+
+            "tmcoe01" => ($operation->type == 'Interbancaria') ? $operation->currency_id : 0,
+            "mocoe01" => $gastos_financieros,
+            "tmcof01" => ($operation->type == 'Interbancaria') ? $operation->currency_id : 1,
+            "mocof01" => round($operation->comission_amount + $operation->igv, 2)
+        );
+
+        // Deposito
+        $deposit_list = array();
+
+        foreach ($operation->escrow_accounts as $key => $value) {
+
+            $deposit = array(
+                "tmdep01" => ($operation->type == 'Compra') ? 1 : ($operation->type == 'Venta' ? 2 : $operation->currency_id),
+                "modep01" => $value->pivot->amount,
+                "idcbdep01" => $value->corfid_id,
+                "nrooperacion" => (!is_null($operation->transfer_number)) ? $operation->transfer_number : "na",
+                "voucher" => $url,
+                "mocoed01" => ($operation->type == 'Interbancaria') ? $gastos_financieros : 0,
+                "mocofd01" => $value->pivot->comission_amount,
+            );
+            array_push($deposit_list, $deposit);
+        }
+
+        
+        // Retribución
+        $retribution_list = array();
+
+        foreach ($operation->bank_accounts as $key => $value) {
+
+            $banco_pago_al_cliente = null;
+
+            if($operation->matches[0]->escrow_accounts->count() == 1){
+                $banco_pago_al_cliente = $operation->matches[0]->escrow_accounts[0]->corfid_id;
+            }
+            else{
+                foreach ($operation->matches[0]->escrow_accounts as $key1 => $value1) {
+                    
+                    if(($value->pivot->amount + $value->pivot->comission_amount) == ($value1->pivot->amount + $value1->pivot->comission_amount)){
+                        $banco_pago_al_cliente = $value1->corfid_id;
+                        break;
+                    }
+                }
+            }
+
+            $retribution = array(
+                "tmret01" => ($operation->type == 'Compra') ? 2 : ($operation->type == 'Venta' ? 1 : $operation->currency_id),
+                "moret01" => $value->pivot->amount,
+                "idbret01" => $value->bank->corfid_id,
+                "ncret01" => $value->account_number,
+                "cciret01" => $value->cci_number,
+                "mocoer01" => $operation->currency_id,
+                "mocofr01" => $value->pivot->comission_amount,
+                "idcbret01" => $banco_pago_al_cliente,
+            );
+            
+            array_push($retribution_list, $retribution);
+        }
+
+        $params["listadoDeposito"] = $deposit_list;
+        $params["listadoRetribucion"] = $retribution_list;
+
 
         if(isset($request->json)){
             return response()->json([
@@ -326,24 +461,19 @@ class WsCorfidController extends Controller
 
         if(is_object($rpta_json)){
             if(isset($rpta_json->{'WSr-resultado'})){
-                $opupdated = DB::table('Operacion')->where('OperacionId', $operation->OperacionId)->update([
-                    'EstadoCorfidId' => $rpta_json->{'WSr-resultado'},
-                    'MensajeCorfi' => $rpta_json->{'WSr-Mensaje'},
-                    //'EstadoId' => 'FSF'
-                ]);
+
+                $operation->corfid_id = $rpta_json->{'WSr-resultado'};
+                $operation->corfid_message = $rpta_json->{'WSr-Mensaje'};
+                $operation->save();
 
                 // si la respuesta fue satisfactoria
-                if($rpta_json->{'WSr-resultado'} ==  1){
+                /*if($rpta_json->{'WSr-resultado'} ==  1){
                     OperationsController::wscorfidopEmparejar($request->operation_id);
-                }
+                }*/
             }
         }
-
-        /*return response()->json([
-            'success' => true,
-            'data' => $rpta_json
-        ]);*/
-
+    
         return response()->json($rpta_json);
     }
+
 }

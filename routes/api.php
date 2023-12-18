@@ -283,6 +283,7 @@ Route::middleware('encryptresponses')->group(function () {
                 Route::GET('{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'detail']);
 
                 Route::GET('user/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'users']);
+                Route::GET('assigned-users/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'assigned_users']);
                 Route::POST('user/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'attach_user']);
                 Route::DELETE('user/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'detach_user']);
                 
