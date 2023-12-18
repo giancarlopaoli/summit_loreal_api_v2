@@ -24,7 +24,7 @@ class Operation extends Model
     }
 
     public function vendor_bank_accounts() {
-        return $this->belongsToMany(BankAccount::class,'vendor_bank_account_operation','operation_id','bank_account_id')->withPivot("amount", "comission_amount");
+        return $this->belongsToMany(BankAccount::class,'vendor_bank_account_operation','operation_id','bank_account_id')->withPivot("amount", "comission_amount","transfer_number","voucher_id");
     }
 
     public function coupon() {
@@ -40,7 +40,7 @@ class Operation extends Model
     }
 
     public function escrow_accounts() {
-        return $this->belongsToMany(EscrowAccount::class)->withPivot("amount", "comission_amount");
+        return $this->belongsToMany(EscrowAccount::class)->withPivot("amount", "comission_amount","transfer_number","voucher_id");
     }
 
     public function matches() {

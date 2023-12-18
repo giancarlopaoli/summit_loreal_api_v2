@@ -254,7 +254,7 @@ class InterbankOperationController extends Controller
             }
 
             $now = Carbon::now();
-            $code = $now->format('YmdHisv') . rand(0, 9);
+            $code = $now->format('ymdHisv') . rand(0, 9);
 
             if($use_escrow_account == 1){
                 // Validating escrow account
@@ -384,7 +384,7 @@ class InterbankOperationController extends Controller
 
         ######### Creating vendor operation #############
 
-        $op_code = Carbon::now()->format('YmdHisv') . rand(0,9);
+        $op_code = Carbon::now()->format('ymdHisv') . rand(0,9);
         $status_id = OperationStatus::where('name', 'Pendiente envio fondos')->first()->id;
 
         // Calculando detracción

@@ -952,7 +952,7 @@ class InmediateOperationController extends Controller
         }
 
 
-        $op_code = Carbon::now()->format('YmdHisv') . rand(0,9);
+        $op_code = Carbon::now()->format('ymdHisv') . rand(0,9);
         $status_id = OperationStatus::where('name', 'Disponible')->first()->id;
 
         $operation = Operation::create([
@@ -1049,7 +1049,7 @@ class InmediateOperationController extends Controller
 
         ######### Creating vendor operation #############
 
-        $op_code = Carbon::now()->format('YmdHisv') . rand(0,9);
+        $op_code = Carbon::now()->format('ymdHisv') . rand(0,9);
         $status_id = OperationStatus::where('name', 'Pendiente envio fondos')->first()->id;
 
         // Calculando detracción
