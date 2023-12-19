@@ -652,7 +652,7 @@ class ClientsController extends Controller
         return response()->json([
             'success' => true,
             'data' => [
-                'users' => User::select('id', 'name', 'last_name')
+                'users' => User::select('id', 'name', 'last_name','email')
                     ->where('role_id', Role::where('name', 'Cliente')->first()->id)
                     ->whereIn('id', $client->users->pluck('id'))
                     ->get()
