@@ -25,9 +25,18 @@ class FicharucController extends Controller
         if($request->hasFile('file')){
             $file = $request->file('file');
 
-            $parser = new \Smalot\PdfParser\Parser();
-            $pdf    = $parser->parseFile($file);
-            
+
+            try {
+                $parser = new \Smalot\PdfParser\Parser();
+                $pdf    = $parser->parseFile($file);
+            } catch (\Exception $e) {
+                logger('Actividad Económica: FicharucController@parseReporteFicharuc', ["error" => $e]);
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Error en el archivo adjunto',
+                ]);
+            }
+                
             $pages  = $pdf->getPages();
 
             $text = "";
