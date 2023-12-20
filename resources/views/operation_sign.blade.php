@@ -143,7 +143,7 @@
         </tr>
 
         <table>
-            <tr><td><b>Fase de Operación</b></td><td>{{ $phase }}</td></tr>
+            <tr><td><b>Fase de Operación</b></td><td style="color: red"></b>{{ $phase }}</b></td></tr>
             <tr><td><b>Tipo de Operación</b></td><td>{{ $type }}</td></tr>
             <tr><td><b>Fecha</b></td><td>{{ $date}}</td></tr>
             <tr><td><b>Cliente</b></td><td>{{ $client_name }}</td></tr>

@@ -35,8 +35,10 @@ class NewInmediateOperation extends Mailable
 
         $mail_executive = (isset($this->operation->client->executive->user->email)) ? $this->operation->client->executive->user->email : env('MAIL_CRM');
 
+        $subject = ($operation->class == 'Inmediata') ? 'de Cambio' : 'negociada';
+
         return $this
-            ->subject('BILLEX | Nueva Operación de Cambio')
+            ->subject('BILLEX | Nueva Operación '.$subject)
             ->to($operation->user->email)
             //->cc($mail_executive)
             ->bcc(env('MAIL_OPS'))

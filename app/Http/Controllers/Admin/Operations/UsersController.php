@@ -113,6 +113,30 @@ class UsersController extends Controller
         ]);
     }
 
+    //Activate user
+    public function unblock(Request $request, User $user) {
+
+        if($user->status != 'Bloqueado') {
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'Solo puede desboquear un usuario que se encuentre en estado Bloqueado'
+                ]
+            ]);
+        }
+
+        $user->status = Enums\UserStatus::Activo;
+        $user->tries = 0;
+        $user->save();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'users' => $user->only(['id','name','last_name','email','document_type_id','document_number','phone','tries','last_active','status','created_at','role_id'])
+            ]
+        ]);
+    }
+
     //Reset Password
     public function reset_password(Request $request, User $user) {
 

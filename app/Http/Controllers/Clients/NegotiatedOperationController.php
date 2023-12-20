@@ -21,6 +21,9 @@ use Carbon\Carbon;
 use App\Enums;
 use App\Events\NegotiatedOperations;
 use App\Events\DatatecExchangeRate;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\NewInmediateOperation;
+use App\Mail\OperationInstructions;
 
 class NegotiatedOperationController extends Controller
 {
@@ -496,6 +499,7 @@ class NegotiatedOperationController extends Controller
         NegotiatedOperations::dispatch();
 
         // Enviar Correo()
+        $rpta_mail = Mail::send(new NewInmediateOperation($operation->id));
 
         return response()->json([
             'success' => true,
@@ -774,6 +778,9 @@ class NegotiatedOperationController extends Controller
         }
 
         // Enviar correo instrucciones
+        $rpta_mail = Mail::send(new OperationInstructions($operation->id));
+        $rpta_mail = Mail::send(new OperationInstructions($matched_operation->id));
+        
         OperationHistory::create(["operation_id" => $operation->id,"user_id" => auth()->id(),"action" => "Operación emparejada"]);
 
          return response()->json([

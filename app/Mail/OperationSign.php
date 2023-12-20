@@ -38,7 +38,7 @@ class OperationSign extends Mailable
 
         $counterpart_name = ($this->operation->matches[0]->client->customer_type == 'PJ') ? $this->operation->matches[0]->client->name : $this->operation->matches[0]->client->name . " " . $this->operation->matches[0]->client->last_name . " " . $this->operation->matches[0]->client->mothers_name;
 
-        $phase = ($this->sign == 1) ? "Primera Firma - " . $client_name : 'Segunda Firma - '. $counterpart_name;
+        $phase = ($this->sign == 1) ? "Primera Firma - " . $counterpart_name : 'Segunda Firma - '. $client_name;
 
         $sent_amount = ($this->operation->type == 'Compra') ? (round($this->operation->amount * $this->operation->exchange_rate,2) + $this->operation->comission_amount + $this->operation->igv) : (($this->operation->type == 'Venta') ? $this->operation->amount : (round(round($this->operation->matches[0]->amount + round($this->operation->matches[0]->amount * $this->operation->matches[0]->spread/10000, 2 ), 2) + $this->operation->comission_amount + $this->operation->igv,2)));
 
@@ -48,12 +48,18 @@ class OperationSign extends Mailable
 
         $counterpart_received_amount = ($this->operation->matches[0]->type == 'Venta') ? round($this->operation->matches[0]->amount * $this->operation->matches[0]->exchange_rate,2) - $this->operation->matches[0]->comission_amount - $this->operation->matches[0]->igv : (($this->operation->type == 'Compra') ? $this->operation->matches[0]->amount :  round($this->operation->matches[0]->amount + round($this->operation->matches[0]->amount * $this->operation->matches[0]->spread/10000, 2 ), 2));
 
+        $operation_id = ($this->sign == 1) ? $this->operation->matches[0]->id : $this->operation->id;
+
         $email = $this
             ->subject('BILLEX | INSTRUCCIÓN DE TRANSFERENCIA')
             ->to(explode(",",Configuration::where('shortname', 'MAILSCORFID')->first()->value))
             ->to(env('MAIL_OPS'))
             ->cc(env('MAIL_TI'))
             ->view('operation_sign')
+            ->attach(env('APP_URL') . "/api/res/instruction/".$operation_id, [
+                'as' => 'Instrucciones.pdf',
+                'mime' => 'application/pdf',
+            ])
             ->with([
                 "phase" => $phase,
                 "type" => $this->operation->type,

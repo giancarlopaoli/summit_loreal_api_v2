@@ -275,12 +275,36 @@ class DailyOperationsController extends Controller
                     ]);
                 }
                 else{
-                    return response()->json([
-                        'success' => false,
-                        'errors' => [
-                            'Error en cuenta bancaria'
-                        ]
-                    ], 404);
+
+                    // Si es banco Pichincha que devuelva error porque solo lo debe tomar coril (banbif tb por si es mi banco)
+                    if($bank_account_data->bank_id == 8 || $bank_account_data->bank_id == 6){
+                        return response()->json([
+                            'success' => false,
+                            'errors' => [
+                                'Error en cuenta fideicomiso'
+                            ]
+                        ], 404);
+                    }
+                
+                    $escrow_account = EscrowAccount::where('bank_id', Configuration::where('shortname', 'DEFAULTBANK')->first()->value)
+                        ->where('currency_id', $bank_account_data->currency_id)
+                        ->first();
+
+                    if(!is_null($escrow_account)){
+                        $matched_operation->escrow_accounts()->attach($escrow_account->id, [
+                            'amount' => $bank_account_data->pivot->amount + $bank_account_data->pivot->comission_amount,
+                            'comission_amount' => 0,
+                            'created_at' => Carbon::now()
+                        ]);
+                    }
+                    else{
+                        return response()->json([
+                            'success' => false,
+                            'errors' => [
+                                'Error en cuenta bancaria'
+                            ]
+                        ], 404);
+                    }
                 }
             }
 

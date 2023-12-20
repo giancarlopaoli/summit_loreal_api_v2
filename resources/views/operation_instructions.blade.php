@@ -496,8 +496,7 @@
             <td style="text-align: center; width: 100%; display: inline-block; justify-content: center; margin: 0 auto;">
               <img src="https://bill-upload.s3.amazonaws.com/static/img/check-circle.png" alt="" style="display: inline-block; vertical-align: middle;">
               <div style="margin-left: 10px; text-align: center; display: inline-block; vertical-align: middle;">
-                <h4 style="font-size: 16px; color:#001489; margin: 0; display: inline-block; vertical-align: middle;">¡Gracias por confiar en nosotros!</h4>
-                <p style="text-align: left;">Gracias por usar Billex.</p>
+                <h4 style="font-size: 16px; color:#001489; margin: 0; display: inline-block; vertical-align: middle;">¡Gracias por confiar en Billex!</h4>
               </div>
             </td>
           </tr>
