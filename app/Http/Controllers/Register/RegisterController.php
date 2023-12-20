@@ -850,13 +850,13 @@ class RegisterController extends Controller
                 $executive = Executive::where('id', $lead[0]->executive_id)->first();
 
                 // Si es freelance, se agrega ejecutivo en tabla executives_comission
-                /*if($executive->type == 'Freelance'){
+                if($executive->type == 'Freelance'){
                     $comision = 0;
                 }
                 else{
                     $comission = $executive->comission;
                     $executive_id = $executive->id;
-                }*/
+                }
             }
 
             $client = Client::create([

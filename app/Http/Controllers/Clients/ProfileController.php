@@ -213,6 +213,7 @@ class ProfileController extends Controller
 
         $bank_accounts = $client->bank_accounts()
             ->select('id','client_id','alias','account_number','cci_number','main','bank_account_status_id','currency_id','bank_id')
+            ->selectRaw("(if( (select count(*) from escrow_accounts ea where ea.bank_id = bank_accounts.bank_id and ea.currency_id = bank_accounts.currency_id and ea.active = 1) > 0,1,0)) as has_escrow_account")
             ->where('currency_id', $request->currency_id)
             ->whereRelation('status', 'name', 'Activo')
             ->with([

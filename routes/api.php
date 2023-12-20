@@ -242,6 +242,7 @@ Route::middleware('encryptresponses')->group(function () {
                 Route::PUT('edit/{user}', [\App\Http\Controllers\Admin\Operations\UsersController::class, 'edit']);
                 Route::PUT('deactivate/{user}', [\App\Http\Controllers\Admin\Operations\UsersController::class, 'deactivate']);
                 Route::PUT('activate/{user}', [\App\Http\Controllers\Admin\Operations\UsersController::class, 'activate']);
+                Route::PUT('unblock/{user}', [\App\Http\Controllers\Admin\Operations\UsersController::class, 'unblock']);
                 Route::POST('reset-password/{user}', [\App\Http\Controllers\Admin\Operations\UsersController::class, 'reset_password']);
                 Route::GET('client-list/{user}', [\App\Http\Controllers\Admin\Operations\UsersController::class, 'client_list']);
                 Route::GET('clients/{user}', [\App\Http\Controllers\Admin\Operations\UsersController::class, 'clients']);

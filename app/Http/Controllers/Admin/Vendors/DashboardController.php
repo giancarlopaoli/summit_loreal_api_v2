@@ -16,6 +16,7 @@ use App\Models\VendorSpread;
 use App\Models\Operation;
 use App\Models\OperationStatus;
 use App\Models\EscrowAccount;
+use App\Models\Configuration;
 use App\Models\BankAccount;
 use App\Events\AvailableOperations;
 
@@ -286,12 +287,37 @@ class DashboardController extends Controller
                 array_push($escrow_account_list, $escrow_account);
             }
             else{
-                return response()->json([
-                    'success' => false,
-                    'errors' => [
-                        'Error en cuenta fideicomiso'
-                    ]
-                ], 404);
+
+                // Si es banco Pichincha que devuelva error porque solo lo debe tomar coril (banbif tb por si es mi banco)
+                if($bank_account_data->bank_id == 8 || $bank_account_data->bank_id == 6){
+                    return response()->json([
+                        'success' => false,
+                        'errors' => [
+                            'Error en cuenta fideicomiso'
+                        ]
+                    ], 404);
+                }
+
+                $escrow_account = EscrowAccount::select('id','bank_id','account_number','cci_number','currency_id')
+                ->where('bank_id', Configuration::where('shortname', 'DEFAULTBANK')->first()->value)
+                ->where('currency_id', $bank_account_data->currency_id)
+                ->with('currency:id,name,sign')
+                ->with('bank:id,shortname,image')
+                ->first();
+
+                if(!is_null($escrow_account)){
+                    $escrow_account->amount = $bank_account_data->pivot->amount + $bank_account_data->pivot->comission_amount;
+                    array_push($escrow_account_list, $escrow_account);
+                }
+                else{
+
+                    return response()->json([
+                        'success' => false,
+                        'errors' => [
+                            'Error en cuenta fideicomiso'
+                        ]
+                    ], 404);
+                }
             }
         }
 

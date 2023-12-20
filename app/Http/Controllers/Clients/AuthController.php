@@ -58,7 +58,14 @@ class AuthController extends Controller
                 ]
             ]);
 
-        } else {
+        }
+        elseif ((User::where('email', $request->email)->where('status', 'Bloqueado')->count()>0)) {
+            
+            return response()->json([
+                'errors' => 'Su usuario se encuentra bloqueado. Por favor contacte al administrador.',
+            ], 403);
+        }
+        else {
             // Add login attempt
             $user = User::where('email', $credentials['email'])->first();
             if($user != null) {

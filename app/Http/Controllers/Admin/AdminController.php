@@ -54,7 +54,14 @@ class AdminController extends Controller
                 ]
             ]);
 
-        } else {
+        } 
+        elseif ((User::where('email', $request->email)->where('status', 'Bloqueado')->count()>0) && Auth::user()->hasAnyRole('administrador','operaciones','proveedor','corfid','ejecutivos','supervisores')) {
+            
+            return response()->json([
+                'errors' => 'Su usuario se encuentra bloqueado. Por favor contacte al administrador.',
+            ], 403);
+        }
+        else {
             // Add login attempt
             $user = User::where('email', $credentials['email'])->first();
             if($user != null) {

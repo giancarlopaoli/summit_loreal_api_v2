@@ -63,7 +63,7 @@ class BankSeeder extends Seeder
         ]);
 
         Bank::create([
-            'id' => 7,
+            'id' => 8,
             'name' => 'Banco Pichincha',
             'shortname' => 'Pichincha',
             'corfid_id' => 35,
