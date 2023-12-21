@@ -1093,7 +1093,7 @@ class RegisterController extends Controller
 
             try {
                 $s3 = Storage::disk('s3')->putFileAs($path, $file, $filename);
-                $cliente = ($request->client_id) ? ( ($request->client_id <> "null") ? $request->client_id : null) : null;
+                $cliente = ($request->client_id) ? ( ($request->client_id <> "null" && $request->client_id <> "undefined") ? $request->client_id : null) : null;
 
                 $insert = Document::create([
                     'client_id' => $cliente,

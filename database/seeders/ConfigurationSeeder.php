@@ -108,13 +108,13 @@ class ConfigurationSeeder extends Seeder
         Configuration::create([
             "shortname" => "MAXOPPN",
             "description" => "Monto Máximo PN Sin validación",
-            "value" => 10000,
+            "value" => 1000000,
         ]);
 
         Configuration::create([
             "shortname" => "MAXOPPJ",
             "description" => "Monto Máximo PJ Sin validación",
-            "value" => 100000,
+            "value" => 10000000,
         ]);
 
         Configuration::create([
@@ -127,6 +127,12 @@ class ConfigurationSeeder extends Seeder
             "shortname" => "PIPSAVE",
             "description" => "Puntos de ahorro clientes",
             "value" => "250",
+        ]);
+
+        Configuration::create([
+            "shortname" => "DEFAULTBANK",
+            "description" => "Banco por defecto para ops interbancarias (id de banco)",
+            "value" => "1",
         ]);
     }
 }

@@ -282,7 +282,12 @@ class DashboardController extends Controller
                 ->with('bank:id,shortname,image')
                 ->first();
 
-            if(!is_null($escrow_account)){
+            $vendor_escrow = BankAccount::where('bank_id', $bank_account_data->bank_id)
+                ->where('client_id', $request->client_id)
+                ->where('currency_id', $bank_account_data->currency_id)
+                ->get();
+
+            if(!is_null($escrow_account) && $vendor_escrow->count() > 0){
                 $escrow_account->amount = $bank_account_data->pivot->amount + $bank_account_data->pivot->comission_amount;
                 array_push($escrow_account_list, $escrow_account);
             }
@@ -295,7 +300,7 @@ class DashboardController extends Controller
                         'errors' => [
                             'Error en cuenta fideicomiso'
                         ]
-                    ], 404);
+                    ], 200);
                 }
 
                 $escrow_account = EscrowAccount::select('id','bank_id','account_number','cci_number','currency_id')
@@ -316,7 +321,7 @@ class DashboardController extends Controller
                         'errors' => [
                             'Error en cuenta fideicomiso'
                         ]
-                    ], 404);
+                    ], 200);
                 }
             }
         }
@@ -341,7 +346,7 @@ class DashboardController extends Controller
                     'errors' => [
                         'Error en cuenta bancaria'
                     ]
-                ], 404);
+                ], 200);
             }
 
         }

@@ -22,6 +22,7 @@ use App\Models\User;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Storage;
+use App\Http\Controllers\Admin\Operations\WsCorfidController;
 
 class ClientsController extends Controller
 {
@@ -751,8 +752,11 @@ class ClientsController extends Controller
                     $client->updated_by = auth()->id();
                     $client->save();
 
+                    $consult = new WsCorfidController();
+                    //$result = $consult->register_client($request, $client)->getData();
 
-                    // Envío de correo()
+
+                    // Envío de correo() presentación ejecutivo
 
                     return response()->json([
                         'success' => true,

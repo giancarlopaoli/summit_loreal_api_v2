@@ -25,6 +25,8 @@ Route::middleware('encryptresponses')->group(function () {
     Route::POST('forgot-password', [\App\Http\Controllers\Clients\AuthController::class, 'forgot_password']);
     Route::GET('res/instruction/{operation}', [\App\Http\Controllers\Admin\AdminController::class, 'instruction']);
     Route::GET('res/download-document-operation', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'download_file']);
+    Route::GET('res/download-document-register/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'download_document']);
+
     Route::POST('produccion', [\App\Http\Controllers\Admin\AdminController::class, 'pase_a_produccion']);
 
     Route::middleware('auth:sanctum','role:cliente','validate_client_user')->group(function () {
@@ -213,6 +215,7 @@ Route::middleware('encryptresponses')->group(function () {
             ########## WS CORFID  #############
             Route::prefix('wscorfid')->group(function () {
                 Route::POST('register-operation/{operation}', [\App\Http\Controllers\Admin\Operations\WsCorfidController::class, 'register_operation']);
+                Route::POST('register-client/{client}', [\App\Http\Controllers\Admin\Operations\WsCorfidController::class, 'register_client']);
             });
 
             ########## Operaciones contravalor recaudado  #############

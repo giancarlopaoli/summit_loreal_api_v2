@@ -4,13 +4,16 @@ namespace App\Http\Controllers\Admin\Operations;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Models\Client;
 use App\Models\Operation;
 use App\Models\OperationDocument;
+use App\Models\Representative;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
 
 class WsCorfidController extends Controller
 {
-    // Registro cliente PJ WS Corfid
+    // Registro de operaciones
     public function register_operation(Request $request, Operation $operation) {
         
         // Error si la operación ya fue enviada con mensaje satisfactorio
@@ -476,4 +479,227 @@ class WsCorfidController extends Controller
         return response()->json($rpta_json);
     }
 
+
+
+    ################# Registro de clientes ##########
+    
+    // Registro clientes WS Corfid
+    public function register_client(Request $request, Client $client) {
+        
+        // Error si el cliente ya fue registrado
+        if($client->corfid_id == 1) return response()->json(['success' => false, 'data' => 'El cliente ya se encuentra registrado en corfid']);
+
+        if($client->customer_type == 'PJ'){
+            $registro = WsCorfidController::register_client_company($request, $client);
+        }
+        else{
+            $registro = WsCorfidController::register_client_person($request, $client);
+        }
+
+        return response()->json(
+            $registro->getData()
+        );
+    }
+
+    public function register_client_company(Request $request, Client $client) {
+
+        $fondos = explode(';', $client->funds_source);
+
+        $fondoscod = "";
+        $codigo = "";
+
+        foreach ($fondos as $key => $value) {
+            if($value == "Fondos propios" || $value == "Fondos propios / Recursos propios") $codigo = 2;
+            if($value == "Venta de activos") $codigo = 4;
+            if($value == "Intereses y rendimiento") $codigo = 7;
+            if($value == "Financiamiento") $codigo = 8;
+            if($value == "Resultados acumulados") $codigo = 9;
+            if($value == "Dividendos y participaciones") $codigo = 6;
+            if($value == "Otros" || $value == "Otros (especifique)") $codigo = 12;
+
+            if($codigo != "") $fondoscod .= $codigo.",";
+            $codigo = "";
+        }
+
+        if($fondoscod != "") $fondoscod = substr($fondoscod,0,Str::length($fondoscod)-1);
+        else {
+            $client->corfid_id = 3;
+            $client->corfid_message = 'Origen de fondos inválido';
+            $client->save();
+
+            return response()->json(['success' => false, 'data' => ['Origen de fondos inválido']]);
+        }
+
+        $url = ($client->documents->count()>0)  ? env('APP_URL').'/api/res/download-document-register/'.$client->id.'?document_id='.$client->documents[0]->id : null;
+
+
+        $params = array(
+            "tpers01" => "2",
+            "tdocu01" => ($client->document_type_id == 1) ? '6' : null,
+            "ndocu01" => $client->document_number,
+            "rsoci01" => $client->name,
+            "idact01" => (!is_null($client->economic_activity_id)) ? $client->economic_activity->code : null,
+            "fcons01" => $client->birthdate,
+            "direc01" => $client->address,
+            "telef01" => $client->phone,
+            "paisd01" => (!is_null($client->country_id)) ? $client->country->prefix : null,
+            "ubige01" => (!is_null($client->district_id)) ? $client->district->ubigeo : null,
+            "idofo01" => $fondoscod,
+            "urlfr01" => $url
+        );
+
+
+        $representatives = $client->representatives;
+        $business_associates = $client->business_associates;
+
+        $listadoAccionista = array();
+        $listadoRepresentantes = array();
+
+        // Rep Legal
+        foreach ($representatives as $key => $value) {
+            $repr = array(
+                "tdocu01" => 1,($value->document_type_id == 1) ? 6 : ($value->document_type_id == 2 ? 1 : ($value->document_type_id == 3 ? 2 : ($value->document_type_id == 4 ? 9 : ($value->document_type_id == 9 ? 5 : ($value->document_type_id == 10 ? 8 : ($value->document_type_id == 11 ? 2 : 4)))))),
+                "ndocu01" => $value->document_number,
+                "nombr01" => $value->names,
+                "apate01" => $value->last_name,
+                "amate01" => $value->mothers_name
+            );
+
+            array_push($listadoRepresentantes, $repr);
+        }
+
+        // Socios
+        foreach ($business_associates as $key => $value) {
+
+            $socio = array(
+                "tpers01" => (in_array($value->document_type_id, array(2,3,9))) ? 1 : 2,
+                "tdocu01" => ($value->document_type_id == 1) ? 6 : ($value->document_type_id == 2 ? 1 : ($value->document_type_id == 3 ? 3 : ($value->document_type_id == 4 ? 9 : ($value->document_type_id == 9 ? 5 : ($value->document_type_id == 10 ? 8 : ($value->document_type_id == 11 ? 2 : 4)))))),
+                "ndocu01" => $value->document_number,
+                
+                "espep01" => $value->pep
+            );
+
+            if($socio['tpers01'] == 1){
+                $socio['nombr01'] = $value->names;
+                $socio['apate01'] = $value->last_name;
+                $socio['amate01'] = $value->mothers_name;
+            }
+            elseif($socio['tpers01'] == 2){
+                $socio['rsoci01'] = $value->names;
+            }
+
+            if($socio['espep01'] == 1){
+                $socio['insti01'] = $value->pep_company;
+                $socio['cargo01'] = $value->pep_position;
+            }
+
+            array_push($listadoAccionista,$socio);
+        }
+
+        $params["listadoAccionista"] = $listadoAccionista;
+        $params["listadoRepresentantes"] = $listadoRepresentantes;
+
+        if(isset($request->json)){
+            return response()->json([
+                'success' => true,
+                'params' => $params,
+            ]);
+        }
+
+        ############### Envio servicio a Corfid ########################
+        $corfid = Http::withHeaders(['Authorization' => 'Basic '.env('TOKEN_WSCORFID')])->post(env('URL_WSCORFID').'/fintechWS/WSCFDADM-01', $params);
+
+        $rpta_json = json_decode($corfid);
+
+        if(is_object($rpta_json)){
+            if(isset($rpta_json->{'strCodMensaje'})){
+
+                $client->corfid_id = $rpta_json->{'strCodMensaje'};
+                $client->corfid_message = $rpta_json->strMensaje;
+                $client->save();
+            }
+        }
+
+        return response()->json($rpta_json);
+    }
+
+    public function register_client_person(Request $request, Client $client) {
+
+        $fondos = explode(';', $client->funds_source);
+
+        $fondoscod = "";
+        $codigo = "";
+
+        foreach ($fondos as $key => $value) {
+            if($value == "Fondos propios" || $value == "Fondos propios / Recursos propios") $codigo = 2;
+            if($value == "Venta de activos") $codigo = 4;
+            if($value == "Intereses y rendimiento") $codigo = 7;
+            if($value == "Financiamiento") $codigo = 8;
+            if($value == "Resultados acumulados") $codigo = 9;
+            if($value == "Dividendos y participaciones") $codigo = 6;
+            if($value == "Otros" || $value == "Otros (especifique)") $codigo = 12;
+
+            if($codigo != "") $fondoscod .= $codigo.",";
+            $codigo = "";
+        }
+
+        if($fondoscod != "") $fondoscod = substr($fondoscod,0,Str::length($fondoscod)-1);
+        else {
+
+            $client->corfid_id = 3;
+            $client->corfid_message = 'Origen de fondos inválido';
+            $client->save();
+
+            return response()->json(['success' => false, 'data' => ['Origen de fondos inválido']]);
+        }
+
+        $url = ($client->documents->count()>0) ? env('APP_URL').'/api/res/download-document-register/'.$client->id.'?document_id='.$client->documents[0]->id : null;
+
+        $params = array(
+            "tpers01" => "1",
+            "nombr01" => $client->name,
+            "apate01" => $client->last_name,
+            "amate01" => $client->mothers_name,
+            "tdocu01" => ($client->document_type_id == 2) ? '1' : (($client->document_type_id == 3) ? '2' : null),
+            "ndocu01" => $client->document_number,
+            "fnaci01" => $client->birthdate,
+            "nacio01" => (!is_null($client->country_id)) ? $client->country->prefix : null,
+            "direc01" => $client->address,
+            "idocu01" => (!is_null($client->profession_id)) ? $client->profession->id : null,
+            "espep01" => $client->pep,
+            //"urldj01" => $url,
+            "idofo01" => $fondoscod,
+            "paisd01" => "PE",
+            "ubige01" => (!is_null($client->district_id)) ? $client->district->ubigeo : null,
+        );
+
+        if($params['espep01'] == 1){
+            $params['insti01'] = $value->pep_company;
+            $params['cargo01'] = $value->pep_position;
+        }
+
+        if(isset($request->json)){
+            return response()->json([
+                'success' => true,
+                'params' => $params,
+            ]);
+        }
+
+        ############### Envio servicio a Corfid ########################
+        $corfid = Http::withHeaders(['Authorization' => 'Basic '.env('TOKEN_WSCORFID')])->post(env('URL_WSCORFID').'/fintechWS/WSCFDADM-01', $params);
+
+        $rpta_json = json_decode($corfid);
+
+        if(is_object($rpta_json)){
+            if(isset($rpta_json->{'strCodMensaje'})){
+
+                $client->corfid_id = $rpta_json->{'strCodMensaje'};
+                $client->corfid_message = $rpta_json->strMensaje;
+                $client->save();
+            }
+        }
+
+
+        return response()->json($rpta_json);
+    }
 }
