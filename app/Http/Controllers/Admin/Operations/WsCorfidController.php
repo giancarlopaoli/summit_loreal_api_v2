@@ -607,7 +607,7 @@ class WsCorfidController extends Controller
         }
 
         ############### Envio servicio a Corfid ########################
-        $corfid = Http::withHeaders(['Authorization' => 'Basic '.env('TOKEN_WSCORFID')])->post(env('URL_WSCORFID').'/fintechWS/WSCFDADM-01', $params);
+        //$corfid = Http::withHeaders(['Authorization' => 'Basic '.env('TOKEN_WSCORFID')])->post(env('URL_WSCORFID').'/fintechWS/WSCFDADM-01', $params);
 
         $rpta_json = json_decode($corfid);
 
@@ -686,7 +686,7 @@ class WsCorfidController extends Controller
         }
 
         ############### Envio servicio a Corfid ########################
-        $corfid = Http::withHeaders(['Authorization' => 'Basic '.env('TOKEN_WSCORFID')])->post(env('URL_WSCORFID').'/fintechWS/WSCFDADM-01', $params);
+        //$corfid = Http::withHeaders(['Authorization' => 'Basic '.env('TOKEN_WSCORFID')])->post(env('URL_WSCORFID').'/fintechWS/WSCFDADM-01', $params);
 
         $rpta_json = json_decode($corfid);
 
