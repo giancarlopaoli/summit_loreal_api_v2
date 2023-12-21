@@ -28,7 +28,7 @@ class MyBankAccountsController extends Controller
             ->with([
             'bank:id,name,shortname,active,image',
             'account_type:id,name,shortname',
-            'currency:id,name,sign,image',
+            'currency:id,name,sign,iso_code,image',
             'account_type'
         ])->get();
 
