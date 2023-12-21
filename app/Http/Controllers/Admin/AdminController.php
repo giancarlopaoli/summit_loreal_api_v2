@@ -129,6 +129,11 @@ class AdminController extends Controller
         $role = Role::findByName('corfid');
         $role->users()->attach($users->pluck('id'));
 
+        $users = User::whereIn('id', [484,2196,2274,2339,2382,2801,2811]);
+        $role = Role::findByName('ejecutivos');
+        $role->users()->attach($users->pluck('id'));
+        $users->update(["role_id" => 6]);
+
         $user = User::where('id',483)->first()->assignRole('administrador');
         $user = User::where('id',483)->first()->assignRole('operaciones');
         $user = User::where('id',483)->first()->assignRole('proveedor');

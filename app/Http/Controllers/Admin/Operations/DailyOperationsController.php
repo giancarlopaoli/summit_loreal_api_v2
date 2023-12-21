@@ -267,7 +267,12 @@ class DailyOperationsController extends Controller
                     ->where('currency_id', $bank_account_data->currency_id)
                     ->first();
 
-                if(!is_null($escrow_account)){
+                $vendor_escrow = BankAccount::where('bank_id', $bank_account_data->bank_id)
+                    ->where('client_id', $request->client_id)
+                    ->where('currency_id', $bank_account_data->currency_id)
+                    ->get();
+
+                if(!is_null($escrow_account) && $vendor_escrow->count() > 0){
                     $matched_operation->escrow_accounts()->attach($escrow_account->id, [
                         'amount' => $bank_account_data->pivot->amount + $bank_account_data->pivot->comission_amount,
                         'comission_amount' => 0,
@@ -285,7 +290,7 @@ class DailyOperationsController extends Controller
                             ]
                         ], 404);
                     }
-                
+
                     $escrow_account = EscrowAccount::where('bank_id', Configuration::where('shortname', 'DEFAULTBANK')->first()->value)
                         ->where('currency_id', $bank_account_data->currency_id)
                         ->first();

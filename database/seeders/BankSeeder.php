@@ -83,6 +83,16 @@ class BankSeeder extends Seeder
         ]);
 
         Bank::create([
+            'id' => 11,
+            'name' => 'CITIBANK N.A LIMA',
+            'shortname' => 'Citibank',
+            'corfid_id' => 7,
+            'main' => false,
+            'active' => true,
+            'image' => 'https://bill-upload.s3.amazonaws.com/static/img/citibank.png'
+        ]);
+
+        Bank::create([
             'id' => 12,
             'name' => 'Banco de la Nación',
             'shortname' => 'Nación',
@@ -90,6 +100,16 @@ class BankSeeder extends Seeder
             'main' => false,
             'active' => true,
             'image' => 'https://bill-upload.s3.amazonaws.com/static/img/bn.png'
+        ]);
+
+        Bank::create([
+            'id' => 13,
+            'name' => 'Banco Santander',
+            'shortname' => 'Santander',
+            'corfid_id' => 22,
+            'main' => false,
+            'active' => true,
+            'image' => 'https://bill-upload.s3.amazonaws.com/static/img/santander.png'
         ]);
 
     }
