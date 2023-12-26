@@ -30,6 +30,8 @@ use App\Mail\OperationInstructions;
 use App\Mail\OperationSign;
 use App\Mail\VendorInstructions;
 use App\Http\Controllers\Admin\Operations\DailyOperationsController;
+use App\Http\Controllers\Admin\Operations\WsCorfidController;
+use App\Http\Controllers\Admin\Operations\TelegramNotificationsControllers;
 
 class DailyOperationsController extends Controller
 {
@@ -393,6 +395,10 @@ class DailyOperationsController extends Controller
                     $operation->operation_status_id = OperationStatus::where('name', 'Pendiente fondos contraparte')->first()->id;
                     $operation->funds_confirmation_date = Carbon::now();
                     $operation->save();
+
+                    ########### Envío operación a WS CORFID
+                    $consult = new WsCorfidController();
+                    //$result = $consult->register_operation($request, $operation)->getData();
                 }
                 elseif($operation->matches[0]->operation_status_id == OperationStatus::where('name', 'Pendiente fondos contraparte')->first()->id){
                     $operation->operation_status_id = OperationStatus::where('name', 'Contravalor recaudado')->first()->id;
@@ -485,6 +491,9 @@ class DailyOperationsController extends Controller
         ]);
         if($val->fails()) return response()->json($val->messages());
 
+        $consult = new TelegramNotificationsControllers();
+        $notification = $consult->new_operation_confirmation($request, $request->operation_id)->getData();
+
         logger('Archivo adjunto: DailyOperationsController@upload_voucher', ["operation_id" => $request->operation_id]);
 
         if($request->hasFile('file')){
@@ -517,9 +526,22 @@ class DailyOperationsController extends Controller
             } catch (\Exception $e) {
                 // Registrando el el log los datos ingresados
                 logger('ERROR: archivo adjunto: DailyOperationsController@upload_voucher', ["error" => $e]);
+
+                return response()->json([
+                    'success' => false,
+                    'errors' => 'Error en el archivo adjunto',
+                ]);
             }
 
             OperationHistory::create(["operation_id" => $request->operation_id,"user_id" => auth()->id(),"action" => "Comprobante cargado", "detail" => 'filename: ' . $filename]);
+
+            // Notificación Telegram
+            try {
+                $consult = new TelegramNotificationsControllers();
+                $notification = $consult->confirm_funds_notification($request)->getData();
+            } catch (\Exception $e) {
+                logger('ERROR: notificación telegram: DailyOperationsController@upload_voucher', ["error" => $e]);
+            }
 
             return response()->json([
                 'success' => true,
@@ -1469,4 +1491,5 @@ class DailyOperationsController extends Controller
             ]
         ]);
     }
+    
 }

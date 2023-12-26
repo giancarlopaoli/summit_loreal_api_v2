@@ -16,6 +16,7 @@ class BankSeeder extends Seeder
     public function run()
     {
         Bank::create([
+            'id' => 1,
             'name' => 'Banco de Crédito del Perú',
             'shortname' => 'BCP',
             'corfid_id' => 2,
@@ -25,6 +26,7 @@ class BankSeeder extends Seeder
         ]);
 
         Bank::create([
+            'id' => 2,
             'name' => 'Banco Internacional del Perú',
             'shortname' => 'INTERBANK',
             'corfid_id' => 3,
@@ -34,6 +36,7 @@ class BankSeeder extends Seeder
         ]);
 
         Bank::create([
+            'id' => 3,
             'name' => 'BBVA Continental',
             'shortname' => 'BBVA',
             'corfid_id' => 11,

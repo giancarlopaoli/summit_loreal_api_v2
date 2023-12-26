@@ -114,4 +114,14 @@ class Client extends Model
     public function tracking_phase() {
         return $this->belongsTo(TrackingPhase::class);
     }
+
+    public function getClientNameAttribute()
+    {
+        if($this->customer_type == 'PJ'){
+            return $this->name;
+        }
+        else{
+            return $this->name . ' ' . $this->last_name . ' ' . $this->mothers_name;
+        }
+    }
 }

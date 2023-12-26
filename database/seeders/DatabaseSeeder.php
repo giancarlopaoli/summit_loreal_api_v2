@@ -32,9 +32,9 @@ class DatabaseSeeder extends Seeder
             DepartmentSeeder::class,
             ProvinceSeeder::class,
             DistrictSeeder::class,
-            EconomicActivitySeeder::class,
+            //EconomicActivitySeeder::class,
             LeadStatusSeeder::class,
-            ProfessionSeeder::class,
+            //ProfessionSeeder::class,
             RegionSeeder::class,
             RangeSeeder::class,
             SectorSeeder::class,
@@ -46,12 +46,12 @@ class DatabaseSeeder extends Seeder
             TrackingPhaseSeeder::class
         ]);
 
-        if(env('APP_ENV') == 'prod') {
-            $this->call(PRDSeeder::class);
+        $this->call(PRDSeeder::class);
+        /*if(env('APP_ENV') == 'prod') {
         }
         else{
             $this->call(TestingSeeder::class);
-        }
+        }*/
 
 
         // \App\Models\User::factory(10)->create();
