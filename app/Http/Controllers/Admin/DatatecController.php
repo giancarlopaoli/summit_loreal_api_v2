@@ -42,6 +42,23 @@ class DatatecController extends Controller
         return $exchange_rate;
     }
 
+    public function datatec_exchange_rate(Request $request) {
+        $validator = Validator::make($request->all(), [
+            'Compra' => 'required|numeric',
+            'Venta' => 'required|numeric'
+        ]);
+
+        $request['compra'] = $request->Compra;
+        $request['venta'] = $request->Venta;
+
+        $registro = DatatecController::new_exchange_rate($request);
+
+        return response()->json(
+            $registro
+        );        
+    }
+
+
     public function exchange_rate(Request $request) {
         $min_amount = Range::minimun_amount();
         $exchange_rate = ExchangeRate::latest()->first();

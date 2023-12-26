@@ -33,6 +33,7 @@ use App\Enums;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\NewInmediateOperation;
 use App\Mail\OperationInstructions;
+use App\Http\Controllers\Admin\Operations\TelegramNotificationsControllers;
 
 class InmediateOperationController extends Controller
 {
@@ -1019,6 +1020,14 @@ class InmediateOperationController extends Controller
         else{
             // Enviar Correo()
             $rpta_mail = Mail::send(new NewInmediateOperation($operation->id));
+        }
+
+        // Notificación Telegram
+        try {
+            $consult = new TelegramNotificationsControllers();
+            $notification = $consult->new_operation_confirmation($request, $operation->id)->getData();
+        } catch (\Exception $e) {
+            logger('ERROR: notificación telegram: InmediateOperationController@create_operation', ["error" => $e]);
         }
 
         AvailableOperations::dispatch();

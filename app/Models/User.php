@@ -132,4 +132,9 @@ class User extends Authenticatable
     public static function get_authenticated_users() {
         return self::activityOlderThan(15)->get();
     }
+
+    public function getFullNameAttribute()
+    {
+        return $this->name . ' ' . $this->last_name;
+    }
 }
