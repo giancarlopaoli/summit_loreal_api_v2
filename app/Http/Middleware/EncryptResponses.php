@@ -25,6 +25,9 @@ class EncryptResponses
                 return $response;
             }
         } else {
+
+            logger('ROUTE LOG', ["data" => request()->fullUrl()]);
+
             return $response; //descomentar para pruebas de desarrollo
         }
     }
