@@ -43,10 +43,13 @@ class DatatecController extends Controller
     }
 
     public function datatec_exchange_rate(Request $request) {
-        $validator = Validator::make($request->all(), [
+        
+        logger('LOG: Tipo de Cambio: DatatecController@datatec_exchange_rate', ["data" => $request->all()]);
+
+        /*$validator = Validator::make($request->all(), [
             'Compra' => 'required|numeric',
             'Venta' => 'required|numeric'
-        ]);
+        ]);*/
 
         $request['compra'] = $request->Compra;
         $request['venta'] = $request->Venta;
