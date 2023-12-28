@@ -4,10 +4,13 @@ namespace App\Http\Controllers\Clients;
 
 use App\Http\Controllers\Controller;
 use App\Models\Client;
+use App\Models\Operation;
 use App\Models\OperationStatus;
 use Illuminate\Http\Request;
 use App\Enums;
 use Illuminate\Support\Facades\Validator;
+use Carbon\Carbon;
+use App\Models\OperationHistory;
 
 class MyOperationsController extends Controller
 {
@@ -148,6 +151,34 @@ class MyOperationsController extends Controller
             ]
         ]);
 
+    }
+
+    public function cancel_operation(Request $request, Operation $operation) {
+
+        if($operation->operation_status_id == OperationStatus::where('name', 'Disponible')->first()->id){
+            $operation->operation_status_id = OperationStatus::where('name', 'Cancelado')->first()->id;
+            $operation->canceled_at = Carbon::now();
+            $operation->save();
+
+            OperationHistory::create(["operation_id" => $operation->id,"user_id" => auth()->id(),"action" => "Operación cancelada"]);
+        }
+        else{
+            return response()->json([
+                'success' => false,
+                'data' => [
+                    'La operación ya se encuentra emparejada y no puede ser anulada. Comuníquese de inmediato con su ejecutivo para que lo pueda asistir.'
+                ]
+            ]);
+        }
+        
+            
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'Operación anulada'
+            ]
+        ]);
     }
 
 }

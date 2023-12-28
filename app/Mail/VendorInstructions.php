@@ -50,10 +50,13 @@ class VendorInstructions extends Mailable
             $deposit_account = $this->operation->vendor_bank_accounts->load('client:id,name,last_name,mothers_name,customer_type');
         }
 
+        $emails = (is_null($this->client->accountable_email) || $this->client->accountable_email == "") ? env('MAIL_OPS') : array_merge(explode(",", $this->client->accountable_email), array(env('MAIL_OPS')));
+
         return $this
             ->subject('BILLEX | CONSTANCIA DE LA TRANSFERENCIA - ' . $this->operation->type . ' ' . $this->operation->amount . ' - OP ' . $this->operation->code)
-            //->to($operation->user->email)
-            ->bcc(env('MAIL_OPS'))
+            ->to($this->operation->client->email)
+            ->cc($this->operation->user->email)
+            ->cc($emails)
             ->bcc(env('MAIL_TI'))
             ->view('vendor_instructions')
             ->attach(env('APP_URL') . "/api/res/download-document-operation?operation_id=".$document->operation_id."&document_id=".$document->id, [

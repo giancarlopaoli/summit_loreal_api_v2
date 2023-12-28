@@ -207,7 +207,7 @@
       <td style="background-color: #001489; width: 100%; height: 100%; padding: 0 0 10px 0;">
         <p style="font-size: 11px;
         margin: 0; text-align: center; color: #fff; margin: 20px 0;">Este mensaje es solo informativo, favor de no responder a este correo. <br>
-          ©2022 Billex. Todos los derechos reservados</p>
+          ©2023 Billex. Todos los derechos reservados</p>
         <p style="font-size: 11px;
         margin: 0; text-align: center; color: #fff; margin: 20px 0; margin-top: 30px;">Si tienes alguna duda ó pregunta, encuentra la información en nuestra <a href=""style="color: #fff;">página de ayuda</a>  o <a href=""style="color: #fff;">contáctenos</a></p>
       </td>

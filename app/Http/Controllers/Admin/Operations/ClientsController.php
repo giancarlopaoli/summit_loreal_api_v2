@@ -23,6 +23,8 @@ use Illuminate\Support\Str;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Controllers\Admin\Operations\WsCorfidController;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\ExecutivePresentation;
 
 class ClientsController extends Controller
 {
@@ -755,8 +757,11 @@ class ClientsController extends Controller
                     $consult = new WsCorfidController();
                     //$result = $consult->register_client($request, $client)->getData();
 
-
-                    // Envío de correo() presentación ejecutivo
+                    foreach ($client->users as $key => $value) {
+                        // Envío de correo() presentación ejecutivo
+                        $rpta_mail = Mail::send(new ExecutivePresentation($value->id, $client->id));
+                    }
+                    
 
                     return response()->json([
                         'success' => true,

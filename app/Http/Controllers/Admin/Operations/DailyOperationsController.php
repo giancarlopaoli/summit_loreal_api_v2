@@ -678,12 +678,7 @@ class DailyOperationsController extends Controller
             ]);
         }
 
-        if($operation->client->customer_type == 'PJ'){
-            $client_name = $operation->client->name;
-        }
-        else{
-            $client_name = $operation->client->name . ' ' . $operation->client->last_name . ' ' . $operation->client->mothers_name;
-        }
+        $client_name = $operation->client->client_full_name;
 
         try{
 

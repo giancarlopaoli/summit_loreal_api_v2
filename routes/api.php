@@ -55,9 +55,11 @@ Route::middleware('encryptresponses')->group(function () {
             Route::GET('download-file', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'download_file']);
             
             Route::GET('{operation}', [\App\Http\Controllers\Clients\MyOperationsController::class, 'operation_detail']);
+            Route::DELETE('cancel/{operation}', [\App\Http\Controllers\Clients\MyOperationsController::class, 'cancel_operation']);
             Route::POST('upload-voucher', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'upload_voucher']);
             Route::GET('instruction/{operation}', [\App\Http\Controllers\Admin\AdminController::class, 'instruction']);
         });
+
 
         Route::prefix('my-bank-accounts')->group(function () {
             Route::POST('', [\App\Http\Controllers\Clients\MyBankAccountsController::class, 'new_account']);
@@ -464,6 +466,8 @@ Route::middleware('encryptresponses')->group(function () {
                 Route::GET('interbank-parameters', [\App\Http\Controllers\Admin\Executives\ClientsController::class, 'get_interbank_parameters']);
                 Route::DELETE('interbank-parameters/{ibops_client_comissions}', [\App\Http\Controllers\Admin\Executives\ClientsController::class, 'delete_interbank_parameter']);
                 Route::POST('create-interbank', [\App\Http\Controllers\Clients\InterbankOperationController::class, 'create_operation']);
+                
+                Route::POST('operation/upload-voucher/{operation_id}', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'upload_voucher']);
 
                 Route::POST('bank-accounts', [\App\Http\Controllers\Clients\MyBankAccountsController::class, 'new_account']);
                 Route::GET('my-bank-accounts', [\App\Http\Controllers\Clients\MyBankAccountsController::class, 'list_accounts']);

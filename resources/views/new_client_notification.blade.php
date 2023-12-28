@@ -134,7 +134,7 @@
 							 					padding-top: 30px;">
 
 										<p style="font-size: 14px;">
-										&copy; 2021 Bill Financial Services S.A.</p>
+										&copy; 2023 Bill Financial Services S.A.</p>
 										
 										<p style="font-size: 12px;">
 										Av. Alfredo Benavides 1944 piso 9, Miraflores, Lima Perú.</p>
