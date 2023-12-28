@@ -104,28 +104,11 @@
                     </a>
                 </td>
             </tr>
-
-            <!-- <tr>
-              <td align="center" style="background-color: #001489; padding: 30px 0 0 0;">
-                <a href="https://www.linkedin.com/company/billex-divisas/" target="_blank">
-                <img src="https://www.billex.pe/wp-content/uploads/2020/10/linkedin-icon.png" alt="Linkedin" width="32" height="32" style="display: block;" border="0" target="_blank" />
-                  </a>
-
-                <a href="https://www.youtube.com/channel/UC0hRfNpJN-1aX_VoaKa-ZVg/featured" target="_blank">
-                <img src="https://www.billex.pe/wp-content/uploads/2020/10/youtube-icon.png" alt="Youtube" width="32" height="32" style="display: block;" border="0" target="_blank" />
-                  </a>
-
-                <a href="https://www.facebook.com/BillexDivisas/" target="_blank">
-                  <img src="https://www.billex.pe/wp-content/uploads/2020/10/facebook-icon.png" alt="Facebook" width="32" height="32" style="display: block;" border="0" />
-                  </a>
-              </td>
-            </tr> -->
-
             <tr>
                 <td style="background-color: #001489; width: 100%; height: 100%; padding: 0 0 10px 0;">
                     <p style="font-size: 11px;
                     margin: 0; text-align: center; color: #fff; margin: 20px 0;">Este mensaje es solo informativo, favor de no responder a este correo. <br>
-                        ©2022 Billex. Todos los derechos reservados</p>
+                        ©2023 Billex. Todos los derechos reservados</p>
                     <p style="font-size: 11px;
                     margin: 0; text-align: center; color: #fff; margin: 20px 0; margin-top: 40px;">Si tienes alguna duda ó pregunta, encuentra la información en nuestra <a href=""style="color: #fff;">página de ayuda</a>  o <a href=""style="color: #fff;">contáctenos</a></p>
                 </td>

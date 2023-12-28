@@ -12,7 +12,7 @@ class TelegramNotificationsControllers extends Controller
     public function new_operation_confirmation(Request $request, $operation_id) {
         $operation = Operation::find($operation_id);
 
-        $client = $operation->client->client_name;
+        $client = $operation->client->client_full_name;
         $currency = $operation->currency->sign;
         $executive = (!is_null($operation->client->executive)) ? $operation->client->executive->user->full_name : 'Sin ejecutivo';
         $analyst = (!is_null($operation->operations_analyst)) ? $operation->operations_analyst->user->full_name : 'No Asignado';
@@ -54,7 +54,7 @@ Instructivo: [Descargar]($url/api/res/instruction/$operation_id)";
     public function confirm_funds_notification(Request $request) {
         $operation = Operation::find($request->operation_id);
 
-        $client = $operation->client->client_name;
+        $client = $operation->client->client_full_name;
         $currency = $operation->currency->sign;
         $executive = (!is_null($operation->client->executive)) ? $operation->client->executive->user->full_name : 'Sin ejecutivo';
         $analyst = (!is_null($operation->operations_analyst)) ? $operation->operations_analyst->user->full_name : 'No Asignado';
