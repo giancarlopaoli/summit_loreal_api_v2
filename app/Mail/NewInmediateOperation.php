@@ -33,14 +33,14 @@ class NewInmediateOperation extends Mailable
         $operation = Operation::find($this->operation_id)
             ->load('user','client');
 
-        $mail_executive = (isset($this->operation->client->executive->user->email)) ? $this->operation->client->executive->user->email : env('MAIL_CRM');
+        $mail_executive = (isset($operation->client->executive->user->email)) ? $operation->client->executive->user->email : env('MAIL_CRM');
 
         $subject = ($operation->class == 'Inmediata') ? 'de Cambio' : 'negociada';
 
         return $this
             ->subject('BILLEX | Nueva Operación '.$subject)
             ->to($operation->user->email)
-            //->cc($mail_executive)
+            ->cc($mail_executive)
             ->bcc(env('MAIL_OPS'))
             ->bcc(env('MAIL_TI'))
             ->view('new_inmediate_operation')
