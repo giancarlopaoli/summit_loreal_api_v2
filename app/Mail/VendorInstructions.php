@@ -57,6 +57,7 @@ class VendorInstructions extends Mailable
             ->to($this->operation->client->email)
             ->cc($this->operation->user->email)
             ->cc($emails)
+            ->cc(env('MAIL_OPS'))
             ->bcc(env('MAIL_TI'))
             ->view('vendor_instructions')
             ->attach(env('APP_URL') . "/api/res/download-document-operation?operation_id=".$document->operation_id."&document_id=".$document->id, [

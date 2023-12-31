@@ -102,7 +102,7 @@ class OperationInstructions extends Mailable
             ->to($operation->user->email)
             ->cc($mail_executive)
             ->cc($emails)
-            ->bcc(env('MAIL_OPS'))
+            ->cc(env('MAIL_OPS'))
             ->bcc(env('MAIL_TI'))
             ->view('operation_instructions')
             ->attach(env('APP_URL') . "/api/res/instruction/".$operation->id, [

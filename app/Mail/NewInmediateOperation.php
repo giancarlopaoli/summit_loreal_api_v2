@@ -41,7 +41,7 @@ class NewInmediateOperation extends Mailable
             ->subject('BILLEX | Nueva Operación '.$subject)
             ->to($operation->user->email)
             ->cc($mail_executive)
-            ->bcc(env('MAIL_OPS'))
+            ->cc(env('MAIL_OPS'))
             ->bcc(env('MAIL_TI'))
             ->view('new_inmediate_operation')
             ->with([

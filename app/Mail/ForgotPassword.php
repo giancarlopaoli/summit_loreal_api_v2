@@ -36,7 +36,6 @@ class ForgotPassword extends Mailable
         return $this
             ->subject('BILLEX | Recuperación de Contraseña')
             ->to($user->email)
-            ->bcc(env('MAIL_OPS'))
             ->bcc(env('MAIL_TI'))
             ->view('forgot_password')
             ->with([
