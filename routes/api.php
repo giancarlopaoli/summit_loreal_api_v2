@@ -23,8 +23,6 @@ Route::middleware('encryptresponses')->group(function () {
     Route::POST('login', [\App\Http\Controllers\Clients\AuthController::class, 'login']);
     Route::POST('logout', [\App\Http\Controllers\Clients\AuthController::class, 'logout']);
 
-    Route::POST('prueba', [\App\Http\Controllers\Clients\AuthController::class, 'prueba']);
-
     Route::POST('forgot-password', [\App\Http\Controllers\Clients\AuthController::class, 'forgot_password']);
     Route::GET('res/instruction/{operation}', [\App\Http\Controllers\Admin\AdminController::class, 'instruction']);
     Route::GET('res/download-document-operation', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'download_file']);
@@ -33,8 +31,6 @@ Route::middleware('encryptresponses')->group(function () {
 
     Route::POST('res/calculadora', [\App\Http\Controllers\Admin\DatatecController::class, 'calculadora']);
     Route::GET('res/tcambio', [\App\Http\Controllers\Admin\DatatecController::class, 'tipocambio']);
-    Route::GET('res/tipocambio', [\App\Http\Controllers\Admin\DatatecController::class, 'tipocambio']);
-    Route::GET('res/test', [\App\Http\Controllers\Admin\DatatecController::class, 'test']);
 
     Route::POST('produccion', [\App\Http\Controllers\Admin\AdminController::class, 'pase_a_produccion']);
 
