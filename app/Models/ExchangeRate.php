@@ -49,7 +49,7 @@ class ExchangeRate extends Model
             ->where('active', true)
             ->get();
 
-        $vendor_spreads = VendorSpread::whereIn('vendor_range_id', $vendor_ranges->only('id')->toArray())
+        $vendor_spreads = VendorSpread::whereIn('vendor_range_id', $vendor_ranges->pluck('id'))
             ->where('active', true)
             ->get();
 
@@ -60,6 +60,7 @@ class ExchangeRate extends Model
 
         $buy_spread = min($buy_spreads) / 10000.0;
         $sell_spread = min($sell_spreads) / 10000.0;
+
 
         if(!is_null($user)){
             $special_exchange_rate = SpecialExchangeRate::where('client_id', $client_id)
