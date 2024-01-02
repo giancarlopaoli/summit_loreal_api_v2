@@ -78,13 +78,15 @@ class InmediateOperationController extends Controller
         // Validating available hours
         $hours = InmediateOperationController::operation_hours($request->client_id)->getData();
 
-        if(!$hours->available){
-            return response()->json([
-                'success' => false,
-                'errors' => [
-                    'El horario de atención es de ' . $hours->message
-                ]
-            ]);
+        if($request->client_id != 363){
+            if(!$hours->available){
+                return response()->json([
+                    'success' => false,
+                    'errors' => [
+                        'El horario de atención es de ' . $hours->message
+                    ]
+                ]);
+            }
         }
 
         // Validating minimum amount
