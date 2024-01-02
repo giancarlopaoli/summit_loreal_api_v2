@@ -364,18 +364,20 @@ class InmediateOperationController extends Controller
             'save' => round($amount * (20/10000) , 2)
         ];
 
-        Quotation::create([
-            "user_id" => auth()->id(),
-            "client_id" => $client->id,
-            "type" => $type,
-            "amount" => $amount,
-            "exchange_rate" => $exchange_rate,
-            "comission_spread" => $comission_spread,
-            "comission_amount" => $comission_amount,
-            "igv" => $igv,
-            "spread" => $spread,
-            "special_exchange_rate_id" => !is_null($special_exchange_rate) ? $special_exchange_rate->id : null
-        ]);
+        if(!is_null(auth()->id())){
+            Quotation::create([
+                "user_id" => auth()->id(),
+                "client_id" => $client->id,
+                "type" => $type,
+                "amount" => $amount,
+                "exchange_rate" => $exchange_rate,
+                "comission_spread" => $comission_spread,
+                "comission_amount" => $comission_amount,
+                "igv" => $igv,
+                "spread" => $spread,
+                "special_exchange_rate_id" => !is_null($special_exchange_rate) ? $special_exchange_rate->id : null
+            ]);
+        }
 
         return response()->json([
             'success' => true,
