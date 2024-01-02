@@ -85,4 +85,207 @@ class DatatecController extends Controller
             ]
         ]);
     }
+
+    public function calculadora(Request $request) {
+        $val = Validator::make($request->all(), [
+            'monto' => 'required|numeric',
+            'tipo' => 'required|in:envias,recibes',
+            'moneda' => 'required|in:usd,pen'
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+        if($request->monto < 1000 && $request->moneda == 'usd'){
+            return response()->json([
+                'error' => 'El monto mínimo de operación es $1000.00.',
+            ]);
+        }
+
+        if($request->monto > 9999999999.99){
+            return response()->json([
+                'error' => 'El valor instroducido no es un monto válido.',
+            ]);
+        }  
+
+        if(($request->tipo == 'envias' && $request->moneda == 'usd') || ($request->tipo == 'recibes' && $request->moneda == 'pen')){
+            $tipoOp = 2;
+        }
+        else{
+            $tipoOp = 1;
+        }
+
+        $tc = $tipoOp == 1 ?
+            TipoCambio::latest('TipoCambioId')->first()->Compra :
+            TipoCambio::latest('TipoCambioId')->first()->Venta;
+
+
+        if( $request->moneda == 'usd'){
+            $montoop = $request->monto;
+        }
+        else{
+            $montoop = ($request->tipo == 'envias') ? $request->monto/TipoCambio::latest('TipoCambioId')->first()->Compra : $request->monto*TipoCambio::latest('TipoCambioId')->first()->Venta;
+            
+            $comisionTmp = Comision::where('ComisionId', 1)->first()->comision;
+
+            if(time() < strtotime(Config::where('acronimo', 'HORCIEOPE')->first()->valor)){//Antes de las 1:30pm
+                $spreadsTmp[] = Comision::where('ComisionId', 1)->first()->spread;
+            }else{
+                $spreadsTmp[] = Comision::where('ComisionId', 1)->first()->spreadAux;
+            }
+            
+            $spreadTmp = DB::table('spread')->where('ComisionId', 1)->where('Estado', 'ACT');
+            $spreadProvTmp = ($request->tipo == 'envias') ? $spreadTmp->min('Compra') : $spreadTmp->min('Venta');
+            if(!is_null($spreadProvTmp)) $spreadsTmp[] = $spreadProvTmp;
+            $spreadFTmp = min($spreadsTmp);
+
+
+            $tc_final_tmp = $tipoOp == 1 ?
+            round(($tc + $spreadFTmp) * (1 + $comisionTmp / 100), 4) :
+            round(($tc - $spreadFTmp) * (1 - $comisionTmp / 100), 4);
+
+            $montoop = $request->monto/$tc_final_tmp;
+            //$montopen = 1000*$tc_final_tmp;
+
+            $montopen = ceil(1000*$tc_final_tmp);
+        }
+
+        if($montoop < 1000){
+            return response()->json([
+                'error' => 'El monto mínimo de operación es $1,000 o S/'.number_format($montopen,0),
+            ]);
+        }
+
+
+        if(time() < strtotime(Config::where('acronimo', 'HORCIEOPE')->first()->valor)){//Antes de las 1:30pm
+            $rango = Comision::where('RangoMin', '<=', $montoop)
+                ->where('RangoMax', '>=', $montoop)
+                ->where('Estado', 'ACT')
+                ->select('ComisionId', 'comision', 'RangoMin', 'RangoMax', 'spread')
+                ->first();
+        }else{
+            $rango = Comision::where('RangoMin', '<=', $montoop)
+                ->where('RangoMax', '>=', $montoop)
+                ->where('Estado', 'ACT')
+                ->select('ComisionId', 'comision', 'RangoMin', 'RangoMax', 'spreadAux as spread')
+                ->first();
+        }
+
+
+        if(is_null($rango)){
+            return response()->json([
+                'error' => 'El monto ingresado es incorrecto.',
+            ]);
+        }
+
+        
+
+        $proveedores = Cliente::where('TipoEmpresaId', 2)->with('spreads')->get();
+
+        $spreads = [];
+        //$spreads[] = $rango->spread;
+
+        foreach ($proveedores as $proveedor) {
+            $sp = $proveedor->spreads->where('Estado', 'ACT')->where('ComisionId', $rango->ComisionId)->first();
+            if($sp == null){
+                $spreads[] = $rango->spread;
+            }else{
+                $spreads[] = $tipoOp == 1 ? $sp->Venta : $sp->Compra;
+            }
+        }
+
+
+        /*return response()->json([
+                'error' => $spreads,
+                'spreadFinal' => $spreadFTmp,
+                'comisionTmp' => $spreadsTmp
+            ]);*/
+
+
+        $spread = min($spreads);
+        $comision = $rango->comision;
+        
+
+        $tc_final = $tipoOp == 1 ?
+            round(($tc + $spread) * (1 + $comision / 100), 4) :
+            round(($tc - $spread) * (1 - $comision / 100), 4);
+
+
+        /*$tc_final_compra = round(($tcc + $spreadVenta) * (1 + $comision / 100), 4);
+        $tc_final_venta = round(($tcv - $spreadCompra) * (1 - $comision / 100), 4);*/
+
+
+        $porc_ahorro = 0.0155;
+
+         
+        if($request->tipo == 'envias' && $request->moneda == 'usd'){
+            $monto_comision = round(round($request->monto * ($tc - $spread),2) * $comision/100, 2);
+            $igv = round($monto_comision *(1-1/1.18),2);
+
+            $monto_cambio = round($request->monto * ($tc - $spread), 2) - $monto_comision;
+            $tc_final = round($monto_cambio/$request->monto,4);
+
+            $ahorro = $monto_cambio * $porc_ahorro;
+        }
+        elseif ($request->tipo == 'recibes' && $request->moneda == 'usd') {
+            $monto_comision = round(round($request->monto * ($tc + $spread),2) * $comision/100, 2);
+            $igv = round($monto_comision *(1-1/1.18),2);
+
+            $monto_cambio = round($request->monto * ($tc + $spread), 2) + $monto_comision;
+            $tc_final = round($monto_cambio/$request->monto,4);
+
+            $ahorro = $monto_cambio * $porc_ahorro;
+            
+        }
+        elseif ($request->tipo == 'recibes' && $request->moneda == 'pen') {
+            
+            $monto_tmp = ($request->monto)/($tc - $spread);
+            //$monto_cambio = round($monto_tmp/(1-$comision/100),2);
+
+            $monto_cambio = ($request->monto)/($tc_final);
+
+            //$monto_comision = round(round($monto_cambio * ($tc - $spread), 2) * $comision/100, 2);
+            $monto_comision = round($monto_cambio * $tc_final * $comision/100, 2);
+
+            $tc_final = round($request->monto/$monto_cambio,4);
+
+            $igv = round($monto_comision * (1-1/1.18),2);
+
+            $ahorro = $request->monto * $porc_ahorro;
+        }
+        else{
+            $monto_tmp = ($request->monto)/($tc + $spread);
+            $monto_cambio = round($monto_tmp/(1 + $comision/100),2);
+            $tc_final = round($request->monto/$monto_cambio,4);
+
+            $monto_comision = round(round($monto_cambio * ($tc + $spread),2) * $comision/100, 2);
+            $igv = round($monto_comision * (1-1/1.18),2);
+
+            $ahorro = $request->monto * $porc_ahorro;
+        }
+
+        if($request->moneda == 'pen' && $monto_cambio < 1000 ){
+            return response()->json([
+                'error' => 'El monto mínimo de operación es $1000.00.',
+            ]);
+        }
+
+        return response()->json([
+            'tc_final'      => round($tc_final, 4),
+            'monto_cambio' => round($monto_cambio, 2),
+            'comision' => round($monto_comision, 2),
+            'igv' => $igv,
+            'ahorro' => round($ahorro, 2)
+        ]);
+    }
+
+    public function tipocambio() {
+        $min_amount = 1000;
+        $exchange_rate = ExchangeRate::latest()->first()->for_user(null, $min_amount);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'exchange_rate' => $exchange_rate
+            ]
+        ]);
+    }
 }
