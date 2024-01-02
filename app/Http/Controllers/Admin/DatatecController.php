@@ -7,9 +7,11 @@ use App\Events\DatatecExchangeRate;
 use App\Http\Controllers\Controller;
 use App\Models\ExchangeRate;
 use App\Models\Range;
+use App\Models\Client;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use App\Http\Controllers\Clients\InmediateOperationController;
 
 class DatatecController extends Controller
 {
@@ -77,6 +79,65 @@ class DatatecController extends Controller
     public function exchange_rate_list(Request $request) {
         $min_amount = Range::minimun_amount();
         $exchange_rate = ExchangeRate::latest()->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'exchange_rate' => $exchange_rate
+            ]
+        ]);
+    }
+
+    public function calculadora(Request $request) {
+        $val = Validator::make($request->all(), [
+            'monto' => 'required|numeric',
+            'tipo' => 'required|in:envias,recibes',
+            'moneda' => 'required|in:usd,pen'
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+        $request['amount'] = $request->monto;
+        $request['client_id'] = 363;
+
+        if($request->moneda == 'usd'){
+            $request['currency_id'] = 2;
+        }
+        elseif($request->moneda == 'pen'){
+            $request['currency_id'] = 1;
+        }
+
+        if(($request->moneda == 'usd' && $request->tipo == 'envias') || ($request->moneda == 'pen' && $request->tipo == 'recibes')){
+            $request['type'] = 'venta';
+        }
+        else{
+            $request['type'] = 'compra';
+        }
+
+        $consult = new InmediateOperationController();
+        $result = $consult->quote_operation($request)->getData();
+
+        if($result->success){
+
+            $porc_ahorro = 0.0155;
+            $ahorro = $result->data->amount * $porc_ahorro;
+
+            return response()->json([
+                'tc_final'      => round($result->data->final_exchange_rate, 4),
+                'monto_cambio' => round($result->data->amount, 2),
+                'comision' => round($result->data->comission_amount, 2),
+                'igv' => $result->data->igv,
+                'ahorro' => round($ahorro, 2)
+            ]);
+        }
+        else{
+            return response()->json($result);
+        }
+        
+    }
+
+    public function tipocambio() {
+        $min_amount = 1000;
+        $exchange_rate = ExchangeRate::latest()->first()->for_user(null, $min_amount);
 
         return response()->json([
             'success' => true,

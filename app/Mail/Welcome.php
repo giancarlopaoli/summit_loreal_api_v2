@@ -37,8 +37,8 @@ class Welcome extends Mailable
             ->bcc(env('MAIL_OPS'))
             ->bcc(env('MAIL_TI'))
             ->view('welcome')
-            //->attach(storage_path('Manual_Billex.pdf'))
-            //->attach(storage_path('Contrato de Afiliación a Plataforma BILLEX.pdf'))
+            ->attach('https://bill-upload.s3.amazonaws.com/static/Manual_Billex.pdf')
+            ->attach('https://bill-upload.s3.amazonaws.com/static/Contrato+de+Afiliaci%C3%B3n+a+Plataforma+BILLEX.pdf')
             ->with([
                 'names' => $this->names,
                 'email' => $this->email,

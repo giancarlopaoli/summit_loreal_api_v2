@@ -53,8 +53,7 @@ class OperationSign extends Mailable
         $email = $this
             ->subject('BILLEX | INSTRUCCIÓN DE TRANSFERENCIA')
             ->to(explode(",",Configuration::where('shortname', 'MAILSCORFID')->first()->value))
-            ->to(env('MAIL_OPS'))
-            ->cc(env('MAIL_TI'))
+            ->cc(env('MAIL_OPS'))
             ->view('operation_sign')
             ->attach(env('APP_URL') . "/api/res/instruction/".$operation_id, [
                 'as' => 'Instrucciones.pdf',

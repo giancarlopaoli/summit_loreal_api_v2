@@ -28,6 +28,9 @@ Route::middleware('encryptresponses')->group(function () {
     Route::GET('res/download-document-register/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'download_document']);
     Route::POST('res/datatec', [\App\Http\Controllers\Admin\DatatecController::class, 'datatec_exchange_rate']);
 
+    Route::POST('res/calculadora', [\App\Http\Controllers\Admin\DatatecController::class, 'calculadora']);
+    Route::GET('res/tcambio', [\App\Http\Controllers\Admin\DatatecController::class, 'tipocambio']);
+
     Route::POST('produccion', [\App\Http\Controllers\Admin\AdminController::class, 'pase_a_produccion']);
 
     Route::middleware('auth:sanctum','role:cliente','validate_client_user')->group(function () {

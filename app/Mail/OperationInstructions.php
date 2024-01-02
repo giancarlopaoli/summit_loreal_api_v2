@@ -95,11 +95,14 @@ class OperationInstructions extends Mailable
 
         $mail_executive = (isset($operation->client->executive->user->email)) ? $operation->client->executive->user->email : env('MAIL_OPS');
 
+        $emails = (is_null($operation->client->accountable_email) || $operation->client->accountable_email == "") ? env('MAIL_OPS') : array_merge(explode(",", $operation->client->accountable_email), array(env('MAIL_OPS')));
+
         return $this
             ->subject('BILLEX | Instrucciones de la Operación')
             ->to($operation->user->email)
             ->cc($mail_executive)
-            ->bcc(env('MAIL_OPS'))
+            ->cc($emails)
+            ->cc(env('MAIL_OPS'))
             ->bcc(env('MAIL_TI'))
             ->view('operation_instructions')
             ->attach(env('APP_URL') . "/api/res/instruction/".$operation->id, [

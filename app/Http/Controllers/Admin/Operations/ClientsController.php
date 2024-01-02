@@ -755,7 +755,7 @@ class ClientsController extends Controller
                     $client->save();
 
                     $consult = new WsCorfidController();
-                    //$result = $consult->register_client($request, $client)->getData();
+                    $result = $consult->register_client($request, $client)->getData();
 
                     foreach ($client->users as $key => $value) {
                         // Envío de correo() presentación ejecutivo

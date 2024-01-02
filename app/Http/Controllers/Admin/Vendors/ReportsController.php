@@ -23,6 +23,7 @@ class ReportsController extends Controller
         $end_date = $request->end_date;
 
         $operations = Operation::select('id','code','class','type','user_id','amount','exchange_rate','currency_id','operation_status_id','operation_date')
+            ->selectRaw('round(amount*exchange_rate, 2) as counter_value')
             ->where('client_id', $request->client_id)
             ->where('operation_status_id', OperationStatus::where('name', 'Finalizado sin factura')->first()->id)
             ->whereRaw("date(operation_date) >= date('$start_date') and date(operation_date) <= date('$end_date')")
