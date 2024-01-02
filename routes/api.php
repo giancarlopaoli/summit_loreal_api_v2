@@ -30,6 +30,8 @@ Route::middleware('encryptresponses')->group(function () {
 
     Route::POST('res/calculadora', [\App\Http\Controllers\Admin\DatatecController::class, 'calculadora']);
     Route::GET('res/tcambio', [\App\Http\Controllers\Admin\DatatecController::class, 'tipocambio']);
+    Route::GET('res/tipocambio', [\App\Http\Controllers\Admin\DatatecController::class, 'tipocambio']);
+    Route::GET('res/test', [\App\Http\Controllers\Admin\DatatecController::class, 'test']);
 
     Route::POST('produccion', [\App\Http\Controllers\Admin\AdminController::class, 'pase_a_produccion']);
 

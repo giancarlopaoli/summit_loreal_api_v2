@@ -146,4 +146,11 @@ class DatatecController extends Controller
             ]
         ]);
     }
+
+    public function test() {
+
+        return response()->json([
+            'success' => true,
+        ]);
+    }
 }
