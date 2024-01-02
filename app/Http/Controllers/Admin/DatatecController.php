@@ -145,12 +145,10 @@ class DatatecController extends Controller
                 'exchange_rate' => $exchange_rate
             ]
         ]);
-    }
-
-    public function test() {
 
         return response()->json([
-            'success' => true,
+            'tc_venta'  => $exchange_rate->venta,
+            'tc_compra' => $exchange_rate->compra
         ]);
     }
 }
