@@ -116,14 +116,23 @@ class DatatecController extends Controller
         $consult = new InmediateOperationController();
         $result = $consult->quote_operation($request)->getData();
 
+        //return response()->json($result);
+
         if($result->success){
 
             $porc_ahorro = 0.0155;
             $ahorro = $result->data->amount * $porc_ahorro;
 
+            if($request->moneda == 'usd'){
+                $amount = $result->data->final_mount;
+            }
+            else{
+                $amount = $result->data->amount;
+            }
+
             return response()->json([
                 'tc_final'      => round($result->data->final_exchange_rate, 4),
-                'monto_cambio' => round($result->data->amount, 2),
+                'monto_cambio' => round($amount, 2),
                 'comision' => round($result->data->comission_amount, 2),
                 'igv' => $result->data->igv,
                 'ahorro' => round($ahorro, 2)
