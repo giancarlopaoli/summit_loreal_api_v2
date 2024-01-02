@@ -140,13 +140,6 @@ class DatatecController extends Controller
         $exchange_rate = ExchangeRate::latest()->first()->for_user(null, $min_amount);
 
         return response()->json([
-            'success' => true,
-            'data' => [
-                'exchange_rate' => $exchange_rate
-            ]
-        ]);
-
-        return response()->json([
             'tc_venta'  => $exchange_rate->venta,
             'tc_compra' => $exchange_rate->compra
         ]);
