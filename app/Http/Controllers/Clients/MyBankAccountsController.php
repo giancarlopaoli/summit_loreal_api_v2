@@ -29,7 +29,9 @@ class MyBankAccountsController extends Controller
             'bank:id,name,shortname,active,image',
             'account_type:id,name,shortname',
             'currency:id,name,sign,iso_code,image',
-            'account_type'
+            'account_type',
+            'status:id,name'
+
         ])->get();
 
         if($accounts->isEmpty()) {
