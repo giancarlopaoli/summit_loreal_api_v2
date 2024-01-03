@@ -372,11 +372,11 @@ Route::middleware('encryptresponses')->group(function () {
                 Route::GET('indicators', [\App\Http\Controllers\Admin\Vendors\DashboardController::class, 'indicators']);
                 Route::PUT('{configuration}', [\App\Http\Controllers\Admin\Vendors\DashboardController::class, 'edit']);
 
-
                 Route::GET('spreads', [\App\Http\Controllers\Admin\Vendors\DashboardController::class, 'spreads']);
                 Route::PUT('spreads/{vendor_spread}', [\App\Http\Controllers\Admin\Vendors\DashboardController::class, 'edit_spread']);
                 Route::DELETE('spreads/{vendor_spread}', [\App\Http\Controllers\Admin\Vendors\DashboardController::class, 'delete_spread']);
                 Route::POST('spreads', [\App\Http\Controllers\Admin\Vendors\DashboardController::class, 'register_spreads']);
+                Route::DELETE('spreads', [\App\Http\Controllers\Admin\Vendors\DashboardController::class, 'delete_all_spreads']);
 
                 Route::GET('ranges', [\App\Http\Controllers\Admin\Vendors\DashboardController::class, 'ranges']);
                 Route::PUT('ranges/{vendor_range}', [\App\Http\Controllers\Admin\Vendors\DashboardController::class, 'edit_price']);
