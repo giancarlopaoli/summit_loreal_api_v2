@@ -145,6 +145,29 @@ class DashboardController extends Controller
         ]);
     }
 
+    public function delete_all_spreads(Request $request) {
+        $val = Validator::make($request->all(), [
+            'client_id' => 'required|exists:clients,id,type,PL',
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+        $client = Client::find($request->client_id)->vendor_ranges;
+        $vendor_spread = VendorSpread::wherein('vendor_range_id', $client->pluck('id'))->where('active', true);
+
+        $vendor_spread->update([
+            'active' => false,
+            "user_id" => auth()->id(),
+            "updated_at" => Carbon::now()
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'Spreads eliminados exitosamente'
+            ]
+        ]);
+    }
+
     //Register Vendor Spread
     public function register_spreads(Request $request) {
         $val = Validator::make($request->all(), [
