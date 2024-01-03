@@ -72,6 +72,11 @@ class DashboardController extends Controller
                 ->orderByDesc('created_at')
                 ->get();
 
+                return response()->json([
+            'success' => true,
+            'data' => $data
+        ]);
+
             if(count($data) == 0){
                 $data = ExchangeRate::select('created_at')
                     ->selectRaw('(compra + venta)/2 as tipodecambio')
