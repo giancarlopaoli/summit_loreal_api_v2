@@ -139,4 +139,11 @@ class AuthController extends Controller
             ]
         ]);
     }
+
+    public function prueba() {
+
+        return response()->json([
+            'success' => true,
+        ]);
+    }
 }
