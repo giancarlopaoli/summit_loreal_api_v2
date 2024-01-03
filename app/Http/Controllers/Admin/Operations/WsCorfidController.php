@@ -558,7 +558,7 @@ class WsCorfidController extends Controller
         // Rep Legal
         foreach ($representatives as $key => $value) {
             $repr = array(
-                "tdocu01" => 1,($value->document_type_id == 1) ? 6 : ($value->document_type_id == 2 ? 1 : ($value->document_type_id == 3 ? 2 : ($value->document_type_id == 4 ? 9 : ($value->document_type_id == 9 ? 5 : ($value->document_type_id == 10 ? 8 : ($value->document_type_id == 11 ? 2 : 4)))))),
+                "tdocu01" => ($value->document_type_id == 1) ? 6 : ($value->document_type_id == 2 ? 1 : ($value->document_type_id == 3 ? 2 : ($value->document_type_id == 4 ? 9 : ($value->document_type_id == 9 ? 5 : ($value->document_type_id == 10 ? 8 : ($value->document_type_id == 11 ? 2 : 4)))))),
                 "ndocu01" => $value->document_number,
                 "nombr01" => $value->names,
                 "apate01" => $value->last_name,
@@ -607,7 +607,7 @@ class WsCorfidController extends Controller
         }
 
         ############### Envio servicio a Corfid ########################
-        //$corfid = Http::withHeaders(['Authorization' => 'Basic '.env('TOKEN_WSCORFID')])->post(env('URL_WSCORFID').'/fintechWS/WSCFDADM-01', $params);
+        $corfid = Http::withHeaders(['Authorization' => 'Basic '.env('TOKEN_WSCORFID')])->post(env('URL_WSCORFID').'/fintechWS/WSCFDADM-01', $params);
 
         $rpta_json = json_decode($corfid);
 
