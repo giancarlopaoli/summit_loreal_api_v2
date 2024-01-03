@@ -30,13 +30,40 @@ class ClientsController extends Controller
         $clients = Client::select('id','customer_type','document_number','client_status_id','registered_at','executive_id')
             ->selectRaw("if(customer_type ='PN',CONCAT(name,' ',last_name, ' ',mothers_name),name) as client_name")
             ->with('status:id,name')
-            ->with('executive:id,type')
-            ->with('executive.user:id,name,last_name,email,phone')
+            ->with('executive:id,type','executive.user:id,name,last_name,email,phone')
             ->where('executive_id', auth()->id());
 
         if(isset($request->customer_type)) $clients = $clients->where('customer_type', $request->customer_type);
 
-        if($request->company_name != "") $clients = $clients->whereRaw("CONCAT(name,' ',last_name,' ',mothers_name) like "."'%"."$request->company_name"."%'");
+        if($request->company_name != "") $clients = $clients->whereRaw("CONCAT(name,' ',last_name,' ',mothers_name) like "."'%"."$request->company_name"."%'" . "or name like "."'%"."$request->company_name"."%'");
+
+        if($request->document_number != "")  $clients = $clients->where('document_number', 'like', "%".$request->document_number."%");
+
+        $clients = $clients->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'clients' => $clients
+            ]
+        ]);
+    }
+
+    public function clients_base(Request $request) {
+        $val = Validator::make($request->all(), [
+            'customer_type' => 'required|in:PN,PJ'
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+        $clients = Client::select('id','customer_type','document_number','client_status_id','registered_at','executive_id')
+            ->selectRaw("if(customer_type ='PN',CONCAT(name,' ',last_name, ' ',mothers_name),name) as client_name")
+            ->selectRaw(" (select count(*) from operations op where op.client_id = clients.id and op.operation_status_id in (6,7,8)) as num_operations") 
+            ->with('status:id,name')
+            ->with('executive:id,type','executive.user:id,name,last_name,email,phone');
+
+        if(isset($request->customer_type)) $clients = $clients->where('customer_type', $request->customer_type);
+
+        if($request->company_name != "") $clients = $clients->whereRaw("CONCAT(name,' ',last_name,' ',mothers_name) like "."'%"."$request->company_name"."%'" . "or name like "."'%"."$request->company_name"."%'");
 
         if($request->document_number != "")  $clients = $clients->where('document_number', 'like', "%".$request->document_number."%");
 

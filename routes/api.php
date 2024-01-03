@@ -454,6 +454,7 @@ Route::middleware('encryptresponses')->group(function () {
             Route::prefix('clients')->group(function () {
 
                 Route::GET('', [\App\Http\Controllers\Admin\Executives\ClientsController::class, 'list']);
+                Route::GET('base', [\App\Http\Controllers\Admin\Executives\ClientsController::class, 'clients_base']);
                 Route::GET('tracking-forms', [\App\Http\Controllers\Admin\Executives\LeadsController::class, 'tracking_forms']);
                 Route::GET('tracking-statuses', [\App\Http\Controllers\Admin\Executives\LeadsController::class, 'tracking_statuses']);
                 Route::GET('financial-vendors', [\App\Http\Controllers\Admin\Executives\ClientsController::class, 'vendors']);
