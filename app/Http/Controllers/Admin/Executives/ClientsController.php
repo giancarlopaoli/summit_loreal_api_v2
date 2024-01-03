@@ -57,7 +57,7 @@ class ClientsController extends Controller
 
         $clients = Client::select('id','customer_type','document_number','client_status_id','registered_at','executive_id')
             ->selectRaw("if(customer_type ='PN',CONCAT(name,' ',last_name, ' ',mothers_name),name) as client_name")
-            ->selectRaw(" (select count(*) from operations op where op.client_id = clients.id and op.operation_status_id in (6,7,8)) as num_operations") 
+            ->selectRaw(" (select operation_date from operations op where op.client_id = clients.id and op.operation_status_id in (6,7,8) order by operation_date desc limit 1) as last_operation") 
             ->with('status:id,name')
             ->with('executive:id,type','executive.user:id,name,last_name,email,phone');
 
