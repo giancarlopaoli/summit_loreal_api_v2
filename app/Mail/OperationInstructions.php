@@ -99,6 +99,7 @@ class OperationInstructions extends Mailable
 
         return $this
             ->subject('BILLEX | Instrucciones de la Operación')
+            ->to($operation->client->email)
             ->to($operation->user->email)
             ->cc($mail_executive)
             ->cc($emails)
