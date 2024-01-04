@@ -47,7 +47,11 @@ class MyOperationsController extends Controller
             ], 404);
          }
 
-        $ops = $client->operations()->whereIn('operation_status_id', $status)
+        $ops = $client->operations()->select('id','client_id','code','class','type','user_id','use_escrow_account','amount','currency_id','exchange_rate','comission_amount','igv','operation_status_id','operation_date','funds_confirmation_date','deposit_date','spread','comission_spread','canceled_at')
+            ->selectRaw("if(type='Compra', round(exchange_rate + comission_spread/10000,4),
+                if(type='Venta', round(exchange_rate - comission_spread/10000,4),
+                round(exchange_rate + comission_spread/10000,4))) as final_exchange_rate")
+            ->whereIn('operation_status_id', $status)
             ->orderByDesc('operation_date')
             ->get();
 

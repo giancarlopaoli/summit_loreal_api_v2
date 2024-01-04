@@ -44,6 +44,8 @@ class NegotiatedOperationController extends Controller
             ]);
         }
 
+        $configurations = new Configuration();
+
         $client = Client::find($request->client_id);
         $client_id = $client->id;
 
@@ -127,7 +129,7 @@ class NegotiatedOperationController extends Controller
                 'igv' => $igv,
                 'final_mount' => $final_amount,
                 'final_exchange_rate' => $final_exchange_rate,
-                'save' => round($amount * (120/10000) , 2)
+                'save' => round($amount * (($configurations->get_value('PIPSAVE')*1.0)/10000) , 2)
             ];
 
             Quotation::create([
@@ -216,7 +218,7 @@ class NegotiatedOperationController extends Controller
             'igv' => $igv,
             'final_mount' => $final_amount,
             'final_exchange_rate' => $final_exchange_rate,
-            'save' => round($amount * (120/10000) , 2)
+            'save' => round($amount * (($configurations->get_value('PIPSAVE')*1.0)/10000) , 2)
         ];
 
         Quotation::create([

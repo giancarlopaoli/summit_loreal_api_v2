@@ -72,6 +72,8 @@ class InmediateOperationController extends Controller
             ]);
         }
 
+        $configurations = new Configuration();
+
         $client = Client::find($request->client_id);
         $client_id = $client->id;
 
@@ -266,7 +268,7 @@ class InmediateOperationController extends Controller
                 'coupon_code' => $coupon?->code,
                 'coupon_value' => isset($coupon) ? ($coupon?->type == CouponType::Comision) ? $coupon?->value : round($old_comission_spread*$coupon?->value/100,2) : null,
                 'special_exchange_rate_id' => !is_null($special_exchange_rate) ? $special_exchange_rate->id : null,
-                'save' => round($amount * (20/10000) , 2)
+                'save' => round($amount * (($configurations->get_value('PIPSAVE')*1.0)/10000) , 2)
             ];
 
             if(!is_null(auth()->id())){
@@ -361,7 +363,7 @@ class InmediateOperationController extends Controller
             'coupon_code' => $coupon?->code,
             'coupon_value' => $coupon_value,
             'special_exchange_rate_id' => !is_null($special_exchange_rate) ? $special_exchange_rate->id : null,
-            'save' => round($amount * (20/10000) , 2)
+            'save' => round($amount * (($configurations->get_value('PIPSAVE')*1.0)/10000) , 2)
         ];
 
         if(!is_null(auth()->id())){
