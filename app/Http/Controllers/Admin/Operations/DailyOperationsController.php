@@ -679,7 +679,8 @@ class DailyOperationsController extends Controller
         }
 
         $client_name = $operation->client->client_full_name;
-
+        $executive_email = (!is_null($operation->executive)) ? $operation->executive->email : null;
+        
         try{
 
             $data = array(
@@ -692,9 +693,9 @@ class DailyOperationsController extends Controller
                 "cliente_numero_de_documento"       => $operation->client->document_number,
                 "cliente_denominacion"              => ucfirst($client_name),
                 "cliente_direccion"                 => $operation->client->address,
-                "cliente_email"                     => env('MAIL_OPS'),
-                "cliente_email_1"                   => null,
-                "cliente_email_2"                   => null,
+                "cliente_email"                     => $operation->client->email,
+                "cliente_email_1"                   => $executive_email,
+                "cliente_email_2"                   => env('MAIL_OPS'),
                 "fecha_de_emision"                  => Carbon::now()->format('d-m-Y'),
                 "fecha_de_vencimiento"              => Carbon::now()->format('d-m-Y'),
                 "moneda"                            => ($operation->type == 'Interbancaria') ? $operation->currency_id : 1,

@@ -221,6 +221,11 @@ Route::middleware('encryptresponses')->group(function () {
             Route::PUT('operation-analysts', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'analyst_status']);
             Route::GET('operation-analyst-summary', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'operation_analyst_summary']);
 
+            ########## Tiempos de Atención #############
+            Route::prefix('times')->group(function () {
+                Route::GET('daily-times', [\App\Http\Controllers\Admin\Operations\OperationsTimesController::class, 'daily_times']);
+            });
+            
             ########## WS CORFID  #############
             Route::prefix('wscorfid')->group(function () {
                 Route::POST('register-operation/{operation}', [\App\Http\Controllers\Admin\Operations\WsCorfidController::class, 'register_operation']);
