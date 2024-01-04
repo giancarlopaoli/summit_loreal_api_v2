@@ -42,7 +42,7 @@ class NewInmediateOperation extends Mailable
             ->to($operation->user->email)
             ->cc($mail_executive)
             ->cc(env('MAIL_OPS'))
-            ->bcc(env('MAIL_TI'))
+            //->bcc(env('MAIL_TI'))
             ->view('new_inmediate_operation')
             ->with([
                 'name' => $operation->client->customer_type == 'PJ' ? $operation->client->name : $operation->client->name ." " . $operation->client->last_name . " " . $operation->client->mothers_name,
