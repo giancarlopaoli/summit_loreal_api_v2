@@ -679,8 +679,8 @@ class DailyOperationsController extends Controller
         }
 
         $client_name = $operation->client->client_full_name;
-        $executive_email = (!is_null($operation->executive)) ? $operation->executive->email : null;
-        
+        $executive_email = (!is_null($operation->executive)) ? $operation->executive->user->email : null;
+
         try{
 
             $data = array(
