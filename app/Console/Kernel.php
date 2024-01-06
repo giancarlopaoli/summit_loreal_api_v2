@@ -26,6 +26,15 @@ class Kernel extends ConsoleKernel
         // Deactivating vendor spreads at the end of the day
         $schedule->job(new Jobs\SpreadCloseMarket)
             ->weekdays()->at("18:30");
+
+        // Activating Operation Analysts
+        $schedule->job(new Jobs\ActivatingOperationAnalysts)
+            ->everyMinute();
+
+        // Deactivating Operation Analysts
+        $schedule->job(new Jobs\DesactivatingOperationAnalysts
+        )
+            ->everyMinute();
     }
 
     /**

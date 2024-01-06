@@ -501,12 +501,16 @@ class DailyOperationsController extends Controller
             $path = env('AWS_ENV').'/operations/';
 
             try {
-                $extension = strrpos($file->getClientOriginalName(), ".")? (Str::substr($file->getClientOriginalName(), strrpos($file->getClientOriginalName(), ".") , Str::length($file->getClientOriginalName()) -strrpos($file->getClientOriginalName(), ".") +1)): "";
+                $extension = strrpos($file->getClientOriginalName(), ".")? (Str::substr($file->getClientOriginalName(), strrpos($file->getClientOriginalName(), ".") + 1 , Str::length($file->getClientOriginalName()) -strrpos($file->getClientOriginalName(), "."))): "";
                 
                 $now = Carbon::now();
-                $filename = md5($now->toDateTimeString().$file->getClientOriginalName()).$extension;
+                $filename = md5($now->toDateTimeString().$file->getClientOriginalName()).".".$extension;
 
             } catch (\Exception $e) {
+                $filename = $file->getClientOriginalName();
+            }
+
+            if(!strrpos($filename, ".")){
                 $filename = $file->getClientOriginalName();
             }
 
@@ -574,11 +578,16 @@ class DailyOperationsController extends Controller
             $path = env('AWS_ENV').'/operations/';
 
             try {
-                $extension = strrpos($file->getClientOriginalName(), ".")? (Str::substr($file->getClientOriginalName(), strrpos($file->getClientOriginalName(), "."), Str::length($file->getClientOriginalName()) -strrpos($file->getClientOriginalName(), ".") +1)): "";
+                $extension = strrpos($file->getClientOriginalName(), ".")? (Str::substr($file->getClientOriginalName(), strrpos($file->getClientOriginalName(), ".") + 1 , Str::length($file->getClientOriginalName()) -strrpos($file->getClientOriginalName(), "."))): "";
                 
                 $now = Carbon::now();
-                $filename = md5($now->toDateTimeString().$file->getClientOriginalName()).$extension;
+                $filename = md5($now->toDateTimeString().$file->getClientOriginalName()).".".$extension;
+
             } catch (\Exception $e) {
+                $filename = $file->getClientOriginalName();
+            }
+
+            if(!strrpos($filename, ".")){
                 $filename = $file->getClientOriginalName();
             }
 
@@ -1024,11 +1033,16 @@ class DailyOperationsController extends Controller
                 $path = env('AWS_ENV').'/operations/';
 
                 try {
-                    $extension = strrpos($file->getClientOriginalName(), ".")? (Str::substr($file->getClientOriginalName(), strrpos($file->getClientOriginalName(), ".") , Str::length($file->getClientOriginalName()) -strrpos($file->getClientOriginalName(), ".") +1)): "";
+                    $extension = strrpos($file->getClientOriginalName(), ".")? (Str::substr($file->getClientOriginalName(), strrpos($file->getClientOriginalName(), ".") + 1 , Str::length($file->getClientOriginalName()) -strrpos($file->getClientOriginalName(), "."))): "";
                     
                     $now = Carbon::now();
-                    $filename = md5($now->toDateTimeString().$file->getClientOriginalName()).$extension;
+                    $filename = md5($now->toDateTimeString().$file->getClientOriginalName()).".".$extension;
+
                 } catch (\Exception $e) {
+                    $filename = $file->getClientOriginalName();
+                }
+
+                if(!strrpos($filename, ".")){
                     $filename = $file->getClientOriginalName();
                 }
 
