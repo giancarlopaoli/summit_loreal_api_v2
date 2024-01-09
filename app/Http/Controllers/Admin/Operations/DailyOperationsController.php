@@ -476,6 +476,15 @@ class DailyOperationsController extends Controller
             
         OperationHistory::create(["operation_id" => $operation->id,"user_id" => auth()->id(),"action" => "Fondos confirmados"]);
 
+        // Notificación Telegram
+        try {
+            $request['operation_id'] = $operation->id;
+            $consult = new TelegramNotificationsControllers();
+            $notification = $consult->confirm_funds_notification($request)->getData();
+        } catch (\Exception $e) {
+            logger('ERROR: notificación telegram: DailyOperationsController@confirm_funds', ["error" => $e]);
+        }
+
         return response()->json([
             'success' => true,
             'data' => [
@@ -542,7 +551,7 @@ class DailyOperationsController extends Controller
             // Notificación Telegram
             try {
                 $consult = new TelegramNotificationsControllers();
-                $notification = $consult->confirm_funds_notification($request)->getData();
+                $notification = $consult->client_voucher($request)->getData();
             } catch (\Exception $e) {
                 logger('ERROR: notificación telegram: DailyOperationsController@upload_voucher', ["error" => $e]);
             }
@@ -791,6 +800,15 @@ class DailyOperationsController extends Controller
 
                     OperationHistory::create(["operation_id" => $operation->id,"user_id" => auth()->id(),"action" => "Operación facturada"]);
 
+                    // Notificación Telegram
+                    try {
+                        $request['operation_id'] = $operation->id;
+                        $consult = new TelegramNotificationsControllers();
+                        $notification = $consult->client_deposit_confirmation($request)->getData();
+                    } catch (\Exception $e) {
+                        logger('ERROR: notificación telegram: DailyOperationsController@operation_sign', ["error" => $e]);
+                    }
+
                     return response()->json([
                         'success' => true,
                         'data' => [
@@ -966,6 +984,15 @@ class DailyOperationsController extends Controller
         }
 
         OperationHistory::create(["operation_id" => $operation->id,"user_id" => auth()->id(),"action" => "Firma enviada", "detail" => 'firma: ' . $request->sign]);
+
+        // Notificación Telegram
+        try {
+            $request['operation_id'] = $operation->id;
+            $consult = new TelegramNotificationsControllers();
+            $notification = $consult->sign_notification($request)->getData();
+        } catch (\Exception $e) {
+            logger('ERROR: notificación telegram: DailyOperationsController@operation_sign', ["error" => $e]);
+        }
 
         return response()->json([
             'success' => true,
