@@ -667,7 +667,7 @@ class WsCorfidController extends Controller
             "direc01" => $client->address,
             "idocu01" => (!is_null($client->profession_id)) ? $client->profession->id : null,
             "espep01" => $client->pep,
-            //"urldj01" => $url,
+            "urldj01" => $url,
             "idofo01" => $fondoscod,
             "paisd01" => "PE",
             "ubige01" => (!is_null($client->district_id)) ? $client->district->ubigeo : null,
@@ -686,7 +686,7 @@ class WsCorfidController extends Controller
         }
 
         ############### Envio servicio a Corfid ########################
-        //$corfid = Http::withHeaders(['Authorization' => 'Basic '.env('TOKEN_WSCORFID')])->post(env('URL_WSCORFID').'/fintechWS/WSCFDADM-01', $params);
+        $corfid = Http::withHeaders(['Authorization' => 'Basic '.env('TOKEN_WSCORFID')])->post(env('URL_WSCORFID').'/fintechWS/WSCFDADM-01', $params);
 
         $rpta_json = json_decode($corfid);
 

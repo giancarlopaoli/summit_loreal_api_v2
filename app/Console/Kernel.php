@@ -4,6 +4,8 @@ namespace App\Console;
 
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
+use App\Jobs;
+use App\Models\Configuration;
 
 class Kernel extends ConsoleKernel
 {
@@ -15,7 +17,24 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        // $schedule->command('inspire')->hourly();
+        $configurations = new Configuration();
+
+        // Deactivating vendor spreads at market close
+        $schedule->job(new Jobs\SpreadCloseMarket)
+            ->weekdays()->at($configurations->get_value('MARKETCLOSE'));
+
+        // Deactivating vendor spreads at the end of the day
+        $schedule->job(new Jobs\SpreadCloseMarket)
+            ->weekdays()->at("18:30");
+
+        // Activating Operation Analysts
+        $schedule->job(new Jobs\ActivatingOperationAnalysts)
+            ->everyMinute();
+
+        // Deactivating Operation Analysts
+        $schedule->job(new Jobs\DesactivatingOperationAnalysts
+        )
+            ->everyMinute();
     }
 
     /**

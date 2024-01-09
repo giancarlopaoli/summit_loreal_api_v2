@@ -648,7 +648,7 @@ class RegisterController extends Controller
                 try {
                     // Insertando cuentas bancarias
                     foreach ($request->accounts as $account) {
-                        $alias = Bank::where('id', $account['bank_id'])->first()->shortname .  ($account['currency_id'] == 1) ? " SOLES" : " USD";
+                        $alias = Bank::where('id', $account['bank_id'])->first()->shortname . " " . Currency::where('id', $account['currency_id'])->first()->name;
 
                         $insert = BankAccount::create([
                             'client_id' => $client_id,

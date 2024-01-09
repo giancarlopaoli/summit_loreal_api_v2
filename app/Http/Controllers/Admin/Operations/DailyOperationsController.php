@@ -476,6 +476,15 @@ class DailyOperationsController extends Controller
             
         OperationHistory::create(["operation_id" => $operation->id,"user_id" => auth()->id(),"action" => "Fondos confirmados"]);
 
+        // Notificación Telegram
+        try {
+            $request['operation_id'] = $operation->id;
+            $consult = new TelegramNotificationsControllers();
+            $notification = $consult->confirm_funds_notification($request)->getData();
+        } catch (\Exception $e) {
+            logger('ERROR: notificación telegram: DailyOperationsController@confirm_funds', ["error" => $e]);
+        }
+
         return response()->json([
             'success' => true,
             'data' => [
@@ -501,12 +510,16 @@ class DailyOperationsController extends Controller
             $path = env('AWS_ENV').'/operations/';
 
             try {
-                $extension = strrpos($file->getClientOriginalName(), ".")? (Str::substr($file->getClientOriginalName(), strrpos($file->getClientOriginalName(), ".") , Str::length($file->getClientOriginalName()) -strrpos($file->getClientOriginalName(), ".") +1)): "";
+                $extension = strrpos($file->getClientOriginalName(), ".")? (Str::substr($file->getClientOriginalName(), strrpos($file->getClientOriginalName(), ".") + 1 , Str::length($file->getClientOriginalName()) -strrpos($file->getClientOriginalName(), "."))): "";
                 
                 $now = Carbon::now();
-                $filename = md5($now->toDateTimeString().$file->getClientOriginalName()).$extension;
+                $filename = md5($now->toDateTimeString().$file->getClientOriginalName()).".".$extension;
 
             } catch (\Exception $e) {
+                $filename = $file->getClientOriginalName();
+            }
+
+            if(!strrpos($filename, ".")){
                 $filename = $file->getClientOriginalName();
             }
 
@@ -538,7 +551,7 @@ class DailyOperationsController extends Controller
             // Notificación Telegram
             try {
                 $consult = new TelegramNotificationsControllers();
-                $notification = $consult->confirm_funds_notification($request)->getData();
+                $notification = $consult->client_voucher($request)->getData();
             } catch (\Exception $e) {
                 logger('ERROR: notificación telegram: DailyOperationsController@upload_voucher', ["error" => $e]);
             }
@@ -574,11 +587,16 @@ class DailyOperationsController extends Controller
             $path = env('AWS_ENV').'/operations/';
 
             try {
-                $extension = strrpos($file->getClientOriginalName(), ".")? (Str::substr($file->getClientOriginalName(), strrpos($file->getClientOriginalName(), "."), Str::length($file->getClientOriginalName()) -strrpos($file->getClientOriginalName(), ".") +1)): "";
+                $extension = strrpos($file->getClientOriginalName(), ".")? (Str::substr($file->getClientOriginalName(), strrpos($file->getClientOriginalName(), ".") + 1 , Str::length($file->getClientOriginalName()) -strrpos($file->getClientOriginalName(), "."))): "";
                 
                 $now = Carbon::now();
-                $filename = md5($now->toDateTimeString().$file->getClientOriginalName()).$extension;
+                $filename = md5($now->toDateTimeString().$file->getClientOriginalName()).".".$extension;
+
             } catch (\Exception $e) {
+                $filename = $file->getClientOriginalName();
+            }
+
+            if(!strrpos($filename, ".")){
                 $filename = $file->getClientOriginalName();
             }
 
@@ -679,8 +697,8 @@ class DailyOperationsController extends Controller
         }
 
         $client_name = $operation->client->client_full_name;
-        $executive_email = (!is_null($operation->executive)) ? $operation->executive->email : null;
-        
+        $executive_email = (!is_null($operation->executive)) ? $operation->executive->user->email : null;
+
         try{
 
             $data = array(
@@ -781,6 +799,15 @@ class DailyOperationsController extends Controller
                     $operation->save();
 
                     OperationHistory::create(["operation_id" => $operation->id,"user_id" => auth()->id(),"action" => "Operación facturada"]);
+
+                    // Notificación Telegram
+                    try {
+                        $request['operation_id'] = $operation->id;
+                        $consult = new TelegramNotificationsControllers();
+                        $notification = $consult->client_deposit_confirmation($request)->getData();
+                    } catch (\Exception $e) {
+                        logger('ERROR: notificación telegram: DailyOperationsController@operation_sign', ["error" => $e]);
+                    }
 
                     return response()->json([
                         'success' => true,
@@ -958,6 +985,15 @@ class DailyOperationsController extends Controller
 
         OperationHistory::create(["operation_id" => $operation->id,"user_id" => auth()->id(),"action" => "Firma enviada", "detail" => 'firma: ' . $request->sign]);
 
+        // Notificación Telegram
+        try {
+            $request['operation_id'] = $operation->id;
+            $consult = new TelegramNotificationsControllers();
+            $notification = $consult->sign_notification($request)->getData();
+        } catch (\Exception $e) {
+            logger('ERROR: notificación telegram: DailyOperationsController@operation_sign', ["error" => $e]);
+        }
+
         return response()->json([
             'success' => true,
             'data' => [
@@ -1024,11 +1060,16 @@ class DailyOperationsController extends Controller
                 $path = env('AWS_ENV').'/operations/';
 
                 try {
-                    $extension = strrpos($file->getClientOriginalName(), ".")? (Str::substr($file->getClientOriginalName(), strrpos($file->getClientOriginalName(), ".") , Str::length($file->getClientOriginalName()) -strrpos($file->getClientOriginalName(), ".") +1)): "";
+                    $extension = strrpos($file->getClientOriginalName(), ".")? (Str::substr($file->getClientOriginalName(), strrpos($file->getClientOriginalName(), ".") + 1 , Str::length($file->getClientOriginalName()) -strrpos($file->getClientOriginalName(), "."))): "";
                     
                     $now = Carbon::now();
-                    $filename = md5($now->toDateTimeString().$file->getClientOriginalName()).$extension;
+                    $filename = md5($now->toDateTimeString().$file->getClientOriginalName()).".".$extension;
+
                 } catch (\Exception $e) {
+                    $filename = $file->getClientOriginalName();
+                }
+
+                if(!strrpos($filename, ".")){
                     $filename = $file->getClientOriginalName();
                 }
 
