@@ -500,16 +500,13 @@ class DailyOperationsController extends Controller
         ]);
         if($val->fails()) return response()->json($val->messages());
 
-        $consult = new TelegramNotificationsControllers();
-        $notification = $consult->new_operation_confirmation($request, $request->operation_id)->getData();
-
         logger('Archivo adjunto: DailyOperationsController@upload_voucher', ["operation_id" => $request->operation_id]);
 
         if($request->hasFile('file')){
             $file = $request->file('file');
             $path = env('AWS_ENV').'/operations/';
 
-            try {
+            /*try {
                 $extension = strrpos($file->getClientOriginalName(), ".")? (Str::substr($file->getClientOriginalName(), strrpos($file->getClientOriginalName(), ".") + 1 , Str::length($file->getClientOriginalName()) -strrpos($file->getClientOriginalName(), "."))): "";
                 
                 $now = Carbon::now();
@@ -521,15 +518,23 @@ class DailyOperationsController extends Controller
 
             if(!strrpos($filename, ".")){
                 $filename = $file->getClientOriginalName();
-            }
+            }*/
+
+            $filename = $file->getClientOriginalName();
 
             try {
                 $s3 = Storage::disk('s3')->putFileAs($path, $file, $filename);
 
-                // eliminando cualquier comprobante anterior
-                $delete = OperationDocument::where('operation_id', $request->operation_id)
-                    ->where('type', Enums\DocumentType::Comprobante)
-                    ->delete();
+                $operation = Operation::find($request->operation_id);
+
+                // Si es operación de Cliente se elimina comprobantes anteriores
+                if($operation->client->type == 'Cliente'){
+                    // eliminando cualquier comprobante anterior
+                    $delete = OperationDocument::where('operation_id', $request->operation_id)
+                        ->where('type', Enums\DocumentType::Comprobante)
+                        ->delete();
+                }
+
                 $insert = OperationDocument::create([
                     'operation_id' => $request->operation_id,
                     'type' => Enums\DocumentType::Comprobante,
@@ -586,7 +591,7 @@ class DailyOperationsController extends Controller
             $file = $request->file('file');
             $path = env('AWS_ENV').'/operations/';
 
-            try {
+            /*try {
                 $extension = strrpos($file->getClientOriginalName(), ".")? (Str::substr($file->getClientOriginalName(), strrpos($file->getClientOriginalName(), ".") + 1 , Str::length($file->getClientOriginalName()) -strrpos($file->getClientOriginalName(), "."))): "";
                 
                 $now = Carbon::now();
@@ -598,7 +603,9 @@ class DailyOperationsController extends Controller
 
             if(!strrpos($filename, ".")){
                 $filename = $file->getClientOriginalName();
-            }
+            }*/
+
+            $filename = $file->getClientOriginalName();
 
             try {
                 $s3 = Storage::disk('s3')->putFileAs($path, $file, $filename);
@@ -1059,7 +1066,7 @@ class DailyOperationsController extends Controller
                 $file = $request->file('file');
                 $path = env('AWS_ENV').'/operations/';
 
-                try {
+                /*try {
                     $extension = strrpos($file->getClientOriginalName(), ".")? (Str::substr($file->getClientOriginalName(), strrpos($file->getClientOriginalName(), ".") + 1 , Str::length($file->getClientOriginalName()) -strrpos($file->getClientOriginalName(), "."))): "";
                     
                     $now = Carbon::now();
@@ -1071,15 +1078,22 @@ class DailyOperationsController extends Controller
 
                 if(!strrpos($filename, ".")){
                     $filename = $file->getClientOriginalName();
-                }
+                }*/
+
+                $filename = $file->getClientOriginalName();
 
                 try {
                     $s3 = Storage::disk('s3')->putFileAs($path, $file, $filename);
 
-                    // eliminando cualquier comprobante anterior
-                    $delete = OperationDocument::where('operation_id', $operation->id)
-                        ->where('type', Enums\DocumentType::Comprobante)
-                        ->delete();
+                    // Si es operación de Cliente se elimina comprobantes anteriores
+                    if($operation->client->type == 'Cliente'){
+                        // eliminando cualquier comprobante anterior
+                        $delete = OperationDocument::where('operation_id', $operation->id)
+                            ->where('type', Enums\DocumentType::Comprobante)
+                            ->delete();ete();
+                    }
+
+                        
                     $insert = OperationDocument::create([
                         'operation_id' => $operation->id,
                         'type' => Enums\DocumentType::Comprobante,

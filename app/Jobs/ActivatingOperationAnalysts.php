@@ -36,13 +36,13 @@ class ActivatingOperationAnalysts implements ShouldQueue
     {
         //
         
-        $analysts = OperationsAnalyst::where("status", "Inactivo")->get();
+        $analysts = OperationsAnalyst::where("status", "Activo")->where("online", false)->get();
 
         foreach ($analysts as $key => $value) {
 
             if(Carbon::now()->format('H:i:00') == $value->start_time){
                 $value->update([
-                    "status" => "Activo",
+                    "online" => true,
                     "updated_at" => Carbon::now()
                 ]);
 

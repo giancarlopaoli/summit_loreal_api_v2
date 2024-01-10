@@ -35,13 +35,13 @@ class DesactivatingOperationAnalysts implements ShouldQueue
     public function handle()
     {
         //
-        $analysts = OperationsAnalyst::where("status", "Activo")->get();
+        $analysts = OperationsAnalyst::where("status", "Activo")->where("online", true)->get();
 
         foreach ($analysts as $key => $value) {
 
             if(Carbon::now()->format('H:i:00') == $value->end_time){
                 $value->update([
-                    "status" => "Inactivo",
+                    "online" => false,
                     "updated_at" => Carbon::now()
                 ]);
 
