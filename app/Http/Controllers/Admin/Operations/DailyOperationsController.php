@@ -506,7 +506,7 @@ class DailyOperationsController extends Controller
             $file = $request->file('file');
             $path = env('AWS_ENV').'/operations/';
 
-            try {
+            /*try {
                 $extension = strrpos($file->getClientOriginalName(), ".")? (Str::substr($file->getClientOriginalName(), strrpos($file->getClientOriginalName(), ".") + 1 , Str::length($file->getClientOriginalName()) -strrpos($file->getClientOriginalName(), "."))): "";
                 
                 $now = Carbon::now();
@@ -518,7 +518,9 @@ class DailyOperationsController extends Controller
 
             if(!strrpos($filename, ".")){
                 $filename = $file->getClientOriginalName();
-            }
+            }*/
+
+            $filename = $file->getClientOriginalName();
 
             try {
                 $s3 = Storage::disk('s3')->putFileAs($path, $file, $filename);
@@ -583,7 +585,7 @@ class DailyOperationsController extends Controller
             $file = $request->file('file');
             $path = env('AWS_ENV').'/operations/';
 
-            try {
+            /*try {
                 $extension = strrpos($file->getClientOriginalName(), ".")? (Str::substr($file->getClientOriginalName(), strrpos($file->getClientOriginalName(), ".") + 1 , Str::length($file->getClientOriginalName()) -strrpos($file->getClientOriginalName(), "."))): "";
                 
                 $now = Carbon::now();
@@ -595,7 +597,9 @@ class DailyOperationsController extends Controller
 
             if(!strrpos($filename, ".")){
                 $filename = $file->getClientOriginalName();
-            }
+            }*/
+
+            $filename = $file->getClientOriginalName();
 
             try {
                 $s3 = Storage::disk('s3')->putFileAs($path, $file, $filename);
@@ -1056,7 +1060,7 @@ class DailyOperationsController extends Controller
                 $file = $request->file('file');
                 $path = env('AWS_ENV').'/operations/';
 
-                try {
+                /*try {
                     $extension = strrpos($file->getClientOriginalName(), ".")? (Str::substr($file->getClientOriginalName(), strrpos($file->getClientOriginalName(), ".") + 1 , Str::length($file->getClientOriginalName()) -strrpos($file->getClientOriginalName(), "."))): "";
                     
                     $now = Carbon::now();
@@ -1068,7 +1072,9 @@ class DailyOperationsController extends Controller
 
                 if(!strrpos($filename, ".")){
                     $filename = $file->getClientOriginalName();
-                }
+                }*/
+
+                $filename = $file->getClientOriginalName();
 
                 try {
                     $s3 = Storage::disk('s3')->putFileAs($path, $file, $filename);
