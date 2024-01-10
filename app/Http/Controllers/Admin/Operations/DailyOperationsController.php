@@ -500,9 +500,6 @@ class DailyOperationsController extends Controller
         ]);
         if($val->fails()) return response()->json($val->messages());
 
-        $consult = new TelegramNotificationsControllers();
-        $notification = $consult->new_operation_confirmation($request, $request->operation_id)->getData();
-
         logger('Archivo adjunto: DailyOperationsController@upload_voucher', ["operation_id" => $request->operation_id]);
 
         if($request->hasFile('file')){
