@@ -37,10 +37,10 @@ class VendorInstructions extends Mailable
         $received_amount = ($this->operation->type == 'Venta') ? round($this->operation->amount * $this->operation->exchange_rate,2) - $this->operation->comission_amount - $this->operation->igv : (($this->operation->type == 'Venta') ? $this->operation->amount : round($this->operation->amount *(1 + $this->operation->spread/10000), 2 ));
 
         if($this->operation->use_escrow_account == 1){
-            $document = OperationDocument::where('operation_id', $this->operation->id)->where('type', Enums\DocumentType::Comprobante)->first();
+            $documents = OperationDocument::where('operation_id', $this->operation->id)->where('type', Enums\DocumentType::Comprobante)->get();
         }
         else{
-            $document = OperationDocument::where('operation_id', $this->operation->matched_operation[0]->id)->where('type', Enums\DocumentType::Comprobante)->first();
+            $documents = OperationDocument::where('operation_id', $this->operation->matched_operation[0]->id)->where('type', Enums\DocumentType::Comprobante)->get();
         }
 
         if($this->operation->use_escrow_account){
@@ -52,7 +52,7 @@ class VendorInstructions extends Mailable
 
         $emails = (is_null($this->operation->client->accountable_email) || $this->operation->client->accountable_email == "") ? env('MAIL_OPS') : array_merge(explode(",", $this->operation->client->accountable_email), array(env('MAIL_OPS')));
 
-        return $this
+        $email = $this
             ->subject('BILLEX | CONSTANCIA DE LA TRANSFERENCIA - ' . $this->operation->type . ' ' . $this->operation->amount . ' - OP ' . $this->operation->code)
             ->to($this->operation->client->email)
             ->cc($this->operation->user->email)
@@ -60,9 +60,7 @@ class VendorInstructions extends Mailable
             ->cc(env('MAIL_OPS'))
             //->bcc(env('MAIL_TI'))
             ->view('vendor_instructions')
-            ->attach(env('APP_URL') . "/api/res/download-document-operation?operation_id=".$document->operation_id."&document_id=".$document->id, [
-                'as' => $document->document_name
-            ])
+            
             ->with([
                 'name' => $this->operation->client->name,
                 'codigo' => $this->operation->code,
@@ -76,5 +74,16 @@ class VendorInstructions extends Mailable
                 "bank_accounts" => $this->operation->bank_accounts,
                 "escrow_accounts" => $deposit_account
             ]);
+
+            foreach ($documents as $document) {
+                if($document->type == 'Comprobante'){
+                    $email->attach(env('APP_URL') . "/api/res/download-document-operation?operation_id=".$document->operation_id."&document_id=".$document->id, [
+                        'as' => $document->document_name
+                    ]);
+                }
+            }
+
+
+        return $email;
     }
 }

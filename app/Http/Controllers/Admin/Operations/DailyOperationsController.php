@@ -525,10 +525,16 @@ class DailyOperationsController extends Controller
             try {
                 $s3 = Storage::disk('s3')->putFileAs($path, $file, $filename);
 
-                // eliminando cualquier comprobante anterior
-                $delete = OperationDocument::where('operation_id', $request->operation_id)
-                    ->where('type', Enums\DocumentType::Comprobante)
-                    ->delete();
+                $operation = Operation::find($request->operation_id);
+
+                // Si es operación de Cliente se elimina comprobantes anteriores
+                if($operation->client->type == 'Cliente'){
+                    // eliminando cualquier comprobante anterior
+                    $delete = OperationDocument::where('operation_id', $request->operation_id)
+                        ->where('type', Enums\DocumentType::Comprobante)
+                        ->delete();
+                }
+
                 $insert = OperationDocument::create([
                     'operation_id' => $request->operation_id,
                     'type' => Enums\DocumentType::Comprobante,
@@ -1079,10 +1085,15 @@ class DailyOperationsController extends Controller
                 try {
                     $s3 = Storage::disk('s3')->putFileAs($path, $file, $filename);
 
-                    // eliminando cualquier comprobante anterior
-                    $delete = OperationDocument::where('operation_id', $operation->id)
-                        ->where('type', Enums\DocumentType::Comprobante)
-                        ->delete();
+                    // Si es operación de Cliente se elimina comprobantes anteriores
+                    if($operation->client->type == 'Cliente'){
+                        // eliminando cualquier comprobante anterior
+                        $delete = OperationDocument::where('operation_id', $operation->id)
+                            ->where('type', Enums\DocumentType::Comprobante)
+                            ->delete();ete();
+                    }
+
+                        
                     $insert = OperationDocument::create([
                         'operation_id' => $operation->id,
                         'type' => Enums\DocumentType::Comprobante,
