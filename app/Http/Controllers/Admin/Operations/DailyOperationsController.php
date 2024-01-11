@@ -460,7 +460,7 @@ class DailyOperationsController extends Controller
                     $operation->matches[0]->operation_status_id = OperationStatus::where('name', 'Fondos enviados')->first()->id;
                     $operation->matches[0]->save();
 
-                    DailyOperationsController::vendor_instruction($request, Operation::where('id', $operation->matches[0]->id)->first());
+                    /*DailyOperationsController::vendor_instruction($request, Operation::where('id', $operation->matches[0]->id)->first());*/
                 }
                 else{
                     return response()->json([
@@ -1041,11 +1041,7 @@ class DailyOperationsController extends Controller
         ]);
     }
 
-    public function vendor_instruction(Request $request, Operation $operation) {
-        /*return response()->json([
-                    'success' => 'test',
-                    'object' => $operation->vendor_bank_accounts->load('client:id,name,last_name,mothers_name,customer_type'),
-                ]);*/
+    public function voucher_vendor_instruction(Request $request, Operation $operation) {
 
         if($operation->use_escrow_account == 1){
             $val = Validator::make($request->all(), [
@@ -1066,34 +1062,11 @@ class DailyOperationsController extends Controller
                 $file = $request->file('file');
                 $path = env('AWS_ENV').'/operations/';
 
-                /*try {
-                    $extension = strrpos($file->getClientOriginalName(), ".")? (Str::substr($file->getClientOriginalName(), strrpos($file->getClientOriginalName(), ".") + 1 , Str::length($file->getClientOriginalName()) -strrpos($file->getClientOriginalName(), "."))): "";
-                    
-                    $now = Carbon::now();
-                    $filename = md5($now->toDateTimeString().$file->getClientOriginalName()).".".$extension;
-
-                } catch (\Exception $e) {
-                    $filename = $file->getClientOriginalName();
-                }
-
-                if(!strrpos($filename, ".")){
-                    $filename = $file->getClientOriginalName();
-                }*/
-
                 $filename = $file->getClientOriginalName();
 
                 try {
                     $s3 = Storage::disk('s3')->putFileAs($path, $file, $filename);
-
-                    // Si es operación de Cliente se elimina comprobantes anteriores
-                    if($operation->client->type == 'Cliente'){
-                        // eliminando cualquier comprobante anterior
-                        $delete = OperationDocument::where('operation_id', $operation->id)
-                            ->where('type', Enums\DocumentType::Comprobante)
-                            ->delete();ete();
-                    }
-
-                        
+ 
                     $insert = OperationDocument::create([
                         'operation_id' => $operation->id,
                         'type' => Enums\DocumentType::Comprobante,
@@ -1102,7 +1075,7 @@ class DailyOperationsController extends Controller
 
                 } catch (\Exception $e) {
                     // Registrando el el log los datos ingresados
-                    logger('ERROR: archivo adjunto: DailyOperationsController@upload_voucher', ["error" => $e]);
+                    logger('ERROR: archivo adjunto: DailyOperationsController@voucher_vendor_instruction', ["error" => $e]);
 
                     return response()->json([
                         'success' => false,
@@ -1131,12 +1104,38 @@ class DailyOperationsController extends Controller
             }
         }
 
-        // Enviar Correo()
-        $rpta_mail = Mail::send(new VendorInstructions($operation));
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'comprobante de instrucciones subido exitosamente',
+            ]
+        ]);
+    }
 
-        if(is_null($operation->mail_instructions)){
-            $operation->mail_instructions = Carbon::now();
-            $operation->save();
+    public function vendor_instruction(Request $request, Operation $operation) {
+
+        try {
+            // Enviar Correo()
+            $rpta_mail = Mail::send(new VendorInstructions($operation));
+
+            if(is_null($operation->mail_instructions)){
+                $operation->mail_instructions = Carbon::now();
+                $operation->save();
+            }
+
+        } catch (\Exception $e) {
+            // Registrando el el log los datos ingresados
+            logger('ERROR: envio correo PL: DailyOperationsController@vendor_instruction', ["error" => $e]);
+
+            // eliminando cualquier comprobante anterior
+            $delete = OperationDocument::where('operation_id', $operation->id)
+                ->where('type', Enums\DocumentType::Comprobante)
+                ->delete();
+
+            return response()->json([
+                'success' => false,
+                'errors' => 'Error al enviar correo',
+            ]);
         }
 
         OperationHistory::create(["operation_id" => $operation->id,"user_id" => auth()->id(),"action" => "Correo de instrucciones PL enviado"]);
