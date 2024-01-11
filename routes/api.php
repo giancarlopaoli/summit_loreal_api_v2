@@ -225,7 +225,7 @@ Route::middleware('encryptresponses')->group(function () {
             Route::prefix('times')->group(function () {
                 Route::GET('daily-times', [\App\Http\Controllers\Admin\Operations\OperationsTimesController::class, 'daily_times']);
             });
-            
+
             ########## WS CORFID  #############
             Route::prefix('wscorfid')->group(function () {
                 Route::POST('register-operation/{operation}', [\App\Http\Controllers\Admin\Operations\WsCorfidController::class, 'register_operation']);
@@ -488,6 +488,16 @@ Route::middleware('encryptresponses')->group(function () {
             });
 
             Route::GET('exchange-rate', [\App\Http\Controllers\Admin\Operations\ExchangeRateController::class, 'list']);
+
+        });
+
+        ########## Módulo de Supervidores  #############
+        Route::prefix('supervisors')->middleware('role:supervisores')->group(function () {
+            
+            ########## dashboard  #############
+            Route::prefix('dashboard')->group(function () {
+                Route::GET('', [\App\Http\Controllers\Admin\Supervisors\DashboardController::class, 'dashboard']);
+            });
 
         });
 
