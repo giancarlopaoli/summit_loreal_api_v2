@@ -32,9 +32,16 @@ class Kernel extends ConsoleKernel
             ->everyMinute();
 
         // Deactivating Operation Analysts
-        $schedule->job(new Jobs\DesactivatingOperationAnalysts
-        )
+        $schedule->job(new Jobs\DesactivatingOperationAnalysts)
             ->everyMinute();
+
+        // Pending Operations Send WS Corfid
+        $schedule->job(new Jobs\WsCorfidOperations)
+            ->everyFifteenMinutes();
+
+        // Pending Detractions
+        $schedule->job(new Jobs\PendingDetractions)
+            ->hourly();
     }
 
     /**

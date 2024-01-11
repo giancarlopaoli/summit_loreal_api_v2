@@ -181,7 +181,7 @@
             <tr>
               <td><img src="{{$escrow_account->bank->image}}" width="30" style="display: {{$show_image_counterpart}}"> {{$escrow_account->bank->shortname}}</td>
               <td>Nro: {{$escrow_account->account_number}} <br>CCI: {{$escrow_account->cci_number}}</td>
-              <td>{{ $sent_currency }}{{number_format($escrow_account->pivot->amount,2)}}</td>
+              <td>{{ $received_currency }}{{number_format($escrow_account->pivot->amount,2)}}</td>
             </tr>
             @endforeach
             </table></td></tr>
@@ -191,7 +191,7 @@
             <tr>
               <td><img src="{{$bank_account->bank->image}}" width="30" style="display: {{$show_image_counterpart}}"> {{$bank_account->bank->shortname}}</td>
               <td>Nro: {{$bank_account->account_number}} <br>CCI: {{$bank_account->cci_number}}</td>
-              <td>{{ $received_currency }}{{number_format($bank_account->pivot->amount,2)}}</td>
+              <td>{{ $sent_currency }}{{number_format($bank_account->pivot->amount,2)}}</td>
             </tr>
             @endforeach
             </table></td></tr>
