@@ -32,6 +32,9 @@ Route::middleware('encryptresponses')->group(function () {
     Route::POST('res/calculadora', [\App\Http\Controllers\Admin\DatatecController::class, 'calculadora']);
     Route::GET('res/tcambio', [\App\Http\Controllers\Admin\DatatecController::class, 'tipocambio']);
 
+    /*Route::middleware('res/corfidws')->POST('confirmop', 'CRM\OperationsController@confirmacionOperacionCorfid');
+    Route::POST('res/confirmop', [\App\Http\Controllers\Admin\DatatecController::class, 'calculadora']);*/
+
     Route::POST('produccion', [\App\Http\Controllers\Admin\AdminController::class, 'pase_a_produccion']);
 
     Route::middleware('auth:sanctum','role:cliente','validate_client_user')->group(function () {
