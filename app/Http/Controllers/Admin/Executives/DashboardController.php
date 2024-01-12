@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
-    // Validating if the ruc exists
+    // Dashboard
     public function dashboard(Request $request) {
 
         $executive_id = (isset($request->executive_id)) ? $request->executive_id : auth()->id();

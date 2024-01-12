@@ -16,23 +16,34 @@ class DashboardController extends Controller
     // Dashboard
     public function dashboard(Request $request) {
 
-        $operations = Operation::where('operation_date', '>=', '2024-01-01')
-            ->whereIn('operation_status_id', OperationStatus::whereIn('name', ['Contravalor recaudado','Facturado', 'Finalizado sin factura'])->get()->pluck('id'))
-            ->where('detraction_paid', false)
-            ->whereHas('client', function (Builder $query) {
-                    $query->where('type', 'Cliente');
-                })
-            ->where(function ($query) {
-                    $query->where('corfid_id', null)
-                        ->orwhere('corfid_id', '!=' , 1);
-                })
+        $indicators = DB::table('monthly_operations_view')
+            ->selectRaw("sum(amount) as total_volume, sum(operations_number) as num_operations, round(sum(comission_amount),2) as total_comissions")
+            ->selectRaw("(select count(distinct client_id) from operations_view where type in ('Compra','Venta')) as unique_clients")
+            ->whereIn("type", ['Compra','Venta'])
+            ->first();
+
+        $graphs = DB::table('monthly_operations_view')
+            ->selectRaw("year, sum(amount) as volume, sum(operations_number) as num_operations, round(sum(comission_amount),2) as comissions")
+            ->selectRaw("(select count(distinct client_id) from operations_view where type in ('Compra','Venta') and year(operation_date) = year) as unique_clients")
+            ->whereIn("type", ['Compra','Venta'])
+            ->groupByRaw("year")
+            ->orderByRaw('year desc')
+            ->limit(7)
             ->get();
 
         return response()->json([
             'success' => true,
             'data' => [ 
-                $operations
-
+                'global_indicators' => [
+                    $indicators
+                ],
+                'ghaphs' => [
+                    'year' => $graphs->pluck('year'),
+                    'volume' => $graphs->pluck('volume'),
+                    'comissions' => $graphs->pluck('comissions'),
+                    'num_operations' => $graphs->pluck('num_operations'),
+                    'unique_clients' => $graphs->pluck('unique_clients'),
+                ]
             ]
         ]);
     }

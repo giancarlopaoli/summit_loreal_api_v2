@@ -4,12 +4,14 @@ namespace App\Http\Controllers\Admin\Operations;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 use App\Models\Client;
 use App\Models\Operation;
 use App\Models\OperationDocument;
 use App\Models\Representative;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
+use Carbon\Carbon;
 
 class WsCorfidController extends Controller
 {
@@ -306,30 +308,20 @@ class WsCorfidController extends Controller
         $params["listadoDeposito"] = $deposit_list;
         $params["listadoRetribucion"] = $retribution_list;
 
-        return response()->json([
-            'success' => true,
-            'data' => $params
-        ]);
-
-        /*
         $corfid = Http::withHeaders(['Authorization' => 'Basic '.env('TOKEN_WSCORFID')])->post(env('URL_WSCORFID').'/fintechWSOperacion/WSCFDOPE-01', $params);
 
         $rpta_json = json_decode($corfid);
 
         if(is_object($rpta_json)){
             if(isset($rpta_json->{'WSr-resultado'})){
-                $opupdated = DB::table('Operacion')->where('OperacionId', $operacion->OperacionId)->update([
-                    'EstadoCorfidId' => $rpta_json->{'WSr-resultado'},
-                    'MensajeCorfi' => $rpta_json->{'WSr-Mensaje'},
-                    //'EstadoId' => 'FSF'
-                ]);
+
+                $operation->corfid_id = $rpta_json->{'WSr-resultado'};
+                $operation->corfid_message = $rpta_json->{'WSr-Mensaje'};
+                $operation->save();
             }
         }
-
-        return response()->json([
-            'success' => true,
-            'data' => $rpta_json
-        ]);*/
+    
+        return response()->json($rpta_json);
     }
 
 
@@ -699,7 +691,63 @@ class WsCorfidController extends Controller
             }
         }
 
-
         return response()->json($rpta_json);
+    }
+
+    // API confirmación de Operación por parte de Corfid
+    public function confirm_operation_corfid(Request $request) {
+        $val = Validator::make($request->all(), [
+            'nref01' => 'required|string',
+            'estado' => 'required|in:APROBADO,ANULADO,EXTORNADO',
+            'mensaje' => 'nullable|string'
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+        try {
+            $operation = Operation::where('code', $request->nref01)->get();
+
+            if($operation->count() == 0){
+                return response()->json([
+                    'success' => false,
+                    'errortype' => 1,
+                    'fecha' => Carbon::now()->toDateTimeString(),
+                    'msg' => "No se encontró la operación con código ".$request->nref01
+                ]);
+            }
+
+            $operation = $operation->first();
+
+            if($request->estado == "APROBADO"){
+                $operation->corfid_id = 1;
+                $operation->corfid_message = 'Operación aprobada';
+                $operation->save();
+            }
+            elseif($request->estado == "ANULADO") {
+                $operation->corfid_id = 2;
+                $operation->corfid_message = (!is_null($request->mensaje)) ? $request->mensaje : 'Operación anulada';
+                $operation->save();
+            }
+            elseif($request->estado == "EXTORNADO") {
+                $operation->corfid_id = 3;
+                $operation->corfid_message = (!is_null($request->mensaje)) ? $request->mensaje : 'Operación extornada';
+                $operation->save();
+            }
+
+        } catch (\Exception $e) {
+            logger('Confirmación de operación Corfid: confirm_operation_corfid@WsCorfidController', ["error" => $e]);
+
+            return response()->json([
+                'success' => false,
+                'errortype' => 99,
+                'fecha' => Carbon::now()->toDateTimeString(),
+                'msg' => "Se encontró un error al tratar de confirmar la operación "
+            ]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'fecha' => Carbon::now()->toDateTimeString(),
+            'msg' => "Operación " .$request->estado . " exitosamente"
+        ]);
     }
 }

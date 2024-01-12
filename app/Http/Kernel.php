@@ -76,5 +76,7 @@ class Kernel extends HttpKernel
         'permission' => \Spatie\Permission\Middlewares\PermissionMiddleware::class,
         'role_or_permission' => \Spatie\Permission\Middlewares\RoleOrPermissionMiddleware::class,
         'validate_client_user' => \App\Http\Middleware\ValidateClientUser::class,
+        'corfidws' => \App\Http\Middleware\CorfidWS::class,
+        
     ];
 }
