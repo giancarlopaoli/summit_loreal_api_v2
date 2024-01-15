@@ -26,7 +26,7 @@ class EncryptResponses
             }
         } else {
 
-            logger('ROUTE LOG', ["data" => request()->fullUrl(), "ip" => request()->ip()]);
+            //logger('ROUTE LOG', ["data" => request()->fullUrl(), "ip" => request()->ip()]);
 
             return $response; //descomentar para pruebas de desarrollo
         }
