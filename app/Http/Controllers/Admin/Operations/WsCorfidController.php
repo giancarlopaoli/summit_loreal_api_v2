@@ -591,7 +591,7 @@ class WsCorfidController extends Controller
         $params["listadoAccionista"] = $listadoAccionista;
         $params["listadoRepresentantes"] = $listadoRepresentantes;
 
-        if($request->json)){
+        if($request->json){
             return response()->json([
                 'success' => true,
                 'params' => $params,
