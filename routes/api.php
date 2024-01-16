@@ -32,7 +32,7 @@ Route::middleware('encryptresponses')->group(function () {
     Route::POST('res/calculadora', [\App\Http\Controllers\Admin\DatatecController::class, 'calculadora']);
     Route::GET('res/tcambio', [\App\Http\Controllers\Admin\DatatecController::class, 'tipocambio']);
 
-    Route::POST('res/confirmop', [\App\Http\Controllers\Admin\Operations\WsCorfidController::class, 'confirm_operation_corfid'])->middleware('corfidws');
+    Route::POST('res/confirmop', [\App\Http\Controllers\Admin\Operations\WsCorfidController::class, 'confirm_operation_corfid']);//->middleware('corfidws');
 
     Route::POST('produccion', [\App\Http\Controllers\Admin\AdminController::class, 'pase_a_produccion']);
 
