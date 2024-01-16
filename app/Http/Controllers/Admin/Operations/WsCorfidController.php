@@ -701,9 +701,10 @@ class WsCorfidController extends Controller
             'estado' => 'required|in:APROBADO,ANULADO,EXTORNADO',
             'mensaje' => 'nullable|string'
         ]);
+        logger('Confirmación de operación Corfid: confirm_operation_corfid@WsCorfidController', ["success" => $request->all()]);
+        
         if($val->fails()) return response()->json($val->messages());
 
-        logger('Confirmación de operación Corfid: confirm_operation_corfid@WsCorfidController', ["success" => $request->all()]);
 
         try {
             $operation = Operation::where('code', $request->nref01)->get();
