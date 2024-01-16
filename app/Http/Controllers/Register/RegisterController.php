@@ -499,7 +499,7 @@ class RegisterController extends Controller
             'document_number' => 'required|string',
             'document_type' => 'required|exists:document_types,id',
         ]);
-        if($validator->fails()) if($validator->fails()) {return response()->json(['success' => false,'errors' => $validator->errors()->toJson()]);}
+        if($validator->fails()) {return response()->json(['success' => false,'errors' => $validator->errors()->toJson()]);}
 
         $client = Client::where('document_type_id', $request->document_type)->where('document_number', $request->document_number)->get();
 
