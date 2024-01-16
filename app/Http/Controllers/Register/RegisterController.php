@@ -871,6 +871,7 @@ class RegisterController extends Controller
                 'email' => $request->client['email'],
                 'birthdate' => isset($request->client['constitution_date']) ? $request->client['constitution_date'] : $now,
                 'district_id' => $request->client['district_id'],
+                'country_id' => 375,
                 'economic_activity_id' => $request->client['economic_activity_id'],
                 'customer_type' => 'PJ',
                 'type' => 'Cliente',
