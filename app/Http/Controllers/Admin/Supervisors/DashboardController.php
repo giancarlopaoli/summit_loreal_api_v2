@@ -16,7 +16,7 @@ class DashboardController extends Controller
     // Dashboard
     public function dashboard(Request $request) {
 
-        /*$indicators = DB::table('monthly_operations_view')
+        $indicators = DB::table('monthly_operations_view')
             ->selectRaw("sum(amount) as total_volume, sum(operations_number) as num_operations, round(sum(comission_amount),2) as total_comissions")
             ->selectRaw("(select count(distinct client_id) from operations_view where type in ('Compra','Venta')) as unique_clients")
             ->whereIn("type", ['Compra','Venta'])
@@ -43,21 +43,21 @@ class DashboardController extends Controller
             ->groupByRaw("year, month")
             ->orderByRaw('year asc, month')
             ->limit(7)
-            ->get();*/
+            ->get();
 
-        $vendor_indicators = Operation::selectRaw("year(operation_date) as year,month(operation_date) as month")
+        /*$vendor_indicators = Operation::selectRaw("year(operation_date) as year,month(operation_date) as month")
             ->whereIn("type", ['Compra','Venta'])
             ->whereRaw("((year(operation_date)-2000)*12 + month(operation_date)) >= ((year(now()) - 2000 )*12 + month(now()) -6)")
             ->groupByRaw("year(operation_date), month(operation_date)")
             ->orderByRaw('year(operation_date) asc, month(operation_date)')
             ->limit(7)
-            ->get();
+            ->get();*/
 
 
         return response()->json([
             'success' => true,
             'data' => [ 
-                /*'global_indicators' => [
+                'global_indicators' => [
                     $indicators
                 ],
                 'ghaphs' => [
@@ -66,9 +66,20 @@ class DashboardController extends Controller
                     'comissions' => $graphs->pluck('comissions'),
                     'num_operations' => $graphs->pluck('num_operations'),
                     'unique_clients' => $graphs->pluck('unique_clients'),
-                ],*/
+                ],
                 'monthly_indicators' => [
-                    $vendor_indicators
+                    'month' => $monthly_indicators->pluck('month'),
+                    'year' => $monthly_indicators->pluck('year'),
+                    'volume' => $monthly_indicators->pluck('volume'),
+                    'num_operations' => $monthly_indicators->pluck('num_operations'),
+                    'comissions' => $monthly_indicators->pluck('comissions'),
+                    'rate_buying' => $monthly_indicators->pluck('rate_buying'),
+                    'rate_selling' => $monthly_indicators->pluck('rate_selling'),
+                    'sales_goal' => $monthly_indicators->pluck('sales_goal'),
+                    'volume_pj' => $monthly_indicators->pluck('volume_pj'),
+                    'volume_pn' => $monthly_indicators->pluck('volume_pn'),
+                    'num_operations_pj' => $monthly_indicators->pluck('num_operations_pj'),
+                    'num_operations_pn' => $monthly_indicators->pluck('num_operations_pn'),
                 ]
             ]
         ]);
