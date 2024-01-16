@@ -161,7 +161,7 @@ class WsCorfidController extends Controller
         $params["listadoDeposito"] = $deposit_list;
         $params["listadoRetribucion"] = $retribution_list;
 
-        if(($request->json)){
+        if($request->json == "true"){
 
             $match = WsCorfidController::match_operation_type_3($operation, $request->json);
 
@@ -443,7 +443,7 @@ class WsCorfidController extends Controller
         $params["listadoRetribucion"] = $retribution_list;
 
 
-        if(($request->json)){
+        if($request->json == "true"){
             return response()->json([
                 'success' => true,
                 'params' => $params,
@@ -591,7 +591,7 @@ class WsCorfidController extends Controller
         $params["listadoAccionista"] = $listadoAccionista;
         $params["listadoRepresentantes"] = $listadoRepresentantes;
 
-        if($request->json){
+        if($request->json == "true"){
             return response()->json([
                 'success' => true,
                 'params' => $params,
@@ -670,7 +670,7 @@ class WsCorfidController extends Controller
             $params['cargo01'] = $value->pep_position;
         }
 
-        if(($request->json)){
+        if($request->json == "true"){
             return response()->json([
                 'success' => true,
                 'params' => $params,
