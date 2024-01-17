@@ -213,7 +213,7 @@ class ClientsController extends Controller
         ]);
         if($val->fails()) return response()->json($val->messages());
 
-        logger('Archivo adjunto: ClientsController@upload_bank_account_receipt', ["client_id" => $request->client_id]);
+        logger('Archivo adjunto: ClientsController@upload_bank_account_receipt', ["bank_account" => $bank_account->id]);
 
         if($request->hasFile('file')){
             $file = $request->file('file');
