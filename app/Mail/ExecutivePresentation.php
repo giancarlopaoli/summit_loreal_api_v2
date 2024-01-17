@@ -44,6 +44,7 @@ class ExecutivePresentation extends Mailable
             ->bcc(env('MAIL_TI'))
             ->view('executive')
             ->with([
+                'executive_id' => $client->executive->id,
                 'name' => $user->name,
                 'executive_name' => $client->executive->user->full_name,
                 'executive_phone' => $client->executive->user->phone,

@@ -499,7 +499,7 @@ class RegisterController extends Controller
             'document_number' => 'required|string',
             'document_type' => 'required|exists:document_types,id',
         ]);
-        if($validator->fails()) return response()->json($val->messages());
+        if($validator->fails()) {return response()->json(['success' => false,'errors' => $validator->errors()->toJson()]);}
 
         $client = Client::where('document_type_id', $request->document_type)->where('document_number', $request->document_number)->get();
 
@@ -524,7 +524,7 @@ class RegisterController extends Controller
         $validator = Validator::make($request->all(), [
             'ruc' => 'required|string'
         ]);
-        if($validator->fails()) return response()->json($val->messages());
+        if($validator->fails()) {return response()->json(['success' => false,'errors' => $validator->errors()->toJson()]);}
 
         $client = Client::where('document_type_id', 1)->where('document_number', $request->ruc)->get();
 
@@ -724,13 +724,6 @@ class RegisterController extends Controller
                                 'client_id' => $client_id,
                             ]);
                     }
-
-                    return response()->json([
-                    'success' => true,
-                        'executive' => [ 
-                            $executive
-                        ]
-                    ]);
 
                     // Si es freelance, se agrega ejecutivo en tabla executives_comission
                     if(isset($executive)){

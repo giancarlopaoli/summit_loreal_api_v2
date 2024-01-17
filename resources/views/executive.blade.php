@@ -177,7 +177,11 @@
     </tr>
     <tr>
       <td align="center" class="check">
-        <img src="https://bill-upload.s3.amazonaws.com/static/img/user.png" alt="">
+        @if ( $executive_id == 2339 || $executive_id == 2801 || $executive_id == 2811)
+          <img src="https://bill-upload.s3.amazonaws.com/static/img/user_woman.png" alt="">
+        @else
+          <img src="https://bill-upload.s3.amazonaws.com/static/img/user.png" alt="">
+        @endif
         <h1>Estoy para ayudarte</h1>
       </td>
     </tr>
