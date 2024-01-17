@@ -725,13 +725,6 @@ class RegisterController extends Controller
                             ]);
                     }
 
-                    return response()->json([
-                    'success' => true,
-                        'executive' => [ 
-                            $executive
-                        ]
-                    ]);
-
                     // Si es freelance, se agrega ejecutivo en tabla executives_comission
                     if(isset($executive)){
                         if($executive->type == 'Freelance'){

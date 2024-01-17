@@ -703,21 +703,39 @@ class DailyOperationsController extends Controller
             ]);
         }
 
-        $client_name = $operation->client->client_full_name;
+        if(is_null($operation->client->invoice_to)){
+            $client_name = $operation->client->client_full_name;
+            $customer_type = ($operation->client->customer_type == 'PJ') ? 1 : 2;
+            $invoice_serie = (($operation->client->customer_type == 'PJ') ? 'F' : 'B') .'001';
+            $client_document_type = ($operation->client->document_type->name == 'RUC') ? 6 : ($operation->client->document_type->name == 'DNI' ? 1 : ($operation->client->document_type->name == 'Carné de extranjería' ? 4 : null));
+            $client_document_number = $operation->client->document_number;
+            $client_address = $operation->client->address;
+        }
+        else{
+            $client = Client::find($operation->client->invoice_to);
+
+            $client_name = $client->client_full_name;
+            $customer_type = ($client->customer_type == 'PJ') ? 1 : 2;
+            $invoice_serie = (($client->customer_type == 'PJ') ? 'F' : 'B') .'001';
+            $client_document_type = ($client->document_type->name == 'RUC') ? 6 : ($client->document_type->name == 'DNI' ? 1 : ($client->document_type->name == 'Carné de extranjería' ? 4 : null));
+            $client_document_number = $client->document_number;
+            $client_address = $client->address;
+        }
+
         $executive_email = (!is_null($operation->executive)) ? $operation->executive->user->email : null;
 
         try{
 
             $data = array(
                 "operacion"                         => "generar_comprobante",
-                "tipo_de_comprobante"               => ($operation->client->customer_type == 'PJ') ? 1 : 2,
-                "serie"                             => (($operation->client->customer_type == 'PJ') ? 'F' : 'B') .'001',
+                "tipo_de_comprobante"               => $customer_type,
+                "serie"                             => $invoice_serie,
                 "numero"                            => "",
                 "sunat_transaction"                 => "1",
-                "cliente_tipo_de_documento"         => ($operation->client->document_type->name == 'RUC') ? 6 : ($operation->client->document_type->name == 'DNI' ? 1 : ($operation->client->document_type->name == 'Carné de extranjería' ? 4 : null)),
-                "cliente_numero_de_documento"       => $operation->client->document_number,
+                "cliente_tipo_de_documento"         => $client_document_type,
+                "cliente_numero_de_documento"       => $client_document_number,
                 "cliente_denominacion"              => ucfirst($client_name),
-                "cliente_direccion"                 => $operation->client->address,
+                "cliente_direccion"                 => $client_address,
                 "cliente_email"                     => $operation->client->email,
                 "cliente_email_1"                   => $executive_email,
                 "cliente_email_2"                   => env('MAIL_OPS'),

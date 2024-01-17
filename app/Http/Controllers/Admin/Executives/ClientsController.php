@@ -35,7 +35,7 @@ class ClientsController extends Controller
 
         if(isset($request->customer_type)) $clients = $clients->where('customer_type', $request->customer_type);
 
-        if($request->company_name != "") $clients = $clients->whereRaw("CONCAT(name,' ',last_name,' ',mothers_name) like "."'%"."$request->company_name"."%'" . "or name like "."'%"."$request->company_name"."%'");
+        if($request->company_name != "") $clients = $clients->whereRaw("(CONCAT(name,' ',last_name,' ',mothers_name) like "."'%"."$request->company_name"."%'" . "or name like "."'%"."$request->company_name"."%')");
 
         if($request->document_number != "")  $clients = $clients->where('document_number', 'like', "%".$request->document_number."%");
 
@@ -63,7 +63,7 @@ class ClientsController extends Controller
 
         if(isset($request->customer_type)) $clients = $clients->where('customer_type', $request->customer_type);
 
-        if($request->company_name != "") $clients = $clients->whereRaw("CONCAT(name,' ',last_name,' ',mothers_name) like "."'%"."$request->company_name"."%'" . "or name like "."'%"."$request->company_name"."%'");
+        if($request->company_name != "") $clients = $clients->whereRaw("(CONCAT(name,' ',last_name,' ',mothers_name) like "."'%"."$request->company_name"."%'" . "or name like "."'%"."$request->company_name"."%')");
 
         if($request->document_number != "")  $clients = $clients->where('document_number', 'like', "%".$request->document_number."%");
 
