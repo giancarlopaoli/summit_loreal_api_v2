@@ -60,7 +60,8 @@ class ClientsController extends Controller
             ->selectRaw("if(customer_type ='PN',CONCAT(name,' ',last_name, ' ',mothers_name),name) as client_name")
             ->selectRaw(" (select operation_date from operations op where op.client_id = clients.id and op.operation_status_id in (6,7,8) order by operation_date desc limit 1) as last_operation") 
             ->with('status:id,name')
-            ->with('executive:id,type','executive.user:id,name,last_name,email,phone');
+            ->with('executive:id,type','executive.user:id,name,last_name,email,phone')
+            ->whereIn('client_status_id', [2,3]);
 
         if(isset($request->customer_type)) $clients = $clients->where('customer_type', $request->customer_type);
 
