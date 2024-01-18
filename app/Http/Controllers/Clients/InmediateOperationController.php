@@ -91,6 +91,15 @@ class InmediateOperationController extends Controller
             }
         }
 
+        if($client->client_status_id != 2 && $client->client_status_id != 3){
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'El cliente no se encuentra aprobado.'
+                ]
+            ]);
+        }
+
         // Validating minimum amount
         $min_amount = InmediateOperationController::minimun_amount($request->client_id)->getData()[0];
 

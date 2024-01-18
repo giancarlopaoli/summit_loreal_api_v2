@@ -435,7 +435,7 @@ class ClientsController extends Controller
             'phone' => 'required|string',
             'address' => 'required|string',
             'district_id' => 'required|exists:districts,id',
-            'comments' => 'required|string',
+            'comments' => 'nullable|string',
         ]);
         if($val->fails()) return response()->json($val->messages());
 
