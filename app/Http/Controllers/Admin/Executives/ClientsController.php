@@ -31,7 +31,8 @@ class ClientsController extends Controller
             ->selectRaw("if(customer_type ='PN',CONCAT(name,' ',last_name, ' ',mothers_name),name) as client_name")
             ->with('status:id,name')
             ->with('executive:id,type','executive.user:id,name,last_name,email,phone')
-            ->where('executive_id', auth()->id());
+            ->whereIn('client_status_id', [1,2,3]);
+            ->where('executive_id', auth()->id())
 
         if(isset($request->customer_type)) $clients = $clients->where('customer_type', $request->customer_type);
 
