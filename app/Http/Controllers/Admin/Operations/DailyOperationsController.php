@@ -722,7 +722,7 @@ class DailyOperationsController extends Controller
             $client_address = $client->address;
         }
 
-        $executive_email = (!is_null($operation->executive)) ? $operation->executive->user->email : null;
+        $executive_email = (!is_null($operation->client->executive)) ? $operation->client->executive->user->email : null;
 
         try{
 
