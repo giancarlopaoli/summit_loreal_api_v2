@@ -31,6 +31,7 @@ class ClientsController extends Controller
             ->selectRaw("if(customer_type ='PN',CONCAT(name,' ',last_name, ' ',mothers_name),name) as client_name")
             ->with('status:id,name')
             ->with('executive:id,type','executive.user:id,name,last_name,email,phone')
+            ->whereIn('client_status_id', [2,3])
             ->where('executive_id', auth()->id());
 
         if(isset($request->customer_type)) $clients = $clients->where('customer_type', $request->customer_type);
@@ -59,7 +60,8 @@ class ClientsController extends Controller
             ->selectRaw("if(customer_type ='PN',CONCAT(name,' ',last_name, ' ',mothers_name),name) as client_name")
             ->selectRaw(" (select operation_date from operations op where op.client_id = clients.id and op.operation_status_id in (6,7,8) order by operation_date desc limit 1) as last_operation") 
             ->with('status:id,name')
-            ->with('executive:id,type','executive.user:id,name,last_name,email,phone');
+            ->with('executive:id,type','executive.user:id,name,last_name,email,phone')
+            ->whereIn('client_status_id', [2,3]);
 
         if(isset($request->customer_type)) $clients = $clients->where('customer_type', $request->customer_type);
 
@@ -79,7 +81,7 @@ class ClientsController extends Controller
 
     public function client_detail(Request $request, Client $client) {
 
-        $client->load('operations:id,code,class,type,client_id,user_id,use_escrow_account,operation_date,amount,currency_id,exchange_rate,comission_spread,comission_amount,igv,spread,operation_status_id,invoice_url','operations.status:id,name','operations.bank_accounts','operations.escrow_accounts','operations.escrow_accounts.bank','tracking_phase:id,name','status:id,name','document_type:id,name','operations.bank_accounts.bank','operations.vendor_bank_accounts','operations.vendor_bank_accounts.bank')
+        $client->load('operations:id,code,class,type,client_id,user_id,use_escrow_account,operation_date,amount,currency_id,exchange_rate,comission_spread,comission_amount,igv,spread,operation_status_id,invoice_url','operations.status:id,name','operations.bank_accounts','operations.escrow_accounts','operations.escrow_accounts.bank','tracking_phase:id,name','status:id,name','document_type:id,name','operations.bank_accounts.bank','operations.vendor_bank_accounts','operations.vendor_bank_accounts.bank','operations.documents')
             ->only(['id','name','last_name','mothers_name','document_type_id','document_number','phone','email','address','birthdate','district_id','economic_activity_id','client_status_id','accountable_email','comments','association_id','registered_at','executive_id','tracking_phase_id','tracking_date','comission_start_date','comission','accepts_publicity','users']);
 
         $client->tracking_status = !is_null(ClientTracking::where('client_id', $client->id)->orderByDesc('id')->with('status:id,name')->first()) ? ClientTracking::where('client_id', $client->id)->orderByDesc('id')->with('status:id,name')->first()->status : null;
