@@ -520,12 +520,21 @@ class DailyOperationsController extends Controller
                 $filename = $file->getClientOriginalName();
             }*/
 
-            $filename = $file->getClientOriginalName();
+            $operation = Operation::find($request->operation_id);
+            $original_name = $file->getClientOriginalName();
+            $longitud = Str::length($file->getClientOriginalName());
+
+            if($longitud >= 10) {
+                $filename = $operation->code . "_" . substr($original_name, $longitud - 10, $longitud);
+            }
+            else{
+                $filename = $operation->code . "_" . $original_name;
+            }
 
             try {
                 $s3 = Storage::disk('s3')->putFileAs($path, $file, $filename);
 
-                $operation = Operation::find($request->operation_id);
+                
 
                 // Si es operación de Cliente se elimina comprobantes anteriores
                 if($operation->client->type == 'Cliente'){
@@ -605,7 +614,16 @@ class DailyOperationsController extends Controller
                 $filename = $file->getClientOriginalName();
             }*/
 
-            $filename = $file->getClientOriginalName();
+            $operation = Operation::find($request->operation_id);
+            $original_name = $file->getClientOriginalName();
+            $longitud = Str::length($file->getClientOriginalName());
+
+            if($longitud >= 10) {
+                $filename = $operation->code . "_" . substr($original_name, $longitud - 10, $longitud);
+            }
+            else{
+                $filename = $operation->code . "_" . $original_name;
+            }
 
             try {
                 $s3 = Storage::disk('s3')->putFileAs($path, $file, $filename);
