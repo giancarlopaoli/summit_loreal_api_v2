@@ -727,7 +727,8 @@ class DailyOperationsController extends Controller
             $invoice_serie = (($operation->client->customer_type == 'PJ') ? 'F' : 'B') .'001';
             $client_document_type = ($operation->client->document_type->name == 'RUC') ? 6 : ($operation->client->document_type->name == 'DNI' ? 1 : ($operation->client->document_type->name == 'Carné de extranjería' ? 4 : null));
             $client_document_number = $operation->client->document_number;
-            $client_address = $operation->client->address;
+            $localidad = isset($operation->client->district) ? $operation->client->district->name . " - " . $operation->client->district->province->name ." - " . $operation->client->district->province->department->name : "";
+            $client_address = $operation->client->address . ", " . $localidad;
         }
         else{
             $client = Client::find($operation->client->invoice_to);
@@ -737,7 +738,8 @@ class DailyOperationsController extends Controller
             $invoice_serie = (($client->customer_type == 'PJ') ? 'F' : 'B') .'001';
             $client_document_type = ($client->document_type->name == 'RUC') ? 6 : ($client->document_type->name == 'DNI' ? 1 : ($client->document_type->name == 'Carné de extranjería' ? 4 : null));
             $client_document_number = $client->document_number;
-            $client_address = $client->address;
+            $localidad = isset($client->district) ? $client->district->name . " - " . $client->district->province->name ." - " . $client->district->province->department->name : "";
+            $client_address = $client->address . ", " . $localidad;
         }
 
         $executive_email = (!is_null($operation->client->executive)) ? $operation->client->executive->user->email : null;
