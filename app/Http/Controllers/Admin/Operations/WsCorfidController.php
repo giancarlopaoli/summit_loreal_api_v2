@@ -187,6 +187,13 @@ class WsCorfidController extends Controller
                 if($rpta_json->{'WSr-resultado'} ==  1){
                     WsCorfidController::match_operation_type_3($operation);
                 }
+
+                return response()->json([
+                    'success' => true,
+                    'data' => [
+                        $rpta_json->{'WSr-Mensaje'}
+                    ]
+                ]);
             }
         }
 
@@ -318,6 +325,13 @@ class WsCorfidController extends Controller
                 $operation->corfid_id = $rpta_json->{'WSr-resultado'};
                 $operation->corfid_message = $rpta_json->{'WSr-Mensaje'};
                 $operation->save();
+
+                return response()->json([
+                    'success' => true,
+                    'data' => [
+                        $rpta_json->{'WSr-Mensaje'}
+                    ]
+                ]);
             }
         }
     
@@ -461,10 +475,12 @@ class WsCorfidController extends Controller
                 $operation->corfid_message = $rpta_json->{'WSr-Mensaje'};
                 $operation->save();
 
-                // si la respuesta fue satisfactoria
-                /*if($rpta_json->{'WSr-resultado'} ==  1){
-                    OperationsController::wscorfidopEmparejar($request->operation_id);
-                }*/
+                return response()->json([
+                    'success' => true,
+                    'data' => [
+                        $rpta_json->{'WSr-Mensaje'}
+                    ]
+                ]);
             }
         }
     
@@ -612,7 +628,13 @@ class WsCorfidController extends Controller
             }
         }
 
-        return response()->json($rpta_json);
+        return response()->json([
+            'success' => true,
+            'data' => [
+                $rpta_json->strMensaje
+            ]
+        ]);
+
     }
 
     public function register_client_person(Request $request, Client $client) {
@@ -691,7 +713,12 @@ class WsCorfidController extends Controller
             }
         }
 
-        return response()->json($rpta_json);
+        return response()->json([
+            'success' => true,
+            'data' => [
+                $rpta_json->strMensaje
+            ]
+        ]);
     }
 
     // API confirmación de Operación por parte de Corfid
