@@ -357,6 +357,12 @@ Route::middleware('encryptresponses')->group(function () {
                 Route::PUT('itbc/{itbc_range}', [\App\Http\Controllers\Admin\Operations\RangesController::class, 'edit_itbc']);
             });
 
+            ########## Ejecutivos Comerciales  #############
+            Route::prefix('executives')->group(function () {
+                Route::GET('comissions', [\App\Http\Controllers\Admin\Operations\ExecutivesController::class, 'comissions']);
+                Route::GET('comissions/{executive}', [\App\Http\Controllers\Admin\Operations\ExecutivesController::class, 'comission_detail']);
+            });
+
             ########## Administración de Configuraciones  #############
             Route::prefix('configurations')->group(function () {
                 Route::GET('', [\App\Http\Controllers\Admin\Operations\ConfigurationsController::class, 'list']);
