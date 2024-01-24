@@ -506,6 +506,7 @@ Route::middleware('encryptresponses')->group(function () {
             ########## dashboard  #############
             Route::prefix('dashboard')->group(function () {
                 Route::GET('', [\App\Http\Controllers\Admin\Supervisors\DashboardController::class, 'dashboard']);
+                Route::GET('sales-progress', [\App\Http\Controllers\Admin\Supervisors\DashboardController::class, 'sales_progress']);
             });
 
         });
