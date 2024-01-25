@@ -190,9 +190,23 @@ class InmediateOperationController extends Controller
             }
 
             if($client_comision != null) {
-                $comission_spread = $market_closed ? $client_comision->comission_close : $client_comision->comission_open;
-            } else if($association_comision != null) {
-                $comission_spread = $market_closed ? $association_comision->comission_close : $association_comision->comission_open;
+                $client_comision_value = $market_closed ? (!is_null($client_comision->comission_close) ? $client_comision->comission_close : null) : (!is_null($client_comision->comission_open) ? $client_comision->comission_open : null);
+            }
+            else{
+                $client_comision_value = null;
+            }
+
+            if($association_comision != null) {
+                $association_comision_value = $market_closed ? (!is_null($association_comision->comission_close) ? $association_comision->comission_close : null) : (!is_null($association_comision->comission_open) ? $association_comision->comission_open : null);
+            }
+            else{
+                $association_comision_value = null;
+            }
+
+            if(!is_null($client_comision_value)) {
+                $comission_spread = $client_comision_value;
+            } else if(!is_null($association_comision_value)) {
+                $comission_spread = $association_comision_value;
             } else {
 
                 $comission_spread = $range->comission_spread;
@@ -476,18 +490,24 @@ class InmediateOperationController extends Controller
                 ->first();
         }
 
-        /*if($client_comision != null && $association_comision != null)  {
-            if($market_closed) {
-                $comission_spread = min((float) $client_comision->comission_close, (float) $association_comision->comission_close);
-            } else {
-                $comission_spread = min((float) $client_comision->comission_open, (float) $association_comision->comission_open);
-            }
-        } else */
-
         if($client_comision != null) {
-            $comission_spread = $market_closed ? $client_comision->comission_close : $client_comision->comission_open;
-        } else if($association_comision != null) {
-            $comission_spread = $market_closed ? $association_comision->comission_close : $association_comision->comission_open;
+            $client_comision_value = $market_closed ? (!is_null($client_comision->comission_close) ? $client_comision->comission_close : null) : (!is_null($client_comision->comission_open) ? $client_comision->comission_open : null);
+        }
+        else{
+            $client_comision_value = null;
+        }
+
+        if($association_comision != null) {
+            $association_comision_value = $market_closed ? (!is_null($association_comision->comission_close) ? $association_comision->comission_close : null) : (!is_null($association_comision->comission_open) ? $association_comision->comission_open : null);
+        }
+        else{
+            $association_comision_value = null;
+        }
+
+        if(!is_null($client_comision_value)) {
+            $comission_spread = $client_comision_value;
+        } else if(!is_null($association_comision_value)) {
+            $comission_spread = $association_comision_value;
         } else {
             $general_comission = Range::where('min_range', '<=', $amount)
                 ->where('max_range', '>=', $amount)
@@ -495,26 +515,6 @@ class InmediateOperationController extends Controller
                 ->first();
 
             $comission_spread = $market_closed ? $general_comission->comission_close : $general_comission->comission_open;
-
-            /*if($coupon != null) {
-                if($coupon->type == CouponType::Comision) {
-                    if($type == "compra") {
-                        $comission_spread += $coupon->value;
-                    } else {
-                        $comission_spread -= $coupon->value;
-                        $comission_spread = $comission_spread < 0 ? 0 : $comission_spread;
-                    }
-                } else if($coupon->type == CouponType::Porcentaje) {
-                    $comission_spread = $comission_spread * ($coupon->value / 100.0);
-                } else {
-                    return response()->json([
-                        'success' => false,
-                        'errors' => [
-                            'El cupon enviado no es valido'
-                        ]
-                    ], 400);
-                }
-            }*/
 
             if($coupon != null) {
                 $old_comission_spread = $comission_spread;
