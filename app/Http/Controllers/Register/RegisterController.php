@@ -834,7 +834,7 @@ class RegisterController extends Controller
         try {
             // Creating Client
             $executive_id = User::where('email', env('COMPANIES_EXECUTIVE'))->first()->id;
-            $comission = 0.05;
+            $comission = 0;
 
             // Looking for a existing lead       
             $lead = Lead::where('contact_type', 'Juridica')->where('document_number', $request->client['ruc'])->get();

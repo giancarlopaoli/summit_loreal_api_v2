@@ -9,6 +9,8 @@ use Illuminate\Queue\SerializesModels;
 use App\Models\Operation;
 use App\Models\OperationDocument;
 use App\Enums;
+use App\Http\Controllers\Admin\Operations\DailyOperationsController;
+use Illuminate\Support\Facades\Storage;
 
 class VendorInstructions extends Mailable
 {
@@ -75,11 +77,22 @@ class VendorInstructions extends Mailable
                 "escrow_accounts" => $deposit_account
             ]);
 
+            //$consult = new DailyOperationsController();
+
             foreach ($documents as $document) {
                 if($document->type == 'Comprobante'){
                     $email->attach(env('APP_URL') . "/api/res/download-document-operation?operation_id=".$document->operation_id."&document_id=".$document->id, [
                         'as' => $document->document_name
                     ]);
+
+                    /*//$file = $consult->internal_download_file($document->operation_id, $document->id);
+
+
+                    $document = OperationDocument::where('id',$document->id)->where('operation_id', $document->operation_id)->first();
+                    
+                    //$file = Storage::disk('s3')->download(env('AWS_ENV').'/operations/' . $document->document_name);
+
+                    $email->attachFromStorageDisk('s3', env('AWS_ENV').'/operations/' . $document->document_name);*/
                 }
             }
 

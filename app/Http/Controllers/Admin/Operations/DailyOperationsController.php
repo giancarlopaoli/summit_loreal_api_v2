@@ -743,7 +743,7 @@ class DailyOperationsController extends Controller
         }
 
         $executive_email = (!is_null($operation->client->executive)) ? $operation->client->executive->user->email : null;
-
+        
         try{
 
             $data = array(
@@ -884,6 +884,34 @@ class DailyOperationsController extends Controller
         if($val->fails()) return response()->json($val->messages());
 
         $document = OperationDocument::where('id',$request->document_id)->where('operation_id', $request->operation_id)->first();
+
+        if(is_null($document)){
+            return response()->json([
+                'success' => false,
+                'data' => [
+                    $document->document_name
+                ]
+            ]);
+        }
+
+        if (Storage::disk('s3')->exists(env('AWS_ENV').'/operations/' . $document->document_name)) {
+            return Storage::disk('s3')->download(env('AWS_ENV').'/operations/' . $document->document_name);
+        }
+        else{
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'Archivo no encontrado'
+                ]
+            ]);
+        }
+
+        return Storage::disk('s3')->download(env('AWS_ENV').'/operations/' . $document->name);
+    }
+
+    public function internal_download_file($operation_id, $document_id) {
+
+        $document = OperationDocument::where('id',$document_id)->where('operation_id', $operation_id)->first();
 
         if(is_null($document)){
             return response()->json([
@@ -1151,6 +1179,18 @@ class DailyOperationsController extends Controller
     }
 
     public function vendor_instruction(Request $request, Operation $operation) {
+
+        /*$consult = new DailyOperationsController();
+        $file = $consult->internal_download_file(48464, 1389);
+
+        return $file;*/
+
+        /*$document = OperationDocument::where('id',1389)->where('operation_id', 48464)->first();
+        $file = $file = Storage::disk('s3')->url(env('AWS_ENV').'/operations/' . $document->document_name);
+
+
+        return $file;*/
+
 
         try {
             // Enviar Correo()
