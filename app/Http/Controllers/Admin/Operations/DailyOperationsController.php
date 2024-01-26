@@ -908,34 +908,6 @@ class DailyOperationsController extends Controller
 
         return Storage::disk('s3')->download(env('AWS_ENV').'/operations/' . $document->name);
     }
-
-    public function internal_download_file($operation_id, $document_id) {
-
-        $document = OperationDocument::where('id',$document_id)->where('operation_id', $operation_id)->first();
-
-        if(is_null($document)){
-            return response()->json([
-                'success' => false,
-                'data' => [
-                    $document->document_name
-                ]
-            ]);
-        }
-
-        if (Storage::disk('s3')->exists(env('AWS_ENV').'/operations/' . $document->document_name)) {
-            return Storage::disk('s3')->download(env('AWS_ENV').'/operations/' . $document->document_name);
-        }
-        else{
-            return response()->json([
-                'success' => false,
-                'errors' => [
-                    'Archivo no encontrado'
-                ]
-            ]);
-        }
-
-        return Storage::disk('s3')->download(env('AWS_ENV').'/operations/' . $document->name);
-    }
     
     public function countervalue_list(Request $request) {
 
@@ -1179,19 +1151,6 @@ class DailyOperationsController extends Controller
     }
 
     public function vendor_instruction(Request $request, Operation $operation) {
-
-        /*$consult = new DailyOperationsController();
-        $file = $consult->internal_download_file(48464, 1389);
-
-        return $file;*/
-
-        /*$document = OperationDocument::where('id',1389)->where('operation_id', 48464)->first();
-        $file = $file = Storage::disk('s3')->url(env('AWS_ENV').'/operations/' . $document->document_name);
-
-
-        return $file;*/
-
-
         try {
             // Enviar Correo()
             $rpta_mail = Mail::send(new VendorInstructions($operation));
