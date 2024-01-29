@@ -509,6 +509,11 @@ Route::middleware('encryptresponses')->group(function () {
                 Route::GET('sales-progress', [\App\Http\Controllers\Admin\Supervisors\DashboardController::class, 'sales_progress']);
             });
 
+            ########## Reprots  #############
+            Route::prefix('reports')->group(function () {
+                Route::GET('new-clients', [\App\Http\Controllers\Admin\Supervisors\ReportsController::class, 'new_clients']);
+            });
+
         });
 
         ########## Módulo CORFID  #############

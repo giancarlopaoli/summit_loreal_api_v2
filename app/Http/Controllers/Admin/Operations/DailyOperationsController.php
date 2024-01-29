@@ -743,7 +743,7 @@ class DailyOperationsController extends Controller
         }
 
         $executive_email = (!is_null($operation->client->executive)) ? $operation->client->executive->user->email : null;
-
+        
         try{
 
             $data = array(
@@ -1151,7 +1151,6 @@ class DailyOperationsController extends Controller
     }
 
     public function vendor_instruction(Request $request, Operation $operation) {
-
         try {
             // Enviar Correo()
             $rpta_mail = Mail::send(new VendorInstructions($operation));
