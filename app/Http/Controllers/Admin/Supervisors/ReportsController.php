@@ -39,44 +39,31 @@ class ReportsController extends Controller
         $year = (isset($request->year)) ? $request->year : Carbon::now()->year;
         $executive = (isset($request->executive_id)) ? " executive_id = " . $request->executive_id : '1';
 
-        $valores = DB::table('Operacion')
-            ->join('Cliente', 'Cliente.ClienteId', '=', 'Operacion.ClienteId')
-            ->selectRaw("iif(Cliente.TipoClienteId=4, Cliente.NonmbresRazonSocial, concat(Cliente.NonmbresRazonSocial,' ', Cliente.ApellidoNombreComercial,' ', Cliente.ApellidoMaterno)) as cliente")
-            ->selectRaw("Operacion.ClienteID as client_id, month(FechaOperacion) as month, year(FechaOperacion) as year")
-            ->selectRaw("round(sum(Monto),2) as total_amount, sum(Comision) as total_comission")
-            ->selectRaw("((year(FechaOperacion)-2000)*12 + MONTH(FechaOperacion)) - ((year(CURRENT_TIMESTAMP)-2000)*12 + MONTH(CURRENT_TIMESTAMP)-12) as periodo")
-            ->whereIn("Cliente.ClienteId", $ejecutivos->pluck('client_id'))
-            ->whereIn("EstadoId", ['FAC', 'FSF'])
-            ->whereRaw('((year(FechaOperacion)-2000)*12 + MONTH(FechaOperacion)) > ((year(CURRENT_TIMESTAMP)-2000)*12 + MONTH(CURRENT_TIMESTAMP)-12)')
-            ->groupByRaw("iif(Cliente.TipoClienteId=4, Cliente.NonmbresRazonSocial, concat(Cliente.NonmbresRazonSocial,' ', Cliente.ApellidoNombreComercial,' ', Cliente.ApellidoMaterno)), Operacion.ClienteID, month(FechaOperacion), year(FechaOperacion)")
-            ->get();
-
-
         $values = DB::table('operations_view')
             ->select("client_id","client_name")
             ->selectRaw("MONTH(operation_date) as month,YEAR(operation_date) as year")
+            ->selectRaw("round(sum(amount),2) as total_amount, round(sum(comission_amount),2) as total_comission")
+            ->selectRaw("((year(operation_date)-2000)*12 + MONTH(operation_date)) - ((year(now())-2000)*12 + MONTH(now())-12) as periodo")
             ->whereRaw($executive)
             ->whereRaw('((year(operation_date)-2000)*12 + MONTH(operation_date)) > ((year(now())-2000)*12 + MONTH(now())-12)')
             ->groupByRaw("client_name, client_id,MONTH(operation_date),YEAR(operation_date)")
             ->get();
 
-        /*$report = DB::table('Cliente')
-            ->select('ClienteId')
-            ->selectRaw("iif(TipoClienteId=4, NonmbresRazonSocial, concat(NonmbresRazonSocial,' ', ApellidoNombreComercial,' ', ApellidoMaterno)) as cliente")
+        $report = Client::select('id')
             ->selectRaw('0 as amount_month_1,0 as amount_month_2,0 as amount_month_3,0 as amount_month_4,0 as amount_month_5,0 as amount_month_6,0 as amount_month_7,0 as amount_month_8,0 as amount_month_9,0 as amount_month_10,0 as amount_month_11,0 as amount_month_12,0 as comission_month_1,0 as comission_month_2,0 as comission_month_3,0 as comission_month_4,0 as comission_month_5,0 as comission_month_6,0 as comission_month_7,0 as comission_month_8,0 as comission_month_9,0 as comission_month_10,0 as comission_month_11,0 as comission_month_12')
-            ->whereIn('ClienteId', $ejecutivos->pluck('client_id'))
-            ->get();        
+            ->whereRaw($executive)
+            ->get();
 
-
-        foreach ($valores as $key => $value) {
-            $report->where('ClienteId', $value->client_id)->first()->{'amount_month_'."$value->periodo"} = $value->total_amount;
-            $report->where('ClienteId', $value->client_id)->first()->{'comission_month_'."$value->periodo"} = $value->total_comission;
-        }*/
+        foreach ($values as $key => $value) {
+            $report->where('id', $value->client_id)->first()->client_name = $value->client_name;
+            $report->where('id', $value->client_id)->first()->{'amount_month_'."$value->periodo"} = $value->total_amount;
+            $report->where('id', $value->client_id)->first()->{'comission_month_'."$value->periodo"} = $value->total_comission;
+        }
 
         return response()->json([
             'success' => true,
             'data' => [
-                'report' => $values
+                'report' => $report
             ]
         ]);
     }

@@ -877,11 +877,11 @@ class InmediateOperationController extends Controller
             
             //Validating amounts in accounts
             if($request->type == 'compra') {
-                $envia = round($request->amount * $request->exchange_rate + $request->comission_amount + $request->igv,2);
+                $envia = round(round($request->amount * $request->exchange_rate, 2) + $request->comission_amount + $request->igv,2);
                 $recibe = $request->amount;
             } else {
                 $envia = $request->amount;
-                $recibe = round($request->amount * $request->exchange_rate - $request->comission_amount - $request->igv,2);
+                $recibe = round( round($request->amount * $request->exchange_rate, 2) - $request->comission_amount - $request->igv,2);
             }
         }
         // If not Escrow accounts are used, we use vendor bank accounts
@@ -943,15 +943,15 @@ class InmediateOperationController extends Controller
             
             //Validating amounts in accounts
             if($request->type == 'compra') {
-                $envia = round($request->amount * $request->exchange_rate + $request->comission_amount + $request->igv,2);
+                $envia = round(round($request->amount * $request->exchange_rate, 2) + $request->comission_amount + $request->igv,2);
                 $recibe = $request->amount;
             } else {
                 $envia = $request->amount;
-                $recibe = round($request->amount * $request->exchange_rate - $request->comission_amount - $request->igv,2);
+                $recibe = round( round($request->amount * $request->exchange_rate, 2) - $request->comission_amount - $request->igv,2);
             }
         }
 
-        /*if( $recibe != $total_amount_bank){
+        if( $recibe != $total_amount_bank){
             return response()->json([
                 'success' => false,
                 'errors' => [
@@ -967,7 +967,7 @@ class InmediateOperationController extends Controller
                     'La suma de montos enviados en las cuentas de '.$destiny_accounts_text.' es incorrecto = ' . $total_amount_escrow . '. Debería ser ' . $envia 
                 ]
             ]);
-        }*/
+        }
 
 
         $op_code = Carbon::now()->format('ymdHisv') . rand(0,9);
