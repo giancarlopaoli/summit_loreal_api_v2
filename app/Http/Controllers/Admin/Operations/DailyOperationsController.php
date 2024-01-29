@@ -525,10 +525,10 @@ class DailyOperationsController extends Controller
             $longitud = Str::length($file->getClientOriginalName());
 
             if($longitud >= 10) {
-                $filename = $operation->code . "_" . substr($original_name, $longitud - 10, $longitud);
+                $filename = $operation->code . "_cprbte_" . substr($original_name, $longitud - 10, $longitud);
             }
             else{
-                $filename = $operation->code . "_" . $original_name;
+                $filename = $operation->code . "_cprbte_" . $original_name;
             }
 
             try {
@@ -619,10 +619,10 @@ class DailyOperationsController extends Controller
             $longitud = Str::length($file->getClientOriginalName());
 
             if($longitud >= 10) {
-                $filename = $operation->code . "_" . substr($original_name, $longitud - 10, $longitud);
+                $filename = $operation->code . "_firma" . $request->sign . "_" . substr($original_name, $longitud - 10, $longitud);
             }
             else{
-                $filename = $operation->code . "_" . $original_name;
+                $filename = $operation->code . "_firma" . $request->sign . "_" . $original_name;
             }
 
             try {
@@ -1100,7 +1100,15 @@ class DailyOperationsController extends Controller
                 $file = $request->file('file');
                 $path = env('AWS_ENV').'/operations/';
 
-                $filename = $file->getClientOriginalName();
+                $original_name = $file->getClientOriginalName();
+                $longitud = Str::length($file->getClientOriginalName());
+
+                if($longitud >= 10) {
+                    $filename = $operation->code . "_voucher_" . substr($original_name, $longitud - 10, $longitud);
+                }
+                else{
+                    $filename = $operation->code . "_voucher_" . $original_name;
+                }
 
                 try {
                     $s3 = Storage::disk('s3')->putFileAs($path, $file, $filename);
