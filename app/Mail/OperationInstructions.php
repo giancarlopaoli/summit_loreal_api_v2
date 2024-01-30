@@ -8,6 +8,7 @@ use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
 use App\Models\Operation;
 use Illuminate\Support\Str;
+use App\Http\Controllers\Admin\AdminController;
 
 class OperationInstructions extends Mailable
 {
@@ -97,6 +98,9 @@ class OperationInstructions extends Mailable
 
         $emails = (is_null($operation->client->accountable_email) || $operation->client->accountable_email == "") ? env('MAIL_OPS') : array_merge(explode(",", $operation->client->accountable_email), array(env('MAIL_OPS')));
 
+        $consult = new AdminController();
+        $instruction = $consult->instruction($operation);
+
         return $this
             ->subject('BILLEX | Instrucciones de la Operación')
             ->to($operation->client->email)
@@ -106,8 +110,7 @@ class OperationInstructions extends Mailable
             ->cc(env('MAIL_OPS'))
             //->bcc(env('MAIL_TI'))
             ->view('operation_instructions')
-            ->attach(env('APP_URL') . "/api/res/instruction/".$operation->id, [
-                'as' => 'Instrucciones.pdf',
+            ->attachData($instruction, 'Instrucciones.pdf', [
                 'mime' => 'application/pdf',
             ])
             ->with($data);

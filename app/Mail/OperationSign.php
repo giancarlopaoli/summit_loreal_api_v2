@@ -8,7 +8,9 @@ use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
 use App\Models\Configuration;
 use App\Models\Operation;
-use App\Http\Controllers\Admin\Operations\DailyOperationsController;
+use App\Models\OperationDocument;
+use Illuminate\Support\Facades\Storage;
+use App\Http\Controllers\Admin\AdminController;
 
 class OperationSign extends Mailable
 {
@@ -50,13 +52,16 @@ class OperationSign extends Mailable
 
         $operation_id = ($this->sign == 1) ? $this->operation->matches[0]->id : $this->operation->id;
 
+        $consult = new AdminController();
+        $instruction = $consult->instruction($this->operation);
+
         $email = $this
             ->subject('BILLEX | INSTRUCCIÓN DE TRANSFERENCIA')
             ->to(explode(",",Configuration::where('shortname', 'MAILSCORFID')->first()->value))
             ->cc(env('MAIL_OPS'))
             ->view('operation_sign')
-            ->attach(env('APP_URL') . "/api/res/instruction/".$operation_id, [
-                'as' => 'Instrucciones.pdf',
+
+            ->attachData($instruction, 'Instrucciones.pdf', [
                 'mime' => 'application/pdf',
             ])
             ->with([
@@ -90,18 +95,16 @@ class OperationSign extends Mailable
             if($this->sign == 1){
                 foreach ($this->operation->documents as $document) {
                     if($document->type == 'Comprobante' || $document->type == '1ra firma'){
-                        $email->attach(env('APP_URL') . "/api/res/download-document-operation?operation_id=".$document->operation_id."&document_id=".$document->id, [
-                            'as' => $document->document_name
-                        ]);
+                        $document = OperationDocument::where('id',$document->id)->where('operation_id', $document->operation_id)->first();
+                        $email->attachFromStorageDisk('s3',env('AWS_ENV').'/operations/' . $document->document_name);
                     }
                 }
             }
             else{
                 foreach ($this->operation->matches[0]->documents as $document) {
                     if($document->type == '2da firma'){
-                        $email->attach(env('APP_URL') . "/api/res/download-document-operation?operation_id=".$document->operation_id."&document_id=".$document->id, [
-                            'as' => $document->document_name
-                        ]);
+                        $document = OperationDocument::where('id',$document->id)->where('operation_id', $document->operation_id)->first();
+                        $email->attachFromStorageDisk('s3',env('AWS_ENV').'/operations/' . $document->document_name);
                     }
                 }
             }

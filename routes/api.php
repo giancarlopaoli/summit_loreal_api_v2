@@ -496,6 +496,12 @@ Route::middleware('encryptresponses')->group(function () {
                 Route::GET('{client}', [\App\Http\Controllers\Admin\Executives\ClientsController::class, 'client_detail']);
             });
 
+            ########## Reports  #############
+            Route::prefix('reports')->group(function () {
+                Route::GET('new-clients', [\App\Http\Controllers\Admin\Executives\ReportsController::class, 'new_clients']);
+                Route::GET('monthly-sales', [\App\Http\Controllers\Admin\Executives\ReportsController::class, 'monthly_sales']);
+            });
+
             Route::GET('exchange-rate', [\App\Http\Controllers\Admin\Operations\ExchangeRateController::class, 'list']);
 
         });
@@ -509,7 +515,7 @@ Route::middleware('encryptresponses')->group(function () {
                 Route::GET('sales-progress', [\App\Http\Controllers\Admin\Supervisors\DashboardController::class, 'sales_progress']);
             });
 
-            ########## Reprots  #############
+            ########## Reports  #############
             Route::prefix('reports')->group(function () {
                 Route::GET('new-clients', [\App\Http\Controllers\Admin\Supervisors\ReportsController::class, 'new_clients']);
                 Route::GET('monthly-sales', [\App\Http\Controllers\Admin\Supervisors\ReportsController::class, 'monthly_sales']);

@@ -147,7 +147,7 @@ class AdminController extends Controller
         ]);
     }
 
-    public function instruction(Request $request, Operation $operation) {
+    public function instruction(Operation $operation) {
         if($operation->type == 'Compra' || $operation->type == 'Venta'){
 
             $pen_amount = $operation->type == 'Compra' ? ($operation->amount*$operation->exchange_rate + $operation->comission_amount + $operation->igv) :  ($operation->amount*$operation->exchange_rate - $operation->comission_amount - $operation->igv);
@@ -189,9 +189,10 @@ class AdminController extends Controller
             $pdf->setOption('defaultFont', 'Poppins');
             $pdf->render();
             
-            return $pdf->download('Instructivo_' . $operation->code .'.pdf');
+            //return $pdf->download('Instructivo_' . $operation->code .'.pdf');
+            return $pdf->output();
         }
-        else{  
+        else{
 
             $financial_expenses = round($operation->amount * $operation->spread/10000,2);
             $spread = round(($operation->spread + 1)*$operation->exchange_rate - $operation->exchange_rate,2);
@@ -231,7 +232,8 @@ class AdminController extends Controller
             $pdf->setOption('defaultFont', 'Poppins');
             $pdf->render();
             
-            return $pdf->download('Instructivo_' . $operation->code .'.pdf');
+            //return $pdf->download('Instructivo_' . $operation->code .'.pdf');
+            return $pdf->output();
         }
     }
 }
