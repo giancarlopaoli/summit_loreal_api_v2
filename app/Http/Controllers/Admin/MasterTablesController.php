@@ -8,6 +8,7 @@ use App\Models\Bank;
 use App\Models\Currency;
 use App\Models\DocumentType;
 use App\Models\EscrowAccount;
+use App\Models\Executive;
 use App\Models\Role;
 use App\Models\LeadContactType;
 use App\Models\Region;
@@ -111,6 +112,16 @@ class MasterTablesController extends Controller
         return response()->json([
             'success' => true,
             'data' => EconomicActivity::select('id','name')->get()
+        ]);
+    }
+
+    public function executives_full_time() {
+        return response()->json([
+            'success' => true,
+            'data' => Executive::select('id','type')
+                ->where('type', 'Tiempo Completo')
+                ->with('user:id,name,last_name')
+                ->get()
         ]);
     }
 }
