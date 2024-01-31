@@ -80,12 +80,16 @@ class ExchangeRate extends Model
 
             if(!is_null($client_comission)){
                 if(!$market_closed){
-                    $buy_spread_comissions[] = $client_comission->comission_open;
-                    $sell_spread_comissions[] = $client_comission->comission_open;
+                    if(!is_null($client_comission->comission_open)){
+                        $buy_spread_comissions[] = $client_comission->comission_open;
+                        $sell_spread_comissions[] = $client_comission->comission_open;
+                    }
                 }
                 else{
-                    $buy_spread_comissions[] = $client_comission->comission_close;
-                    $sell_spread_comissions[] = $client_comission->comission_close;
+                    if(!is_null($client_comission->comission_close)){
+                        $buy_spread_comissions[] = $client_comission->comission_close;
+                        $sell_spread_comissions[] = $client_comission->comission_close;
+                    }
                 }
             }
 

@@ -840,16 +840,18 @@ class RegisterController extends Controller
             $lead = Lead::where('contact_type', 'Juridica')->where('document_number', $request->client['ruc'])->get();
 
             // Retrieving executive
-            if($lead->count() > 0){                
+            if($lead->count() > 0){
                 $executive = Executive::where('id', $lead[0]->executive_id)->first();
 
-                // Si es freelance, se agrega ejecutivo en tabla executives_comission
-                if($executive->type == 'Freelance'){
-                    $comision = 0;
-                }
-                else{
-                    $comission = $executive->comission;
-                    $executive_id = $executive->id;
+                if(!is_null($executive)){
+                    // Si es freelance, se agrega ejecutivo en tabla executives_comission
+                    if($executive->type == 'Freelance'){
+                        $comision = 0;
+                    }
+                    else{
+                        $comission = $executive->comission;
+                        $executive_id = $executive->id;
+                    }
                 }
             }
 

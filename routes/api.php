@@ -374,7 +374,7 @@ Route::middleware('encryptresponses')->group(function () {
             ########## Reportes  #############
             Route::prefix('reports')->group(function () {
                 Route::GET('selling-buying', [\App\Http\Controllers\Admin\Operations\ReportsController::class, 'selling_buying_report']);
-                Route::PUT('interbanking', [\App\Http\Controllers\Admin\Operations\ReportsController::class, 'interbank_report']);
+                Route::GET('corfid', [\App\Http\Controllers\Admin\Operations\ReportsController::class, 'corfid']);
             });
 
         });
