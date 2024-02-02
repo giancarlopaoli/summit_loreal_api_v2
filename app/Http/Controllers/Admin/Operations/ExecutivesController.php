@@ -63,7 +63,7 @@ class ExecutivesController extends Controller
             ->selectRaw("round(if(executive_id = $executive_id, executive_comission, 0)*(if(type='Interbancaria', round(comission_amount*(if(currency_id=2,exchange_rate,1)),2), comission_amount)),2) + round(if(executive2_id = $executive_id, executive2_comission, 0)*(if(type='Interbancaria', round(comission_amount*(if(currency_id=2,exchange_rate,1)),2), comission_amount)),2) as executive_comission")
 
             ->whereRaw("(executive_id = $executive_id or executive2_id = $executive_id)")
-            ->whereRaw("year(operation_date) = $year and month(operation_date) = $month")
+            //->whereRaw("year(operation_date) = $year and month(operation_date) = $month")
             ->get();
 
         return response()->json([

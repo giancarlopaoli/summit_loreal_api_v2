@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin\Vendors;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use App\Models\Client;
 use App\Models\Operation;
 use App\Models\OperationStatus;
 
@@ -38,6 +39,22 @@ class ReportsController extends Controller
             'success' => true,
             'data' => [
                 'operations' => $operations
+            ]
+        ]);
+    }
+
+    public function vendor_spreads(Request $request) {
+
+        $spreads = Client::select('id','name')
+            ->whereIn('id', [366,3166,4280])
+            ->where('client_status_id', 3)
+            ->with('vendor_ranges:id,vendor_id,min_range,max_range','vendor_ranges.active_spreads')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'spreads' => $spreads
             ]
         ]);
     }

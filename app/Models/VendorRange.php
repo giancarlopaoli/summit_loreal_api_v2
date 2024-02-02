@@ -16,6 +16,10 @@ class VendorRange extends Model
         return $this->hasMany(VendorSpread::class);
     }
 
+    public function active_spreads() {
+        return $this->hasMany(VendorSpread::class)->where('active', 1);
+    }
+
     public function vendor() {
         return $this->belongsTo(Client::class, "vendor_id");
     }
