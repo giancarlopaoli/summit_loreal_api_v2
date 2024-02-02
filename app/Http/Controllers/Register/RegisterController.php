@@ -275,7 +275,9 @@ class RegisterController extends Controller
                 return response()->json([
                     'success' => true,
                     'source' => '3',
-                    'data' => $dni
+                    'data' => [
+                        'dni' => $dni
+                    ]
                 ]);
             }
         }

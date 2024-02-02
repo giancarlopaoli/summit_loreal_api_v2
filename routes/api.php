@@ -193,6 +193,7 @@ Route::middleware('encryptresponses')->group(function () {
 
         Route::GET('exchange-rate', [\App\Http\Controllers\Admin\DatatecController::class, 'exchange_rate']);
 
+        Route::GET('vendor-spreads', [\App\Http\Controllers\Admin\Vendors\ReportsController::class, 'vendor_spreads']);
 
         ########## Módulo de Operaciones  #############
         Route::prefix('operations')->middleware('role:operaciones')->group(function () {
@@ -439,7 +440,6 @@ Route::middleware('encryptresponses')->group(function () {
                 Route::GET('', [\App\Http\Controllers\Admin\Executives\DashboardController::class, 'dashboard']);
                 Route::GET('daily-times', [\App\Http\Controllers\Admin\Operations\OperationsTimesController::class, 'daily_times']);
                 Route::GET('goal-progress', [\App\Http\Controllers\Admin\Executives\DashboardController::class, 'goal_progress']);
-
             });
 
             ########## Leads  #############
