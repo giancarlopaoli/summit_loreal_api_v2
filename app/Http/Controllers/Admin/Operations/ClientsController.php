@@ -36,7 +36,7 @@ class ClientsController extends Controller
         if($val->fails()) return response()->json($val->messages());
 
 
-        $client = Client::select('id','name','last_name','mothers_name','document_type_id','document_number','phone','email','address','birthdate','customer_type','type','client_status_id','billex_approved_at','corfid_approved_at','registered_at','updated_at as last_update')
+        $client = Client::select('id','name','last_name','mothers_name','document_type_id','document_number','phone','email','address','birthdate','customer_type','type','client_status_id','accountable_email','billex_approved_at','corfid_approved_at','registered_at','updated_at as last_update')
             ->with('document_type:id,name','status:id,name')
             ->with('documents');
         
@@ -920,6 +920,23 @@ class ClientsController extends Controller
             'success' => true,
             'data' => [
                 'Comision desactivada exitosamente'
+            ]
+        ]);
+    }
+
+    // Editar cuenta contable
+    public function edit_accountable_email(Request $request, Client $client) {
+        $val = Validator::make($request->all(), [
+            'accountable_email' => 'required|string'
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+        $client->update($request->only(["accountable_email"]));
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'Correo contable actualizado exitosamente'
             ]
         ]);
     }

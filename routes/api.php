@@ -305,7 +305,9 @@ Route::middleware('encryptresponses')->group(function () {
                 Route::PUT('bank-account/reject/{bank_account}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'reject_bank_account']);
                 
                 Route::GET('{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'detail']);
+                Route::PUT('{client}/accountable-email', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'edit_accountable_email']);
 
+                
                 Route::GET('user/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'users']);
                 Route::GET('assigned-users/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'assigned_users']);
                 Route::POST('user/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'attach_user']);
@@ -494,7 +496,6 @@ Route::middleware('encryptresponses')->group(function () {
                 Route::GET('my-bank-accounts', [\App\Http\Controllers\Clients\MyBankAccountsController::class, 'list_accounts']);
 
                 Route::PUT('{client}/user', [\App\Http\Controllers\Admin\Executives\ClientsController::class, 'update_user']);
-
                 Route::GET('{client}', [\App\Http\Controllers\Admin\Executives\ClientsController::class, 'client_detail']);
             });
 
