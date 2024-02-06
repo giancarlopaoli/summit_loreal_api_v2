@@ -33,12 +33,12 @@ class Invoice extends Mailable
         $emails = (is_null($this->operation->client->accountable_email) || $this->operation->client->accountable_email == "") ? env('MAIL_OPS') : array_merge(explode(",", $this->operation->client->accountable_email), array(env('MAIL_OPS')));
 
         $email = $this
-            ->subject('BILLEX | CONSTANCIA DE LA TRANSFERENCIA - ' . $this->operation->type . ' ' . $this->operation->amount . ' - OP ' . $this->operation->code)
+            ->subject('BILLEX | OPERACIÓN FINALIZADA'
             ->to($this->operation->client->email)
             ->cc($this->operation->user->email)
             ->cc($emails)
             ->cc(env('MAIL_OPS'))
-            ->bcc(env('MAIL_TI'))
+            //->bcc(env('MAIL_TI'))
             ->view('invoice')
             ->with([
                 "code" => $this->operation->code,
