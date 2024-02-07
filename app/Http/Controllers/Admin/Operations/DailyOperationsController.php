@@ -29,6 +29,7 @@ use Illuminate\Support\Facades\Mail;
 use App\Mail\OperationInstructions;
 use App\Mail\OperationSign;
 use App\Mail\VendorInstructions;
+use App\Mail\Invoice;
 use App\Http\Controllers\Admin\Operations\DailyOperationsController;
 use App\Http\Controllers\Admin\Operations\WsCorfidController;
 use App\Http\Controllers\Admin\Operations\TelegramNotificationsControllers;
@@ -756,9 +757,9 @@ class DailyOperationsController extends Controller
                 "cliente_numero_de_documento"       => $client_document_number,
                 "cliente_denominacion"              => ucfirst($client_name),
                 "cliente_direccion"                 => $client_address,
-                "cliente_email"                     => $operation->client->email,
-                "cliente_email_1"                   => $executive_email,
-                "cliente_email_2"                   => env('MAIL_OPS'),
+                "cliente_email"                     => "",
+                "cliente_email_1"                   => "",
+                "cliente_email_2"                   => "",
                 "fecha_de_emision"                  => Carbon::now()->format('d-m-Y'),
                 "fecha_de_vencimiento"              => Carbon::now()->format('d-m-Y'),
                 "moneda"                            => ($operation->type == 'Interbancaria') ? $operation->currency_id : 1,
@@ -843,8 +844,6 @@ class DailyOperationsController extends Controller
                     $operation->deposit_date = Carbon::now();
                     $operation->save();
 
-                    OperationHistory::create(["operation_id" => $operation->id,"user_id" => auth()->id(),"action" => "Operación facturada"]);
-
                     // Notificación Telegram
                     try {
                         $request['operation_id'] = $operation->id;
@@ -853,6 +852,17 @@ class DailyOperationsController extends Controller
                     } catch (\Exception $e) {
                         logger('ERROR: notificación telegram: DailyOperationsController@operation_sign', ["error" => $e]);
                     }
+
+                    // Facturando Operación
+                    try {
+                        if(!is_null($operation->invoice_url)){
+                            $rpta_mail = Mail::send(new Invoice($operation));
+                        }
+                    } catch (\Exception $e) {
+                        logger('ERROR: notificación telegram: DailyOperationsController@operation_sign', ["error" => $e]);
+                    }
+
+                    OperationHistory::create(["operation_id" => $operation->id,"user_id" => auth()->id(),"action" => "Operación facturada"]);
 
                     return response()->json([
                         'success' => true,
@@ -875,6 +885,19 @@ class DailyOperationsController extends Controller
             ]
         ]);
     }
+
+    public function invoice_email(Request $request, Operation $operation) {
+
+        $rpta_mail = Mail::send(new Invoice($operation));
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'operation' => $rpta_mail
+            ]
+        ]);
+    }
+
     
     public function download_file(Request $request) {
         $val = Validator::make($request->all(), [
@@ -1583,6 +1606,35 @@ class DailyOperationsController extends Controller
             'success' => true,
             'data' => [
                 'analyst' => $analysts,
+            ]
+        ]);
+    }
+
+    public function operation_statuses(Request $request) {
+        $statuses = OperationStatus::select('id','name')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'statuses' => $statuses,
+            ]
+        ]);
+    }
+
+    public function change_status(Request $request, Operation $operation) {
+        $val = Validator::make($request->all(), [
+            'status' => 'required|exists:operation_statuses,id',
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+        $operation->operation_status_id = $request->status;
+        $operation->save();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'Estado modificado exitosamente'
             ]
         ]);
     }

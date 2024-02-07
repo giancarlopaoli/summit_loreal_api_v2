@@ -200,6 +200,12 @@ Route::middleware('encryptresponses')->group(function () {
             Route::GET('daily-operations', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'daily_operations']);
             Route::GET('detail/{operation}', [\App\Http\Controllers\Clients\MyOperationsController::class, 'operation_detail']);
             Route::GET('vendor-list', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'vendor_list']);
+            Route::GET('operation-statuses', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'operation_statuses']);
+            
+            Route::middleware('permission:modificar_estado_operacion')->group(function () {
+                Route::PUT('status/{operation}', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'change_status']);
+            });
+
             Route::POST('match/{operation}', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'match_operation']);
             Route::PUT('cancel/{operation}', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'cancel']);
             Route::PUT('confirm-funds/{operation}', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'confirm_funds']);
@@ -210,6 +216,7 @@ Route::middleware('encryptresponses')->group(function () {
             Route::POST('voucher-vendor-instruction/{operation}', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'voucher_vendor_instruction']);
             Route::POST('vendor-instruction/{operation}', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'vendor_instruction']);
             Route::POST('invoice/{operation}', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'invoice']);
+            Route::POST('invoice-mail/{operation}', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'invoice_email']);
             Route::PUT('close/{operation}', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'close_operation']);
 
             Route::middleware('permission:editar_operacion')->group(function () {
