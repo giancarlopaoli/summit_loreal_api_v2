@@ -1609,5 +1609,34 @@ class DailyOperationsController extends Controller
             ]
         ]);
     }
+
+    public function operation_statuses(Request $request) {
+        $statuses = OperationStatus::select('id','name')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'statuses' => $statuses,
+            ]
+        ]);
+    }
+
+    public function change_status(Request $request, Operation $operation) {
+        $val = Validator::make($request->all(), [
+            'status' => 'required|exists:operation_statuses,id',
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+        $operation->operation_status_id = $request->status;
+        $operation->save();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'Estado modificado exitosamente'
+            ]
+        ]);
+    }
     
 }
