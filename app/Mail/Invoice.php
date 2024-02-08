@@ -32,13 +32,16 @@ class Invoice extends Mailable
     {
         $emails = (is_null($this->operation->client->accountable_email) || $this->operation->client->accountable_email == "") ? env('MAIL_OPS') : array_merge(explode(",", $this->operation->client->accountable_email), array(env('MAIL_OPS')));
 
+        $mail_executive = (isset($this->operation->client->executive->user->email)) ? $this->operation->client->executive->user->email : env('MAIL_CRM');
+
         $email = $this
-            ->subject('BILLEX | OPERACIÓN FINALIZADA'
+            ->subject('BILLEX | OPERACIÓN FINALIZADA')
             ->to($this->operation->client->email)
             ->cc($this->operation->user->email)
             ->cc($emails)
+            ->cc($mail_executive)
             ->cc(env('MAIL_OPS'))
-            //->bcc(env('MAIL_TI'))
+            ->bcc(env('MAIL_TI'))
             ->view('invoice')
             ->with([
                 "code" => $this->operation->code,

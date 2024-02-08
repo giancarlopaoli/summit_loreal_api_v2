@@ -506,6 +506,12 @@ Route::middleware('encryptresponses')->group(function () {
                 Route::GET('{client}', [\App\Http\Controllers\Admin\Executives\ClientsController::class, 'client_detail']);
             });
 
+
+            ########## Comisiones  #############
+            Route::prefix('comissions')->group(function () {
+                Route::GET('', [\App\Http\Controllers\Admin\Executives\ClientsController::class, 'comissions']);
+            });
+
             ########## Reports  #############
             Route::prefix('reports')->group(function () {
                 Route::GET('new-clients', [\App\Http\Controllers\Admin\Executives\ReportsController::class, 'new_clients']);
