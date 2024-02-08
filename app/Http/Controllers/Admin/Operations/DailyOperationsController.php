@@ -893,7 +893,7 @@ class DailyOperationsController extends Controller
         return response()->json([
             'success' => true,
             'data' => [
-                'operation' => $rpta_mail
+                'Factura enviada'
             ]
         ]);
     }
