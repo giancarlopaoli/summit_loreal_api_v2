@@ -51,15 +51,20 @@ class ReportsController extends Controller
         $end_date = $request->end_date;
         
         $buying_operations = Operation::select('operations.id','operations.type','operations.exchange_rate','operations.currency_id','operations.operation_status_id', 'operations.comission_spread as client_comission_spread', 'op2.comission_spread as counterpart_comission_spread')
+            
+
             ->selectRaw("date_format(operations.operation_date, '%Y-%m-%d') as operation_date")
             ->selectRaw(" round(round(operations.amount*operations.exchange_rate,2) + operations.comission_amount + operations.igv,2) as transfer_amount_pen")
             ->selectRaw(" operations.amount as  receipt_amount_usd")
             ->selectRaw(" op2.amount as  transfer_amount_usd")
-            ->selectRaw(" round(round(op2.amount*op2.exchange_rate,2) + op2.comission_amount + op2.igv,2) as  receipt_amount_pen")
+            ->selectRaw(" round(round(op2.amount*op2.exchange_rate,2) - op2.comission_amount - op2.igv,2) as  receipt_amount_pen")
             ->selectRaw(" if(clients.customer_type ='PN', concat(clients.name,' ',clients.last_name, ' ', clients.mothers_name), clients.name ) as client_name")
             ->selectRaw(" if(cl2.customer_type ='PN', concat(cl2.name,' ',cl2.last_name, ' ', cl2.mothers_name), cl2.name ) as counterpart_name")
             ->selectRaw("round(operations.comission_amount + operations.igv,2) as client_comission")
             ->selectRaw("round(op2.comission_amount + op2.igv,2) as counterpart_comission")
+            
+
+
             ->join('clients', 'clients.id', '=', 'operations.client_id')
             ->join('operation_matches', 'operation_matches.operation_id', '=', 'operations.id')
             ->join('operations as op2', 'operation_matches.matched_id', '=', 'op2.id')
@@ -73,6 +78,7 @@ class ReportsController extends Controller
 
         $selling_operations = Operation::select('operations.id','operations.type','operations.exchange_rate','operations.currency_id','operations.operation_status_id', 'operations.comission_spread as client_comission_spread', 'op2.comission_spread as counterpart_comission_spread')
             ->selectRaw("date_format(operations.operation_date, '%Y-%m-%d') as operation_date")
+            
             ->selectRaw(" round(round(operations.amount*operations.exchange_rate,2) - operations.comission_amount - operations.igv,2) as receipt_amount_pen")
             ->selectRaw(" operations.amount as  transfer_amount_usd")
             ->selectRaw(" op2.amount as  receipt_amount_usd")
@@ -81,6 +87,8 @@ class ReportsController extends Controller
             ->selectRaw(" if(cl2.customer_type ='PN', concat(cl2.name,' ',cl2.last_name, ' ', cl2.mothers_name), cl2.name ) as counterpart_name")
             ->selectRaw("round(operations.comission_amount + operations.igv,2) as client_comission")
             ->selectRaw("round(op2.comission_amount + op2.igv,2) as counterpart_comission")
+            
+
             ->join('clients', 'clients.id', '=', 'operations.client_id')
             ->join('operation_matches', 'operation_matches.operation_id', '=', 'operations.id')
             ->join('operations as op2', 'operation_matches.matched_id', '=', 'op2.id')

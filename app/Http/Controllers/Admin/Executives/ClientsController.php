@@ -7,10 +7,12 @@ use Illuminate\Http\Request;
 use App\Models\Client;
 use App\Models\ClientStatus;
 use App\Models\ClientTracking;
+use App\Models\Executive;
 use App\Models\IbopsClientComission;
 use App\Models\User;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Controllers\Clients\InmediateOperationController;
+use App\Http\Controllers\Admin\Operations\ExecutivesController;
 
 class ClientsController extends Controller
 {
@@ -297,5 +299,15 @@ class ClientsController extends Controller
                 'Parametros eliminados exitosamente'
             ]
         ]);
+    }
+
+    public function comissions(Request $request) {
+
+        $executive = Executive::find(auth()->id());
+
+        $consult = new ExecutivesController();
+        $result = $consult->comission_detail($request, $executive)->getData();
+
+        return response()->json($result);
     }
 }
