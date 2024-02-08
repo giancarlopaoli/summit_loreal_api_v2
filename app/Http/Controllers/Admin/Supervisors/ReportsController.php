@@ -42,7 +42,12 @@ class ReportsController extends Controller
             ->join("clients","clients.id","=","operations_view.client_id")
             ->select("client_id","client_name")
             ->selectRaw("MONTH(operation_date) as month,YEAR(operation_date) as year")
-            ->selectRaw("round(sum(amount),2) as total_amount, round(sum(comission_amount),2) as total_comission")
+            ->selectRaw("round(sum(if(operations_view.type = 'Interbancaria', if(currency_id = 1, round(amount/exchange_rate,2),amount), amount)),2) as total_amount")
+            
+            ->selectRaw("round(sum(if(operations_view.type = 'Interbancaria', if(currency_id = 2, round(comission_amount*exchange_rate,2),comission_amount), comission_amount)),2) as total_comission")
+            ->selectRaw("round(sum(comission_amount),2) as total_comission")
+
+
             ->selectRaw("((year(operation_date)-2000)*12 + MONTH(operation_date)) - ((year(now())-2000)*12 + MONTH(now())-12) as periodo")
             ->whereRaw($executive)
             ->whereRaw("clients.client_status_id in (1,2,3)")
