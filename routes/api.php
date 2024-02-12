@@ -504,6 +504,11 @@ Route::middleware('encryptresponses')->group(function () {
 
                 Route::PUT('{client}/user', [\App\Http\Controllers\Admin\Executives\ClientsController::class, 'update_user']);
                 Route::GET('{client}', [\App\Http\Controllers\Admin\Executives\ClientsController::class, 'client_detail']);
+
+                Route::GET('comission/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'comission_list']);
+                Route::POST('comission/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'create_comission']);
+                Route::DELETE('comission/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'delete_comission']);
+                
             });
 
 

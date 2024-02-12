@@ -41,7 +41,7 @@ class Invoice extends Mailable
             ->cc($emails)
             ->cc($mail_executive)
             ->cc(env('MAIL_OPS'))
-            ->bcc(env('MAIL_TI'))
+            //->bcc(env('MAIL_TI'))
             ->view('invoice')
             ->with([
                 "code" => $this->operation->code,

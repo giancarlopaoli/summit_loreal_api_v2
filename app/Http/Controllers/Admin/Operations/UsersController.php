@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Spatie\Permission\Models\Role;
 
 class UsersController extends Controller
 {
@@ -445,6 +446,8 @@ class UsersController extends Controller
             'password' => Hash::make($request->password),
             'role_id' => $request->role_id
         ]);
+
+        $user->assignRole('cliente');
 
         return response()->json([
             'success' => true,

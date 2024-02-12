@@ -199,6 +199,8 @@ class ClientsController extends Controller
 
     public function quote_inmediate_operation(Request $request) {
         
+        $request->executive_request = true;
+
         $consult = new InmediateOperationController();
         $result = $consult->quote_operation($request)->getData();
 
