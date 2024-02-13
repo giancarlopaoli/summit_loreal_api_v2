@@ -13,6 +13,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Controllers\Clients\InmediateOperationController;
 use App\Http\Controllers\Admin\Operations\ExecutivesController;
+use Illuminate\Support\Facades\DB;
 
 class ClientsController extends Controller
 {
@@ -311,5 +312,83 @@ class ClientsController extends Controller
         $result = $consult->comission_detail($request, $executive)->getData();
 
         return response()->json($result);
+    }
+    
+    // Eliminar Comision cliente
+    public function comissions_indicators(Request $request) {
+        $executive_id = (isset($request->executive_id)) ? $request->executive_id : auth()->id();
+
+        $indicators = DB::table('operations_view')
+            ->selectRaw("sum(if(type = 'Interbancaria', if(currency_id = 1, round(amount/exchange_rate,2) ,amount), amount)) as total_amount, count(amount) as num_operations")
+            ->selectRaw("sum(round(if(type = 'Interbancaria', if(currency_id = 2, round(comission_amount * exchange_rate,2) ,comission_amount), comission_amount) * (if(executive_id = $executive_id,executive_comission,0) + if(executive2_id = $executive_id,executive2_comission,0)),2)) as total_comissions")
+            ->selectRaw("count(distinct client_id) as unique_clients")
+            ->whereRaw(" (executive_id = $executive_id or executive2_id = $executive_id)")
+
+            ->first();
+
+        $indicators_graphs = DB::table('operations_view')
+            ->selectRaw("year(operations_view.operation_date) as year, count(amount) as num_operations, sum(if(type = 'Interbancaria', if(currency_id = 1, round(amount/exchange_rate,2) ,amount), amount)) as total_amount")
+            ->selectRaw("sum(round(if(type = 'Interbancaria', if(currency_id = 2, round(comission_amount * exchange_rate,2) ,comission_amount), comission_amount) * (if(executive_id = $executive_id,executive_comission,0) + if(executive2_id = $executive_id,executive2_comission,0)),2)) as total_comissions")
+            ->selectRaw("count(distinct client_id) as unique_clients")
+            ->whereRaw(" (executive_id = $executive_id or executive2_id = $executive_id)")
+            ->groupByRaw("year(operations_view.operation_date)")
+            ->orderByRaw('year(operation_date) asc')
+            ->get();
+
+        $monthly_indicators = DB::table('monthly_operations_view')
+            ->selectRaw("year,month, sum(amount) as volume, sum(operations_number) as num_operations, round(sum(comission_amount),2) as comissions, round(100*sum(if(type='Compra',amount,0))/sum(amount),2) as rate_buying, round(100*sum(if(type='Venta',amount,0))/sum(amount),2) as rate_selling")
+            ->selectRaw("coalesce((select sum(ov.amount) from operations ov where ov.operation_status_id in (1,2,3,4,5) and year(ov.operation_date) = year and month(ov.operation_date) = month ),0) as volume_in_progress")
+            ->selectRaw("coalesce((select sum(ov.comission_amount) from operations ov where ov.operation_status_id in (1,2,3,4,5) and year(ov.operation_date) = year and month(ov.operation_date) = month ),0) as comission_in_progress")
+
+            ->selectRaw("coalesce((select sg.goal from sales_goals sg where sg.year = monthly_operations_view.year and sg.month =monthly_operations_view.month),0) as sales_goal")
+            ->selectRaw("(select sum(ov.amount) from operations_view ov where ov.customer_type = 'PJ' and year(ov.operation_date) = year and month(ov.operation_date) = month ) as volume_pj")
+            ->selectRaw("(select sum(ov.amount) from operations_view ov where ov.customer_type = 'PN' and year(ov.operation_date) = year and month(ov.operation_date) = month ) as volume_pn")
+            ->selectRaw("(select count(ov.amount) from operations_view ov where ov.customer_type = 'PJ' and year(ov.operation_date) = year and month(ov.operation_date) = month ) as num_operations_pj")
+            ->selectRaw("(select count(ov.amount) from operations_view ov where ov.customer_type = 'PN' and year(ov.operation_date) = year and month(ov.operation_date) = month ) as num_operations_pn")
+            ->whereIn("type", ['Compra','Venta'])
+            ->whereRaw("((year-2000)*12 + month) >= ((year(now()) - 2000 )*12 + month(now()) -6)")
+            ->groupByRaw("year, month")
+            ->orderByRaw('year asc, month')
+            ->limit(7)
+            ->get();
+
+        $cumplimiento_meta = DB::table('goals_achievement')
+            ->select('operation_executive_id as executive_id','operation_month as month', 'operation_year as year','progress as operations_amount','goal')
+            ->selectRaw(" round(achievement,4) as goal_achieved, if( ((operation_executive_id = 2801 or operation_executive_id = 2811) and year(CURRENT_TIMESTAMP) = 2023),0.05, comission_achieved ) as comission_achieved")
+            ->selectRaw("(select sum(round( ov.comission_amount*ov.executive_comission ,2)) from operations_view ov where ov.executive_id = goals_achievement.operation_executive_id and month(ov.operation_date) = goals_achievement.operation_month and year(ov.operation_date) = goals_achievement.operation_year) as comission_earned")
+            ->where('operation_executive_id', $executive_id)
+            ->whereRaw(" operation_month = month(CURRENT_TIMESTAMP) and operation_year = year(CURRENT_TIMESTAMP)")
+            ->first();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'indicators' => $indicators,
+                'indicators_graphs' => [
+                    'year' => $indicators_graphs->pluck('year'),
+                    'total_amount' => $indicators_graphs->pluck('total_amount'),
+                    'num_operations' => $indicators_graphs->pluck('num_operations'),
+                    'total_comissions' => $indicators_graphs->pluck('total_comissions'),
+                    'unique_clients' => $indicators_graphs->pluck('unique_clients')
+                ],
+                'monthly_indicators' => [
+                    'month' => $monthly_indicators->pluck('month'),
+                    'year' => $monthly_indicators->pluck('year'),
+                    'volume' => $monthly_indicators->pluck('volume'),
+                    'volume_in_progress' => $monthly_indicators->pluck('volume_in_progress'),
+                    'num_operations' => $monthly_indicators->pluck('num_operations'),
+                    'comissions' => $monthly_indicators->pluck('comissions'),
+                    'comission_in_progress' => $monthly_indicators->pluck('comission_in_progress'),
+                    'rate_buying' => $monthly_indicators->pluck('rate_buying'),
+                    'rate_selling' => $monthly_indicators->pluck('rate_selling'),
+                    'sales_goal' => $monthly_indicators->pluck('sales_goal'),
+                    'volume_pj' => $monthly_indicators->pluck('volume_pj'),
+                    'volume_pn' => $monthly_indicators->pluck('volume_pn'),
+                    'num_operations_pj' => $monthly_indicators->pluck('num_operations_pj'),
+                    'num_operations_pn' => $monthly_indicators->pluck('num_operations_pn'),
+                ],
+                'cumplimiento_meta' => $cumplimiento_meta,
+            ]
+        ]);
     }
 }
