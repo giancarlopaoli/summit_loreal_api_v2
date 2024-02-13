@@ -508,13 +508,14 @@ Route::middleware('encryptresponses')->group(function () {
                 Route::GET('comission/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'comission_list']);
                 Route::POST('comission/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'create_comission']);
                 Route::DELETE('comission/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'delete_comission']);
-                
+
             });
 
 
             ########## Comisiones  #############
             Route::prefix('comissions')->group(function () {
                 Route::GET('', [\App\Http\Controllers\Admin\Executives\ClientsController::class, 'comissions']);
+                Route::GET('indicators', [\App\Http\Controllers\Admin\Executives\ClientsController::class, 'comissions_indicators']);
             });
 
             ########## Reports  #############
