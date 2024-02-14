@@ -335,20 +335,21 @@ class ClientsController extends Controller
             ->orderByRaw('year(operation_date) asc')
             ->get();
 
-        $monthly_indicators = DB::table('monthly_operations_view')
-            ->selectRaw("year,month, sum(amount) as volume, sum(operations_number) as num_operations, round(sum(comission_amount),2) as comissions, round(100*sum(if(type='Compra',amount,0))/sum(amount),2) as rate_buying, round(100*sum(if(type='Venta',amount,0))/sum(amount),2) as rate_selling")
-            ->selectRaw("coalesce((select sum(ov.amount) from operations ov where ov.operation_status_id in (1,2,3,4,5) and year(ov.operation_date) = year and month(ov.operation_date) = month ),0) as volume_in_progress")
-            ->selectRaw("coalesce((select sum(ov.comission_amount) from operations ov where ov.operation_status_id in (1,2,3,4,5) and year(ov.operation_date) = year and month(ov.operation_date) = month ),0) as comission_in_progress")
+        $monthly_indicators = DB::table('operations_view')
+            ->selectRaw("year(operation_date) as year,month(operation_date) as month, sum(amount) as volume, count(amount) as num_operations, round(sum(comission_amount),2) as billex_comissions, round(sum(if(type='Compra',amount,0)),2) as volume_buying, round(sum(if(type='Venta',amount,0)),2) as volume_selling")
+            ->selectRaw("coalesce((select sum(ov.amount) from operations ov where ov.operation_status_id in (1,2,3,4,5) and year(ov.operation_date) = year(operations_view.operation_date) and month(ov.operation_date) = month ),0) as volume_in_progress")
+            ->selectRaw("sum(round(if(type = 'Interbancaria', if(currency_id = 2, round(comission_amount * exchange_rate,2) ,comission_amount), comission_amount) * (if(executive_id = $executive_id,executive_comission,0) + if(executive2_id = $executive_id,executive2_comission,0)),2)) as executive_comissions")
+            ->selectRaw("coalesce((select sum(ov.amount) from operations ov where ov.operation_status_id in (1,2,3,4,5) and year(ov.operation_date) = year(operations_view.operation_date) and month(ov.operation_date) = month ),0) as volume_in_progress")
 
-            ->selectRaw("coalesce((select sg.goal from sales_goals sg where sg.year = monthly_operations_view.year and sg.month =monthly_operations_view.month),0) as sales_goal")
-            ->selectRaw("(select sum(ov.amount) from operations_view ov where ov.customer_type = 'PJ' and year(ov.operation_date) = year and month(ov.operation_date) = month ) as volume_pj")
-            ->selectRaw("(select sum(ov.amount) from operations_view ov where ov.customer_type = 'PN' and year(ov.operation_date) = year and month(ov.operation_date) = month ) as volume_pn")
-            ->selectRaw("(select count(ov.amount) from operations_view ov where ov.customer_type = 'PJ' and year(ov.operation_date) = year and month(ov.operation_date) = month ) as num_operations_pj")
-            ->selectRaw("(select count(ov.amount) from operations_view ov where ov.customer_type = 'PN' and year(ov.operation_date) = year and month(ov.operation_date) = month ) as num_operations_pn")
+            ->selectRaw("(select sum(ov.amount) from operations_view ov where ov.customer_type = 'PJ' and year(ov.operation_date) = year(operations_view.operation_date) and month(ov.operation_date) = month and (ov.executive_id = $executive_id or ov.executive2_id = $executive_id)) as volume_pj")
+            ->selectRaw("(select sum(ov.amount) from operations_view ov where ov.customer_type = 'PN' and year(ov.operation_date) = year(operations_view.operation_date) and month(ov.operation_date) = month and (ov.executive_id = $executive_id or ov.executive2_id = $executive_id)) as volume_pn")
+            ->selectRaw("coalesce((select sg.goal from executive_goals sg where sg.year = year(operations_view.operation_date) and sg.month = month(operations_view.operation_date) and sg.executive_id = operations_view.executive_id),0) as sales_goal")
+            
             ->whereIn("type", ['Compra','Venta'])
-            ->whereRaw("((year-2000)*12 + month) >= ((year(now()) - 2000 )*12 + month(now()) -6)")
-            ->groupByRaw("year, month")
-            ->orderByRaw('year asc, month')
+            ->whereRaw("((year(operations_view.operation_date)-2000)*12 + month(operations_view.operation_date)) >= ((year(now()) - 2000 )*12 + month(now()) -6)")
+            ->whereRaw(" (executive_id = $executive_id or executive2_id = $executive_id)")
+            ->groupByRaw("year(operations_view.operation_date), month(operations_view.operation_date)")
+            ->orderByRaw('year(operations_view.operation_date) asc, month(operations_view.operation_date)')
             ->limit(7)
             ->get();
 
@@ -359,6 +360,16 @@ class ClientsController extends Controller
             ->where('operation_executive_id', $executive_id)
             ->whereRaw(" operation_month = month(CURRENT_TIMESTAMP) and operation_year = year(CURRENT_TIMESTAMP)")
             ->first();
+
+        $cumplimiento_meta_mensual = DB::table('goals_achievement')
+            ->select('operation_executive_id as executive_id','operation_month as month', 'operation_year as year','progress as operations_amount','goal')
+            ->selectRaw(" round(achievement,4) as goal_achieved, if( ((operation_executive_id = 2801 or operation_executive_id = 2811) and year(CURRENT_TIMESTAMP) = 2023),0.05, comission_achieved ) as comission_achieved")
+            ->selectRaw("(select sum(round( ov.comission_amount*ov.executive_comission ,2)) from operations_view ov where ov.executive_id = goals_achievement.operation_executive_id and month(ov.operation_date) = goals_achievement.operation_month and year(ov.operation_date) = goals_achievement.operation_year) as comission_earned")
+            ->where('operation_executive_id', $executive_id)
+            ->whereRaw(" ((operation_year-2000)*12 + operation_month) >= ((year(CURRENT_TIMESTAMP)-2000)*12 + MONTH(CURRENT_TIMESTAMP)-6)")
+            ->orderByRaw('operation_year asc, operation_month')
+            
+            ->get();
 
         return response()->json([
             'success' => true,
@@ -377,17 +388,17 @@ class ClientsController extends Controller
                     'volume' => $monthly_indicators->pluck('volume'),
                     'volume_in_progress' => $monthly_indicators->pluck('volume_in_progress'),
                     'num_operations' => $monthly_indicators->pluck('num_operations'),
-                    'comissions' => $monthly_indicators->pluck('comissions'),
-                    'comission_in_progress' => $monthly_indicators->pluck('comission_in_progress'),
-                    'rate_buying' => $monthly_indicators->pluck('rate_buying'),
-                    'rate_selling' => $monthly_indicators->pluck('rate_selling'),
+                    'billex_comissions' => $monthly_indicators->pluck('billex_comissions'),
+                    'executive_comissions' => $monthly_indicators->pluck('executive_comissions'),
+
+                    'volume_buying' => $monthly_indicators->pluck('volume_buying'),
+                    'volume_selling' => $monthly_indicators->pluck('volume_selling'),
                     'sales_goal' => $monthly_indicators->pluck('sales_goal'),
                     'volume_pj' => $monthly_indicators->pluck('volume_pj'),
-                    'volume_pn' => $monthly_indicators->pluck('volume_pn'),
-                    'num_operations_pj' => $monthly_indicators->pluck('num_operations_pj'),
-                    'num_operations_pn' => $monthly_indicators->pluck('num_operations_pn'),
+                    'volume_pn' => $monthly_indicators->pluck('volume_pn')
                 ],
                 'cumplimiento_meta' => $cumplimiento_meta,
+                'cumplimiento_meta_mensual' => $cumplimiento_meta_mensual,
             ]
         ]);
     }
