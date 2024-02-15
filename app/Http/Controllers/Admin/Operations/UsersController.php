@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Client;
 use App\Models\User;
-use App\Models\Role;
+use App\Models;
 use Spatie\Permission\Models\Permission;
 use App\Enums;
 use Illuminate\Support\Facades\Hash;
@@ -315,7 +315,7 @@ class UsersController extends Controller
 
     //List of roles for user
     public function roles(Request $request, User $user) {
-        $roles = ($user->role->name == 'cliente') ? Role::select('id','name')->where('name', 'Cliente')->get() : Role::select('id','name')->where('name', '<>', 'Cliente')->get();
+        $roles = ($user->role->name == 'cliente') ? Models\Role::select('id','name')->where('name', 'Cliente')->get() : Models\Role::select('id','name')->where('name', '<>', 'Cliente')->get();
 
         return response()->json([
             'success' => true,
