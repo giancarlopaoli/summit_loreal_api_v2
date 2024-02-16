@@ -32,20 +32,28 @@ class DashboardController extends Controller
             ->limit(7)
             ->get();
 
-        $monthly_indicators = DB::table('monthly_operations_view')
-            ->selectRaw("year,month, sum(amount) as volume, sum(operations_number) as num_operations, round(sum(comission_amount),2) as comissions, round(100*sum(if(type='Compra',amount,0))/sum(amount),2) as rate_buying, round(100*sum(if(type='Venta',amount,0))/sum(amount),2) as rate_selling")
-            ->selectRaw("coalesce((select sum(ov.amount) from operations ov where ov.operation_status_id in (1,2,3,4,5) and year(ov.operation_date) = year and month(ov.operation_date) = month ),0) as volume_in_progress")
-            ->selectRaw("coalesce((select sum(ov.comission_amount) from operations ov where ov.operation_status_id in (1,2,3,4,5) and year(ov.operation_date) = year and month(ov.operation_date) = month ),0) as comission_in_progress")
+        $monthly_indicators = Operation::selectRaw("month(operation_date) as month,year(operation_date) as year")
+            ->selectRaw("sum(amount) as volume, count(amount) as num_operations, round(sum(comission_amount),2) as comissions")
+            ->selectRaw("round(100*sum(if(type='Compra',amount,0))/sum(amount),2) as rate_buying")
+            ->selectRaw("round(100*sum(if(type='Venta',amount,0))/sum(amount),2) as rate_selling")
 
-            ->selectRaw("coalesce((select sg.goal from sales_goals sg where sg.year = monthly_operations_view.year and sg.month =monthly_operations_view.month),0) as sales_goal")
-            ->selectRaw("(select sum(ov.amount) from operations_view ov where ov.customer_type = 'PJ' and year(ov.operation_date) = year and month(ov.operation_date) = month ) as volume_pj")
-            ->selectRaw("(select sum(ov.amount) from operations_view ov where ov.customer_type = 'PN' and year(ov.operation_date) = year and month(ov.operation_date) = month ) as volume_pn")
-            ->selectRaw("(select count(ov.amount) from operations_view ov where ov.customer_type = 'PJ' and year(ov.operation_date) = year and month(ov.operation_date) = month ) as num_operations_pj")
-            ->selectRaw("(select count(ov.amount) from operations_view ov where ov.customer_type = 'PN' and year(ov.operation_date) = year and month(ov.operation_date) = month ) as num_operations_pn")
-            ->whereIn("type", ['Compra','Venta'])
-            ->whereRaw("((year-2000)*12 + month) >= ((year(now()) - 2000 )*12 + month(now()) -6)")
-            ->groupByRaw("year, month")
-            ->orderByRaw('year asc, month')
+            ->selectRaw("coalesce((select sum(amount) from operations op where month(op.operation_date) = month(operations.operation_date) and year(op.operation_date) = year(operations.operation_date) and op.operation_status_id in (2,3,4,5) and op.type in ('Compra','Venta') and op.client_id not in (select id from clients where type = 'PL')),0) as volume_in_progress")
+
+            ->selectRaw("coalesce((select sum(comission_amount) from operations op where month(op.operation_date) = month(operations.operation_date) and year(op.operation_date) = year(operations.operation_date) and op.operation_status_id in (2,3,4,5) and op.type in ('Compra','Venta') and op.client_id not in (select id from clients where type = 'PL')),0) as comission_in_progress")
+
+            ->selectRaw("coalesce((select sg.goal from sales_goals sg where sg.year = year(operations.operation_date) and sg.month = month(operations.operation_date)),0) as sales_goal")
+
+            ->selectRaw("(select sum(ov.amount) from operations_view ov where ov.customer_type = 'PJ' and year(ov.operation_date) = year(operations.operation_date) and month(ov.operation_date) = month(operations.operation_date) ) as volume_pj")
+            ->selectRaw("(select sum(ov.amount) from operations_view ov where ov.customer_type = 'PN' and year(ov.operation_date) = year(operations.operation_date) and month(ov.operation_date) = month(operations.operation_date) ) as volume_pn")
+             ->selectRaw("(select count(ov.amount) from operations_view ov where ov.customer_type = 'PJ' and year(ov.operation_date) = year(operations.operation_date) and month(ov.operation_date) = month(operations.operation_date) ) as num_operations_pj")
+            ->selectRaw("(select count(ov.amount) from operations_view ov where ov.customer_type = 'PN' and year(ov.operation_date) = year(operations.operation_date) and month(ov.operation_date) = month(operations.operation_date) ) as num_operations_pn")
+
+            ->whereIn("operations.type", ['Compra','Venta'])
+            ->whereIn("operation_status_id", [6,7,8])
+            ->whereNotIn("client_id", Client::where('type', 'PL')->get()->pluck('id') )
+            ->whereRaw("((year(operation_date)-2000)*12 + month(operation_date)) >= ((year(now()) - 2000 )*12 + month(now()) -6)")
+            ->groupByRaw("month(operation_date), year(operation_date)")
+            ->orderByRaw('month(operation_date) desc, year(operation_date)')
             ->limit(7)
             ->get();
 
@@ -58,42 +66,28 @@ class DashboardController extends Controller
             ->get();*/
 
 
-        /*$daily_indicators = Operation::selectRaw("day(operation_date) as day")
-            ->selectRaw("(select sum(amount) from operations_view as ov where month(ov.operation_date) = month(operations.operation_date) and year(ov.operation_date) = year(operations.operation_date) and day(ov.operation_date) = day(operations.operation_date) and ov.type in ('Compra','Venta')) as volume")
-*/
-            /*->selectRaw("(select sum(comission_amount) from operations_view as ov where month(ov.operation_date) = month(now()) and year(ov.operation_date) = year(now()) and day(ov.operation_date) = day(operations.operation_date) and ov.type in ('Compra','Venta')) as comissions")
-
-            ->selectRaw("(select count(amount) from operations_view as ov where month(ov.operation_date) = month(now()) and year(ov.operation_date) = year(now()) and day(ov.operation_date) = day(operations.operation_date) and ov.type in ('Compra','Venta')) as num_operations")
-
-
+        $daily_indicators = Operation::selectRaw("day(operation_date) as dia")
             ->selectRaw("coalesce((select daily_goal from sales_goals sg where sg.month = month(now()) and sg.year = year(now())),0) as daily_goal")
-            ->selectRaw("coalesce((select daily_goal from sales_goals sg where sg.month = month(now()) and sg.year = year(now())),0) * (@rownum:=coalesce(@rownum,0)+1) as daily_goal_accumulated")
+            ->selectRaw("( sum(amount)) as volume")
+            
+            ->selectRaw("coalesce((select sum(amount) from operations op where month(op.operation_date) = month(operations.operation_date) and year(op.operation_date) = year(operations.operation_date) and day(op.operation_date) <= day(operations.operation_date) and op.operation_status_id in (6,7,8) and op.type in ('Compra','Venta') and op.client_id not in (select id from clients where type = 'PL')),0) as accumulated_volume")
 
-            ->selectRaw("(select sum(amount) from operations_view as ov where month(ov.operation_date) = month(now()) and year(ov.operation_date) = year(now()) and day(ov.operation_date) <= day(operations.operation_date) and ov.type in ('Compra','Venta'))  as volume_accumulated")*/
+            ->selectRaw("coalesce((select sum(amount) from operations op where month(op.operation_date) = month(operations.operation_date) and year(op.operation_date) = year(operations.operation_date) and day(op.operation_date) <= day(operations.operation_date) and op.operation_status_id in (2,3,4,5) and op.type in ('Compra','Venta') and op.client_id not in (select id from clients where type = 'PL')),0) as volume_in_progress")
 
+            ->selectRaw("( sum(comission_amount)) as comission_amount")
+            ->selectRaw("coalesce((select sum(comission_amount) from operations op where month(op.operation_date) = month(operations.operation_date) and year(op.operation_date) = year(operations.operation_date) and day(op.operation_date) <= day(operations.operation_date) and op.operation_status_id in (6,7,8) and op.type in ('Compra','Venta') and op.client_id not in (select id from clients where type = 'PL')),0) as accumulated_comission")
 
-            /*->whereIn("type", ['Compra','Venta'])
+            ->selectRaw("coalesce((select sum(comission_amount) from operations op where month(op.operation_date) = month(operations.operation_date) and year(op.operation_date) = year(operations.operation_date) and day(op.operation_date) <= day(operations.operation_date) and op.operation_status_id in (2,3,4,5) and op.type in ('Compra','Venta') and op.client_id not in (select id from clients where type = 'PL')),0) as comission_in_progress")
+            ->selectRaw("( count(amount)) as num_operations")
+            ->selectRaw("( count(distinct client_id)) as unique_clients")
+
+            ->whereIn("operations.type", ['Compra','Venta'])
+            ->whereIn("operation_status_id", [6,7,8])
+            ->whereNotIn("client_id", Client::where('type', 'PL')->get()->pluck('id') )
             ->whereRaw('month(operation_date) = month(now()) and year(operation_date) = year(now())')
             ->groupByRaw("day(operation_date)")
             ->orderByRaw('day(operation_date)')
-            ->get();*/
-
-
-
-        /*'ventas_diarias' => [
-                    'periodo' => $grafico_ventas_diarias->pluck('dia'),
-                    'meta_diaria' => $meta_diaria,
-                    'meta' => $grafico_ventas_diarias->pluck('contador'),
-                    'volumen' => $grafico_ventas_diarias->pluck('monto'),
-                    'volumen_acumulado' => $grafico_ventas_diarias->pluck('acumulado'),
-                    'volumen_pendiente' => $grafico_ventas_diarias->pluck('pendiente'),
-                    'comision' => $grafico_ventas_diarias->pluck('comision'),
-                    'comision_acumulado' => $grafico_ventas_diarias->pluck('comision_acumulado'),
-                    'comision_pendiente' => $grafico_ventas_diarias->pluck('comision_pendiente'),
-                    'nro_operaciones' => $grafico_ventas_diarias->pluck('nro_ops'),
-                    'clientes_unicos' => $grafico_ventas_diarias->pluck('clientes_unicos')
-                ],*/
-
+            ->get();
 
         return response()->json([
             'success' => true,
@@ -124,9 +118,18 @@ class DashboardController extends Controller
                     'num_operations_pj' => $monthly_indicators->pluck('num_operations_pj'),
                     'num_operations_pn' => $monthly_indicators->pluck('num_operations_pn'),
                 ],
-                /*'daily_indicators' => [
-                    $daily_indicators
-                ]*/
+                'daily_indicators' => [
+                    'period' => $daily_indicators->pluck('dia'),
+                    'daily_goal' => $daily_indicators->pluck('daily_goal'),
+                    'volume' => $daily_indicators->pluck('volume'),
+                    'accumulated_volume' => $daily_indicators->pluck('accumulated_volume'),
+                    'volume_in_progress' => $daily_indicators->pluck('volume_in_progress'),
+                    'comission_amount' => $daily_indicators->pluck('comission_amount'),
+                    'accumulated_comission' => $daily_indicators->pluck('accumulated_comission'),
+                    'comission_in_progress' => $daily_indicators->pluck('comission_in_progress'),
+                    'num_operations' => $daily_indicators->pluck('num_operations'),
+                    'unique_clients' => $daily_indicators->pluck('unique_clients'),
+                ],
             ]
         ]);
     }
