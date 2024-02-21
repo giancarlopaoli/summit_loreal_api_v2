@@ -59,7 +59,7 @@ class RegisterController extends Controller
     //Document Types for Person
     public function representatives_document_types(Request $request) {
 
-        $document_types = DocumentType::wherein('id', [1,2,3,6,8])
+        $document_types = DocumentType::wherein('id', [1,2,3,9,11])
             ->select('id','name')
             ->get();
 
