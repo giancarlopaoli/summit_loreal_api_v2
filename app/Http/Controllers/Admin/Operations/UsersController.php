@@ -397,7 +397,7 @@ class UsersController extends Controller
     // Validating if email for new user is previusly used
     public function mails_exists(Request $request, User $user) {
         $val = Validator::make($request->all(), [
-            'email' => 'required|email',
+            'email' => 'required|email'
         ]);
         if($val->fails()) return response()->json($val->messages());
 
