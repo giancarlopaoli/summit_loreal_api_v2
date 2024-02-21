@@ -48,22 +48,21 @@ class DashboardController extends Controller
              ->selectRaw("(select count(ov.amount) from operations_view ov where ov.customer_type = 'PJ' and year(ov.operation_date) = year(operations.operation_date) and month(ov.operation_date) = month(operations.operation_date) ) as num_operations_pj")
             ->selectRaw("(select count(ov.amount) from operations_view ov where ov.customer_type = 'PN' and year(ov.operation_date) = year(operations.operation_date) and month(ov.operation_date) = month(operations.operation_date) ) as num_operations_pn")
 
+            ->selectRaw("(select sum(ov.amount) from operations ov where ov.client_id = 366 and year(ov.operation_date) = year(operations.operation_date) and month(ov.operation_date) = month(operations.operation_date) and ov.operation_status_id = 7 ) as volume_coril")
+            ->selectRaw("(select sum(ov.amount) from operations ov where ov.client_id = 2815 and year(ov.operation_date) = year(operations.operation_date) and month(ov.operation_date) = month(operations.operation_date) and ov.operation_status_id = 7 ) as volume_mibanco")
+            ->selectRaw("(select sum(ov.amount) from operations ov where ov.client_id = 3166 and year(ov.operation_date) = year(operations.operation_date) and month(ov.operation_date) = month(operations.operation_date) and ov.operation_status_id = 7 ) as volume_renta4")
+            ->selectRaw("(select sum(ov.amount) from operations ov where ov.client_id = 4280 and year(ov.operation_date) = year(operations.operation_date) and month(ov.operation_date) = month(operations.operation_date) and ov.operation_status_id = 7 ) as volume_ripley")
+            ->selectRaw("(select sum(ov.amount) from operations ov where ov.client_id = 4540 and year(ov.operation_date) = year(operations.operation_date) and month(ov.operation_date) = month(operations.operation_date) and ov.operation_status_id = 7 ) as volume_cajatru")
+
+
             ->whereIn("operations.type", ['Compra','Venta'])
             ->whereIn("operation_status_id", [6,7,8])
             ->whereNotIn("client_id", Client::where('type', 'PL')->get()->pluck('id') )
             ->whereRaw("((year(operation_date)-2000)*12 + month(operation_date)) >= ((year(now()) - 2000 )*12 + month(now()) -6)")
             ->groupByRaw("month(operation_date), year(operation_date)")
-            ->orderByRaw('month(operation_date) desc, year(operation_date)')
-            ->limit(7)
-            ->get();
-
-        /*$vendor_indicators = Operation::selectRaw("year(operation_date) as year,month(operation_date) as month")
-            ->whereIn("type", ['Compra','Venta'])
-            ->whereRaw("((year(operation_date)-2000)*12 + month(operation_date)) >= ((year(now()) - 2000 )*12 + month(now()) -6)")
-            ->groupByRaw("year(operation_date), month(operation_date)")
             ->orderByRaw('year(operation_date) asc, month(operation_date)')
             ->limit(7)
-            ->get();*/
+            ->get();
 
 
         $daily_indicators = Operation::selectRaw("day(operation_date) as dia")
@@ -89,6 +88,19 @@ class DashboardController extends Controller
             ->orderByRaw('day(operation_date)')
             ->get();
 
+
+        $top_clients = Operation::join('clients', 'clients.id', '=', 'operations.client_id')
+            ->whereIn('operation_status_id', [6,7,8])
+            ->where('clients.type', 'Cliente')
+            ->whereIn('operations.type', ['Compra','Venta'])
+            ->where('customer_type', 'PJ')
+            ->selectRaw('SUBSTRING(clients.name,1,20) as client_name,sum(comission_amount) as comissions,sum(amount) as volume, count(amount) as num_operations')
+            ->groupByRaw("clients.name")
+            ->orderByRaw('sum(comission_amount) desc')
+            ->havingRaw('count(amount) > 10 ')
+            ->limit(10)
+            ->get();
+
         return response()->json([
             'success' => true,
             'data' => [ 
@@ -102,7 +114,7 @@ class DashboardController extends Controller
                     'num_operations' => $graphs->pluck('num_operations'),
                     'unique_clients' => $graphs->pluck('unique_clients'),
                 ],
-                'monthly_indicators' => [
+                'monthly_indicators' =>  [
                     'month' => $monthly_indicators->pluck('month'),
                     'year' => $monthly_indicators->pluck('year'),
                     'volume' => $monthly_indicators->pluck('volume'),
@@ -117,6 +129,11 @@ class DashboardController extends Controller
                     'volume_pn' => $monthly_indicators->pluck('volume_pn'),
                     'num_operations_pj' => $monthly_indicators->pluck('num_operations_pj'),
                     'num_operations_pn' => $monthly_indicators->pluck('num_operations_pn'),
+                    'volume_coril' => $monthly_indicators->pluck('volume_coril'),
+                    'volume_mibanco' => $monthly_indicators->pluck('volume_mibanco'),
+                    'volume_renta4' => $monthly_indicators->pluck('volume_renta4'),
+                    'volume_ripley' => $monthly_indicators->pluck('volume_ripley'),
+                    'volume_cajatru' => $monthly_indicators->pluck('volume_cajatru'),
                 ],
                 'daily_indicators' => [
                     'period' => $daily_indicators->pluck('dia'),
@@ -129,6 +146,12 @@ class DashboardController extends Controller
                     'comission_in_progress' => $daily_indicators->pluck('comission_in_progress'),
                     'num_operations' => $daily_indicators->pluck('num_operations'),
                     'unique_clients' => $daily_indicators->pluck('unique_clients'),
+                ],
+                'top_cliente' => [
+                    'client' => $top_clients->pluck('client_name'),
+                    'volume' => $top_clients->pluck('volume'),
+                    'comissions' => $top_clients->pluck('comissions'),
+                    'num_operations' => $top_clients->pluck('num_operations')
                 ],
             ]
         ]);
