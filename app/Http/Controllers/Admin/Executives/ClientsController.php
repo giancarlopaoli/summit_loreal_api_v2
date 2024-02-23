@@ -10,10 +10,12 @@ use App\Models\ClientTracking;
 use App\Models\Executive;
 use App\Models\IbopsClientComission;
 use App\Models\User;
+use App\Models\SpecialExchangeRate;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Controllers\Clients\InmediateOperationController;
 use App\Http\Controllers\Admin\Operations\ExecutivesController;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class ClientsController extends Controller
 {
@@ -399,6 +401,69 @@ class ClientsController extends Controller
                 ],
                 'cumplimiento_meta' => $cumplimiento_meta,
                 'cumplimiento_meta_mensual' => $cumplimiento_meta_mensual,
+            ]
+        ]);
+    }
+
+    public function get_special_exchange_rate(Request $request, Client $client) {
+
+        $special_exchange_rate = SpecialExchangeRate::select('id','vendor_id','buying','selling','finished_at')
+            ->where('client_id', $client->id)
+            ->where('active', true)
+            ->first();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'special_exchange_rate' => $special_exchange_rate
+            ]
+        ]);
+    }
+
+    public function create_special_exchange_rate(Request $request, Client $client) {
+        $val = Validator::make($request->all(), [
+            'vendor_id' => 'required|exists:clients,id',
+            "duration_value" => 'required|numeric',
+            "duration_period" => 'required|in:minutes,hours'
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+        $client->client_special_exchange_rates()->where('active', true)->update([
+            'active' => false
+        ]);
+
+        $duration_time = ($request->duration_period == 'minutes') ? $request->duration_value : $request->duration_value * 60;
+        $finished_at = Carbon::now()->addMinutes($duration_time);
+
+
+        $client->client_special_exchange_rates()->create([
+            'vendor_id' => $request->vendor_id,
+            'buying' => $request->buying,
+            'selling' => $request->selling,
+            'duration_time' => $duration_time,
+            'active' => true,
+            'finished_at' => $finished_at,
+            'updated_by' => auth()->id()
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'Tipo de cambio especial configurado exitosamente'
+            ]
+        ]);
+    }
+
+    public function delete_special_exchange_rate(Request $request, Client $client) {
+
+        $client->client_special_exchange_rates()->where('active', true)->update([
+            'active' => false
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'Tipo de cambio especial eliminado exitosamente'
             ]
         ]);
     }

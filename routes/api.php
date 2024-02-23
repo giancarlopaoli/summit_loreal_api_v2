@@ -509,6 +509,10 @@ Route::middleware('encryptresponses')->group(function () {
                 Route::POST('comission/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'create_comission']);
                 Route::DELETE('comission/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'delete_comission']);
 
+                Route::GET('special-exchange-rate/{client}', [\App\Http\Controllers\Admin\Executives\ClientsController::class, 'get_special_exchange_rate']);
+                Route::POST('special-exchange-rate/{client}', [\App\Http\Controllers\Admin\Executives\ClientsController::class, 'create_special_exchange_rate']);
+                Route::DELETE('special-exchange-rate/{client}', [\App\Http\Controllers\Admin\Executives\ClientsController::class, 'delete_special_exchange_rate']);
+
             });
 
 
