@@ -410,6 +410,7 @@ class ClientsController extends Controller
         $special_exchange_rate = SpecialExchangeRate::select('id','vendor_id','buying','selling','finished_at')
             ->where('client_id', $client->id)
             ->where('active', true)
+            ->with('vendor:id,name,last_name')
             ->first();
 
         return response()->json([
@@ -438,8 +439,8 @@ class ClientsController extends Controller
 
         $client->client_special_exchange_rates()->create([
             'vendor_id' => $request->vendor_id,
-            'buying' => $request->buying,
-            'selling' => $request->selling,
+            'buying' => (!is_null($request->buying) && $request->buying != 'null') ? $request->buying : null,
+            'selling' => (!is_null($request->selling) && $request->selling != 'null') ? $request->selling : null,
             'duration_time' => $duration_time,
             'active' => true,
             'finished_at' => $finished_at,
