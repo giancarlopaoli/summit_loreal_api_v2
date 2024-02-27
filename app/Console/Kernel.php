@@ -42,6 +42,10 @@ class Kernel extends ConsoleKernel
         // Pending Detractions
         $schedule->job(new Jobs\PendingDetractions)
             ->hourly();
+
+        // Deactivating Special Exchange Rates
+        $schedule->job(new Jobs\DeactivatingSpecialExchangeRates)
+            ->everyMinute();
     }
 
     /**
