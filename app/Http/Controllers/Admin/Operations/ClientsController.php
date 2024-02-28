@@ -754,6 +754,15 @@ class ClientsController extends Controller
                         ]);
                     }
 
+                    if($client->documents->where('type', 'SPLAFT')->count() == 0){
+                        return response()->json([
+                            'success' => false,
+                            'errors' => [
+                                'No se ha cargado el documento de evaluación SPLAFT'
+                            ]
+                        ]);
+                    }
+
                     $client->client_status_id = ClientStatus::where('name', 'Activo')->first()->id;
                     $client->comments .= " - ".(!is_null($request->comments) ? $request->comments : null);
                     $client->billex_approved_at = Carbon::now();
