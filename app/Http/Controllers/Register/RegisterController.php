@@ -1097,7 +1097,8 @@ class RegisterController extends Controller
 
                 $insert = Document::create([
                     'client_id' => $cliente,
-                    'name' => $filename
+                    'name' => $filename,
+                    'type' => 'Registro'
                 ]);
 
             } catch (\Exception $e) {
