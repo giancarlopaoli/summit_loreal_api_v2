@@ -405,7 +405,8 @@ class ClientsController extends Controller
                 $insert = Document::create([
                     'client_id' => $client->id,
                     'name' => $filename,
-                    'type' => $request->type
+                    'type' => $request->type,
+                    'created_by' => auth()->id()
                 ]);
 
             } catch (\Exception $e) {
