@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Clients;
 
 use App\Http\Controllers\Controller;
+use App\Models\Bank;
 use App\Models\BankAccountStatus;
 use App\Models\Client;
+use App\Models\Currency;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -76,7 +78,7 @@ class MyBankAccountsController extends Controller
         }
 
         $account = $client->bank_accounts()->create([
-            'alias' => $request->alias ?? '',
+            'alias' => $request->alias ?? Bank::where('id', $request->bank_id)->first()->shortname . ' ' . Currency::where('id', $request->currency_id)->first()->name,
             'bank_id' => $request->bank_id,
             'account_number' => $request->account_number,
             'cci_number' => $request->cci_number,
