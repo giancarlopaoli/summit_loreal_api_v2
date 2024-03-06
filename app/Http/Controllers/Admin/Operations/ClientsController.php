@@ -375,6 +375,38 @@ class ClientsController extends Controller
 
     }
 
+    // Edit client document
+    public function edit_document(Request $request, Client $client) {
+        $val = Validator::make($request->all(), [
+            'document_id' => 'required|exists:documents,id',
+            'type' => 'required|in:Registro,SPLAFT'
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+        $document = Document::where('id', $request->document_id)->where('client_id', $client->id)->first();
+
+        if(is_null($document)){
+            return response()->json([
+                'success' => false,
+                'data' => [
+                    'Archivo no encontrado'
+                ]
+            ]);
+        }
+
+        $document->type = $request->type;
+        $document->save();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'Archivo editado exitosamente'
+            ]
+        ]);
+        
+
+    }
+
     public function upload_document(Request $request, Client $client)
     {
         $val = Validator::make($request->all(), [
