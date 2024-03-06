@@ -46,6 +46,10 @@ class Kernel extends ConsoleKernel
         // Deactivating Special Exchange Rates
         $schedule->job(new Jobs\DeactivatingSpecialExchangeRates)
             ->everyMinute();
+
+        // Deactivating Special Exchange Rates
+        $schedule->job(new Jobs\ExchangeRateAlert)
+            ->everyMinute();
     }
 
     /**
