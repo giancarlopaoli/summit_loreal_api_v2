@@ -47,9 +47,14 @@ class Kernel extends ConsoleKernel
         $schedule->job(new Jobs\DeactivatingSpecialExchangeRates)
             ->everyMinute();
 
-        // Deactivating Special Exchange Rates
-        $schedule->job(new Jobs\ExchangeRateAlert)
-            ->everyMinute();
+        if(env('APP_ENV') == 'production'){
+            // Exchange Rates Datatec Alarm
+            $schedule->job(new Jobs\ExchangeRateAlert)
+                ->everyTenMinutes()
+                ->weekdays()
+                ->between('8:50', '13:40');
+        }
+        
     }
 
     /**
