@@ -130,7 +130,7 @@ class AdminController extends Controller
         $role->users()->attach($users->pluck('id'));
 
         $users = User::whereIn('id', [484,2196,2274,2339,2382,2801,2811]);
-        $role = Role::findByName('ejecutivos');
+        $role = Role::findByName('administrador');
         $role->users()->attach($users->pluck('id'));
         $users->update(["role_id" => 6]);
 
@@ -147,7 +147,13 @@ class AdminController extends Controller
         ]);
     }
 
-    public function instruction(Operation $operation) {
+    public function download_instruction(Operation $operation) {
+        $instructivo = AdminController::instruction($operation, true);
+        return $instructivo;
+    }
+
+
+    public function instruction(Operation $operation, $download=null) {
         if($operation->type == 'Compra' || $operation->type == 'Venta'){
 
             $pen_amount = $operation->type == 'Compra' ? ($operation->amount*$operation->exchange_rate + $operation->comission_amount + $operation->igv) :  ($operation->amount*$operation->exchange_rate - $operation->comission_amount - $operation->igv);
@@ -189,7 +195,10 @@ class AdminController extends Controller
             $pdf->setOption('defaultFont', 'Poppins');
             $pdf->render();
             
-            //return $pdf->download('Instructivo_' . $operation->code .'.pdf');
+            if($download){
+                return $pdf->download('Instructivo_' . $operation->code .'.pdf');
+            }
+            
             return $pdf->output();
         }
         else{
@@ -232,7 +241,9 @@ class AdminController extends Controller
             $pdf->setOption('defaultFont', 'Poppins');
             $pdf->render();
             
-            //return $pdf->download('Instructivo_' . $operation->code .'.pdf');
+            if($download){
+                return $pdf->download('Instructivo_' . $operation->code .'.pdf');
+            }
             return $pdf->output();
         }
     }
