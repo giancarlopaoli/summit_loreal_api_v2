@@ -95,11 +95,18 @@ class DashboardController extends Controller
             ->whereIn('operations.type', ['Compra','Venta'])
             ->where('customer_type', 'PJ')
             ->selectRaw('SUBSTRING(clients.name,1,20) as client_name,sum(comission_amount) as comissions,sum(amount) as volume, count(amount) as num_operations')
+            ->whereRaw("(select op.operation_date from operations op where op.client_id = clients.id order by op.id desc limit 1) >= DATE_SUB(now(), INTERVAL 6 MONTH)")
             ->groupByRaw("clients.name")
             ->orderByRaw('sum(comission_amount) desc')
             ->havingRaw('count(amount) > 10 ')
             ->limit(10)
             ->get();
+
+
+/*        return response()->json([
+            'test' => true,
+            'data' => $top_clients
+        ]);*/
 
         return response()->json([
             'success' => true,

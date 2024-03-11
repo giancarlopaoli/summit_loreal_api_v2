@@ -24,7 +24,7 @@ Route::middleware('encryptresponses')->group(function () {
     Route::POST('logout', [\App\Http\Controllers\Clients\AuthController::class, 'logout']);
 
     Route::POST('forgot-password', [\App\Http\Controllers\Clients\AuthController::class, 'forgot_password']);
-    Route::GET('res/instruction/{operation}', [\App\Http\Controllers\Admin\AdminController::class, 'instruction']);
+    Route::GET('res/instruction/{operation}', [\App\Http\Controllers\Admin\AdminController::class, 'download_instruction']);
     Route::GET('res/download-document-operation', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'download_file']);
     Route::GET('res/download-document-register/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'download_document']);
     Route::POST('res/datatec', [\App\Http\Controllers\Admin\DatatecController::class, 'datatec_exchange_rate']);

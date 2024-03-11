@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin\Operations;
 use App\Http\Controllers\Controller;
 use App\Models\Operation;
 use Illuminate\Http\Request;
+use Carbon\Carbon;
 
 class TelegramNotificationsControllers extends Controller
 {
@@ -232,6 +233,9 @@ Analista: $analyst";
         $executive = (!is_null($operation->client->executive)) ? $operation->client->executive->user->full_name : 'Sin ejecutivo';
         $analyst = (!is_null($operation->operations_analyst)) ? $operation->operations_analyst->user->full_name : 'No Asignado';
 
+        $start  = new Carbon($operation->funds_confirmation_date);
+        $end    = new Carbon($operation->deposit_date);
+        $total_time = $start->diffInMinutes($end);
 
         $message = "*Confirmación Depósito a Cliente*
 Cliente: *$client*
@@ -239,6 +243,7 @@ Operación: $operation->code
 Monto: $operation->type $currency$operation->amount
 Ejecutivo: $executive
 Analista: $analyst
+Tiempo Total: $total_time minutes
 Estado: *FACTURADO*";
 
         

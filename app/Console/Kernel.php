@@ -54,6 +54,10 @@ class Kernel extends ConsoleKernel
                 ->weekdays()
                 ->between('8:50', '13:40');
         }
+
+        // Expiring Negotiated Operations
+        $schedule->job(new Jobs\ExpireNegotiatedOperation)
+            ->everyMinute();
         
     }
 

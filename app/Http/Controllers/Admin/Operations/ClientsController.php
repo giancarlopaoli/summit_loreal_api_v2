@@ -765,7 +765,7 @@ class ClientsController extends Controller
 
         if($request->agent == 'billex'){
             if($request->action == 'approve'){
-                if($client->status->name == 'Registrado' || $client->status->name == 'Rechazo parcial'){
+                if($client->status->name == 'Registrado' || $client->status->name == 'Rechazo parcial' || $client->status->name == 'Activo'){
 
                     // Validating if bank accounts were already approved
 
@@ -792,6 +792,15 @@ class ClientsController extends Controller
                             'success' => false,
                             'errors' => [
                                 'No se ha cargado el documento de evaluación SPLAFT'
+                            ]
+                        ]);
+                    }
+
+                    if($client->documents->where('type', 'Registro')->count() == 0){
+                        return response()->json([
+                            'success' => false,
+                            'errors' => [
+                                'El cliente no cuenta con documento adjunto en el registro'
                             ]
                         ]);
                     }
