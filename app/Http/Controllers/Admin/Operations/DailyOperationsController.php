@@ -713,6 +713,10 @@ class DailyOperationsController extends Controller
 
         $configurations = new Configuration();
 
+        $request['operation_id'] = $operation->id;
+        $consult = new TelegramNotificationsControllers();
+        $notification = $consult->client_deposit_confirmation($request)->getData();
+
         if($operation->operation_status_id == OperationStatus::where('name', 'Facturado')->first()->id){
             return response()->json([
                 'success' => false,
@@ -827,7 +831,10 @@ class DailyOperationsController extends Controller
                     logger('ERROR: archivo adjunto: DailyOperationsController@invoice', ["error" => $rpta_json]);
 
                     $operation->operation_status_id = OperationStatus::where('name', 'Pendiente facturar')->first()->id;
+                    $operation->deposit_date = Carbon::now();
                     $operation->save();
+
+                    OperationHistory::create(["operation_id" => $operation->id,"user_id" => auth()->id(),"action" => "Monto depositado, error al facturar."]);
 
                     return response()->json([
                         'success' => false,
@@ -841,7 +848,9 @@ class DailyOperationsController extends Controller
                     $operation->invoice_number = $rpta_json->numero;
                     $operation->invoice_url = $rpta_json->enlace;
                     $operation->operation_status_id = OperationStatus::where('name', 'Facturado')->first()->id;
-                    $operation->deposit_date = Carbon::now();
+                    if(is_null($operation->deposit_date)){
+                        $operation->deposit_date = Carbon::now();
+                    }
                     $operation->save();
 
                     // Notificación Telegram
@@ -850,16 +859,16 @@ class DailyOperationsController extends Controller
                         $consult = new TelegramNotificationsControllers();
                         $notification = $consult->client_deposit_confirmation($request)->getData();
                     } catch (\Exception $e) {
-                        logger('ERROR: notificación telegram: DailyOperationsController@operation_sign', ["error" => $e]);
+                        logger('ERROR: notificación telegram: DailyOperationsController@invoice', ["error" => $e]);
                     }
 
-                    // Facturando Operación
+                    // Enviando Mail de facturación
                     try {
                         if(!is_null($operation->invoice_url)){
                             $rpta_mail = Mail::send(new Invoice($operation));
                         }
                     } catch (\Exception $e) {
-                        logger('ERROR: notificación telegram: DailyOperationsController@operation_sign', ["error" => $e]);
+                        logger('ERROR: Invoice Email: DailyOperationsController@invoice', ["error" => $e]);
                     }
 
                     OperationHistory::create(["operation_id" => $operation->id,"user_id" => auth()->id(),"action" => "Operación facturada"]);
