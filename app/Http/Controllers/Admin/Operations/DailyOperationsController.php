@@ -712,11 +712,7 @@ class DailyOperationsController extends Controller
     public function invoice(Request $request, Operation $operation) {
 
         $configurations = new Configuration();
-
-        $request['operation_id'] = $operation->id;
-        $consult = new TelegramNotificationsControllers();
-        $notification = $consult->client_deposit_confirmation($request)->getData();
-
+        
         if($operation->operation_status_id == OperationStatus::where('name', 'Facturado')->first()->id){
             return response()->json([
                 'success' => false,
