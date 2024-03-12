@@ -765,7 +765,7 @@ class ClientsController extends Controller
 
         if($request->agent == 'billex'){
             if($request->action == 'approve'){
-                if($client->status->name == 'Registrado' || $client->status->name == 'Rechazo parcial' || $client->status->name == 'Activo'){
+                if($client->status->name == 'Registrado' || $client->status->name == 'Rechazo parcial'){
 
                     // Validating if bank accounts were already approved
 
@@ -838,9 +838,9 @@ class ClientsController extends Controller
 
             }
             elseif($request->action == 'reject'){
-                if($client->status->name == 'Registrado' || $client->status->name == 'Rechazo parcial'){
+                if($client->status->name == 'Registrado' || $client->status->name == 'Rechazo parcial' || $client->status->name == 'Activo'){
                     $client->client_status_id = ClientStatus::where('name', 'Rechazado')->first()->id;
-                    $client->comments .= " - ".(!is_null($request->comments) ? $request->comments : null);
+                    $client->comments .= " - rechazado: ".(!is_null($request->comments) ? $request->comments : null);
                     $client->billex_approved_at = Carbon::now();
                     $client->updated_by = auth()->id();
                     $client->save();
