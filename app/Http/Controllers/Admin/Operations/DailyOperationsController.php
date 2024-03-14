@@ -398,8 +398,14 @@ class DailyOperationsController extends Controller
                     $operation->save();
 
                     ########### Envío operación a WS CORFID
-                    $consult = new WsCorfidController();
-                    $result = $consult->register_operation($request, $operation)->getData();
+                    // Notificación Telegram
+                    try {
+                        $consult = new WsCorfidController();
+                        $result = $consult->register_operation($request, $operation)->getData();
+                    } catch (\Exception $e) {
+                        logger('ERROR: envío operación a WS CORFID: DailyOperationsController@confirm_funds', ["error" => $e]);
+                    }
+                    
                 }
                 elseif($operation->matches[0]->operation_status_id == OperationStatus::where('name', 'Pendiente fondos contraparte')->first()->id){
                     $operation->operation_status_id = OperationStatus::where('name', 'Contravalor recaudado')->first()->id;

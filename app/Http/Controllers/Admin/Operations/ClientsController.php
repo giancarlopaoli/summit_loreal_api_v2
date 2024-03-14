@@ -334,6 +334,52 @@ class ClientsController extends Controller
         return Storage::disk('s3')->download(env('AWS_ENV').'/register/' . $document->name);
     }
 
+/*    public function download_document_antiguo(Request $request, Client $client) {
+        $val = Validator::make($request->all(), [
+            'name' => 'required|string'
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+
+        if (Storage::disk('s3')->exists('/DocumentosClientes/' . $request->name)) {
+            return Storage::disk('s3')->download('/DocumentosClientes/' . $request->name);
+        }
+        else{
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'Archivo no encontrado'
+                ]
+            ]);
+        }
+
+        return Storage::disk('s3')->download('/DocumentosClientes/' . $request->name);
+    }*/
+
+    /*public function download_document_antiguo(Request $request) {
+
+        $json = Storage::get('documents.json');
+        $json = json_decode($json, true);
+
+        foreach ($json as $key => $value) {
+
+            try {
+                $s3 = Storage::disk('s3')->move('/DocumentosClientes/' . $value['name'], '/prod/register/' . $value['name']);
+
+            } catch (\Exception $e) {
+                // Registrando el el log los datos ingresados
+                logger('ERROR: no se pudo mover archivo ' . $value['name'] . ' : ClientsController@upload_document');
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                $s3
+            ]
+        ]);
+    }
+*/
     // Deleting client document
     public function delete_document(Request $request, Client $client) {
         $val = Validator::make($request->all(), [
@@ -421,13 +467,14 @@ class ClientsController extends Controller
             $file = $request->file('file');
             $path = env('AWS_ENV').'/register';
 
-            try {
-                $extension = strrpos($file->getClientOriginalName(), ".")? (Str::substr($file->getClientOriginalName(), strrpos($file->getClientOriginalName(), ".") , Str::length($file->getClientOriginalName()) -strrpos($file->getClientOriginalName(), ".") +1)): "";
-                
-                $now = Carbon::now();
-                $filename = md5($now->toDateTimeString().$file->getClientOriginalName()).$extension;
-            } catch (\Exception $e) {
-                $filename = $file->getClientOriginalName();
+            $original_name = $file->getClientOriginalName();
+            $longitud = Str::length($file->getClientOriginalName());
+
+            if($longitud >= 10) {
+                $filename = $request->type . "_" . $client->id . "_" . rand(0,99) . substr($original_name, $longitud - 10, $longitud);
+            }
+            else{
+                $filename = $request->type . "_" . $client->id . "_" . rand(0,99) . $original_name;
             }
 
 

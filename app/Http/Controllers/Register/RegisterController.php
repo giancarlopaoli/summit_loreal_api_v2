@@ -1081,13 +1081,14 @@ class RegisterController extends Controller
             $file = $request->file('file');
             $path = env('AWS_ENV').'/register';
 
-            try {
-                $extension = strrpos($file->getClientOriginalName(), ".")? (Str::substr($file->getClientOriginalName(), strrpos($file->getClientOriginalName(), ".") , Str::length($file->getClientOriginalName()) -strrpos($file->getClientOriginalName(), ".") +1)): "";
-                
-                $now = Carbon::now();
-                $filename = md5($now->toDateTimeString().$file->getClientOriginalName()).$extension;
-            } catch (\Exception $e) {
-                $filename = $file->getClientOriginalName();
+            $original_name = $file->getClientOriginalName();
+            $longitud = Str::length($file->getClientOriginalName());
+
+            if($longitud >= 10) {
+                $filename = "reg_" . $request->client_id . "_" . rand(0,99) . substr($original_name, $longitud - 10, $longitud);
+            }
+            else{
+                $filename = "reg_" . $request->client_id . "_" . rand(0,99) . $original_name;
             }
 
 
