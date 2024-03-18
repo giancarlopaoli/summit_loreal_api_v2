@@ -126,17 +126,20 @@ class OperationsTimesController extends Controller
 
         if($request->status == 'Pendientes'){
             $status = $pendientes;
+            $str_where_time = "1";
         }
         elseif($request->status == 'Finalizadas'){
             $status = $finalizadas;
+            $str_where_time = "date(operations.operation_date) = date(now())";
         }
         else{
             $status = $todas;
+            $str_where_time = "date(operations.operation_date) = date(now())";
         }
 
         $report = Operation::select('operations.id','operations.code','operations.class','operations.type','operations.client_id','operations.user_id','operations.operations_analyst_id','operations.amount','operations.currency_id','operations.operation_status_id','operations.operation_date','operations.sign_date')
             ->whereIn('operations.operation_status_id', $status)
-            ->whereRaw("date(operations.operation_date) = date(now())")
+            ->whereRaw($str_where_time)
             ->with('client:id,name,last_name,mothers_name,type,customer_type,executive_id','client.executive:id,type','client.executive.user:id,name,last_name')
             ->with('documents:id,operation_id,type')
             ->with('operations_analyst:id','operations_analyst.user:id,name,last_name')

@@ -27,6 +27,7 @@ Route::middleware('encryptresponses')->group(function () {
     Route::GET('res/instruction/{operation}', [\App\Http\Controllers\Admin\AdminController::class, 'download_instruction']);
     Route::GET('res/download-document-operation', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'download_file']);
     Route::GET('res/download-document-register/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'download_document']);
+    Route::GET('res/download-document-antiguo/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'download_document_antiguo']);
     Route::POST('res/datatec', [\App\Http\Controllers\Admin\DatatecController::class, 'datatec_exchange_rate']);
 
     Route::POST('res/calculadora', [\App\Http\Controllers\Admin\DatatecController::class, 'calculadora']);
