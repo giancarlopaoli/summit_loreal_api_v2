@@ -59,14 +59,17 @@ class DailyOperationsController extends Controller
         if($request->status == 'Pendientes'){
             $status = $pendientes;
             $status_str = "(op1.operation_status_id in (" . substr($pendientes, 1, Str::length($pendientes)-2) . ") or op2.operation_status_id in (" . substr($pendientes, 1, Str::length($pendientes)-2) . ") )";
+            $where_str = "(1)";
         }
         elseif($request->status == 'Finalizadas'){
             $status = $finalizadas;
             $status_str = "(op1.operation_status_id in (" . substr($finalizadas, 1, Str::length($finalizadas)-2) . ") and op2.operation_status_id in (" . substr($finalizadas, 1, Str::length($finalizadas)-2) . ") )";
+            $where_str = "(date(operation_matches.created_at) = '$date')";
         }
         else{
             $status = $todas;
             $status_str = "(1)";
+            $where_str = "(date(operation_matches.created_at) = '$date')";
         }
 
         ############### Operations Analyst Filter #############
@@ -129,7 +132,7 @@ class DailyOperationsController extends Controller
             ->select('operation_id', 'matched_id')
             ->join('operations as op1', 'op1.id', "=", "operation_matches.operation_id")
             ->join('operations as op2', 'op2.id', "=", "operation_matches.matched_id")
-            ->whereRaw("date(operation_matches.created_at) = '$date'")
+            ->whereRaw($where_str)
             ->whereRaw("$status_str")
             ->whereRaw($operations_analyst)
             ->get();
