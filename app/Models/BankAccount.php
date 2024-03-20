@@ -29,11 +29,11 @@ class BankAccount extends Model
     }
 
     public function operations() {
-        return $this->belongsToMany(Operation::class)->withPivot("amount", "comission_amount");
+        return $this->belongsToMany(Operation::class)->withPivot("amount", "comission_amount","transfer_number","voucher_id","signed_at");
     }
 
     public function vendor_operations() {
-        return $this->belongsToMany(Operation::class, "vendor_bank_account_operation", "bank_account_id", "operation_id")->withPivot("amount", "comission_amount");
+        return $this->belongsToMany(Operation::class, "vendor_bank_account_operation", "bank_account_id", "operation_id")->withPivot("amount", "comission_amount","transfer_number","voucher_id");
     }
 
     public function currency() {
