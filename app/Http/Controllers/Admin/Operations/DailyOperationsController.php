@@ -1315,7 +1315,7 @@ class DailyOperationsController extends Controller
                 if($escrow_account->count() > 0 ){
 
                     return response()->json([
-                        'success' => true,
+                        'success' => false,
                         'errors' => [
                             'No se han confirmado el depósito de todas las cuentas'
                         ]

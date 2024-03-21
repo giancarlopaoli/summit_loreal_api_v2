@@ -1028,7 +1028,14 @@ class InmediateOperationController extends Controller
         }
         
         OperationHistory::create(["operation_id" => $operation->id,"user_id" => auth()->id(),"action" => "Operación creada"]);
-        
+
+        // Assigning Analyst
+        try {
+            $assined_operation = InmediateOperationController::assign_analyst_to_operation($operation->id)->getData();
+        } catch (\Exception $e) {
+            logger('ERROR: Asignación de analista: InmediateOperationController@create_operation', ["error" => $e]);
+        }
+
         $vendor_operation = null;
         // Matching with vendor
         if(!is_null($request->special_exchange_rate_id)){
@@ -1245,9 +1252,9 @@ class InmediateOperationController extends Controller
         ]);
     }
 
-    public function assign_analyst_to_operation(Request $request) {
+    public function assign_analyst_to_operation($operation_id) {
 
-        $operation_id = $request->operation_id;
+        //$operation_id = $request->operation_id;
         $operation = Operation::find($operation_id);
         
         if($operation->client->type == 'PL'){
@@ -1262,9 +1269,22 @@ class InmediateOperationController extends Controller
         $analysts = OperationsAnalyst::select('id')
             ->where('status','Activo')
             ->where('online',1)
-            ->selectRaw("(select count(*) from operations where operations.operations_analyst_id = operations_analysts.id and operations.operation_status_id not in (6,7,8,9,10) and date(operations.operation_date) = date(now())) as ops_in_progress")
-            ->selectRaw("(select count(*) from operations where operations.operations_analyst_id = operations_analysts.id and operations.operation_status_id in (6,7) and date(operations.operation_date) = date(now())) as ops_finished")
-            ->orderByRaw('ops_in_progress, ops_finished')
+
+            /*->selectRaw("(select count(*) from operations where operations.operations_analyst_id = operations_analysts.id and operations.operation_status_id in (6,7) and date(operations.operation_date) = date(now())) as cuenta_1")
+
+            ->selectRaw("(select count(*) from operations where operations.operations_analyst_id = operations_analysts.id and operations.operation_status_id in (1,8) and date(operations.operation_date) = date(now())) as cuenta_2")
+
+            ->selectRaw("(select count(*) from operations where operations.operations_analyst_id = operations_analysts.id and operations.operation_status_id in (2,3,4,5) and date(operations.operation_date) = date(now())) as cuenta_3")
+
+            ->selectRaw("(select count(*) from operations inner join bank_account_operation bao on operations.id = bao.operation_id where operations.operations_analyst_id = operations_analysts.id and date(operations.operation_date) = date(now())) + (select count(*) from operations inner join escrow_account_operation eao on operations.id = eao.operation_id where operations.operations_analyst_id = operations_analysts.id and date(operations.operation_date) = date(now())) as nro_cuentas")*/
+
+
+            ->selectRaw("(select sum(if(operations.operation_status_id in (6,7),1, if(operations.operation_status_id in (1,8),2, if(operations.operation_status_id in (2,3,4,5),3,0))) + 
+                if(operations.operation_status_id in (1,2,3,4,5), (select count(*) from bank_account_operation bao where operations.id = bao.operation_id) + (select count(*) from escrow_account_operation eao where operations.id = eao.operation_id),0) ) 
+                
+                from operations where operations.operations_analyst_id = operations_analysts.id and date(operations.operation_date) = date(now())) as contador")
+
+            ->orderByRaw('contador')
             ->get();
 
         if($analysts->count() == 0){
@@ -1276,8 +1296,8 @@ class InmediateOperationController extends Controller
             ]);
         }
 
-        /*$operation->operations_analyst_id = $analysts[0]->id;
-        $operation->save();*/
+        $operation->operations_analyst_id = $analysts[0]->id;
+        $operation->save();
 
 
         return response()->json([
