@@ -46,8 +46,8 @@ class ExchangeRate extends Model
         $general_spread_comission = $market_closed ? $ranges->comission_close : $ranges->comission_open;
         $buy_spreads[] = $general_spread;
         $sell_spreads[] = $general_spread;
-        $buy_spread_comissions[] = $general_spread_comission;
-        $sell_spread_comissions[] = $general_spread_comission;
+        $buy_spread_comission = $general_spread_comission;
+        $sell_spread_comission = $general_spread_comission;
 
         $vendor_ranges = VendorRange::where('min_range', '<=', $amount)
             ->where('max_range', '>', $amount)
@@ -81,14 +81,14 @@ class ExchangeRate extends Model
             if(!is_null($client_comission)){
                 if(!$market_closed){
                     if(!is_null($client_comission->comission_open)){
-                        $buy_spread_comissions[] = $client_comission->comission_open;
-                        $sell_spread_comissions[] = $client_comission->comission_open;
+                        $buy_spread_comission = $client_comission->comission_open;
+                        $sell_spread_comission = $client_comission->comission_open;
                     }
                 }
                 else{
                     if(!is_null($client_comission->comission_close)){
-                        $buy_spread_comissions[] = $client_comission->comission_close;
-                        $sell_spread_comissions[] = $client_comission->comission_close;
+                        $buy_spread_comission = $client_comission->comission_close;
+                        $sell_spread_comission = $client_comission->comission_close;
                     }
                 }
             }
@@ -98,8 +98,11 @@ class ExchangeRate extends Model
             $special_exchange_rate = null;
         }
 
-        $buy_spread_comission = min($buy_spread_comissions) / 10000.0;
-        $sell_spread_comission = min($sell_spread_comissions) / 10000.0;
+        /*$buy_spread_comission = min($buy_spread_comissions) / 10000.0;
+        $sell_spread_comission = min($sell_spread_comissions) / 10000.0;*/
+
+        $buy_spread_comission = $buy_spread_comission / 10000.0;
+        $sell_spread_comission = $sell_spread_comission / 10000.0;
 
         $exchange_rate = ExchangeRate::latest()->first();
         $user_exchange_rate = new ExchangeRate();
