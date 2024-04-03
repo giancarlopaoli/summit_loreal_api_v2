@@ -94,12 +94,13 @@ class DailyOperationsController extends Controller
 
         $graphs = Operation::
             selectRaw("day(operation_date) as dia, sum(amount) as amount, count(amount) as num_operations")
-            ->selectRaw("(select sum(amount) from operations as op2 where month(op2.operation_date) = month(CURRENT_TIMESTAMP) and year(op2.operation_date) = year(CURRENT_TIMESTAMP) and day(op2.operation_date) <= day(operations.operation_date) and operation_status_id in (" . substr($finalizadas, 1, Str::length($finalizadas)-2) . ") and type in ('Compra','Venta')) as accumulated_amount")
+            ->selectRaw("(select sum(amount) from operations as op2 where month(op2.operation_date) = month(CURRENT_TIMESTAMP) and year(op2.operation_date) = year(CURRENT_TIMESTAMP) and day(op2.operation_date) <= day(operations.operation_date) and operation_status_id in (" . substr($finalizadas, 1, Str::length($finalizadas)-2) . ") and type in ('Compra','Venta') and op2.client_id not in (select id from clients where type = 'PL')) as accumulated_amount")
 
-            ->selectRaw("(select sum(amount) from operations as op2 where month(op2.operation_date) = month(CURRENT_TIMESTAMP) and year(op2.operation_date) = year(CURRENT_TIMESTAMP) and day(op2.operation_date) <= day(operations.operation_date) and operation_status_id in (" . substr($finalizadas, 1, Str::length($finalizadas)-2) . ") and type in ('Compra','Venta')) as accumulated_num_operations")
+            ->selectRaw("(select count(amount) from operations as op2 where month(op2.operation_date) = month(CURRENT_TIMESTAMP) and year(op2.operation_date) = year(CURRENT_TIMESTAMP) and day(op2.operation_date) <= day(operations.operation_date) and operation_status_id in (" . substr($finalizadas, 1, Str::length($finalizadas)-2) . ") and type in ('Compra','Venta') and op2.client_id not in (select id from clients where type = 'PL')) as accumulated_num_operations")
 
             ->whereIn('operation_status_id', $finalizadas)
             ->whereIn('type', ['Compra', 'Venta'])
+            ->whereNotIn('client_id', Client::where('type','PL')->get()->pluck('id'))
             ->whereRaw('month(operation_date) = month(CURRENT_TIMESTAMP) and year(operation_date) = year(CURRENT_TIMESTAMP) ')
             ->groupByRaw("day(operation_date)")
             ->orderByRaw('day(operation_date)')
@@ -211,7 +212,7 @@ class DailyOperationsController extends Controller
         return response()->json([
             'success' => true,
             'data' => [
-                'vendors' => Client::select('id','name','last_name','type')->where('type', 'PL')->get()
+                'vendors' => Client::select('id','name','last_name','type')->where('type', 'PL')->where('client_status_id', 3)->get()
             ]
         ]);
     }
@@ -238,7 +239,7 @@ class DailyOperationsController extends Controller
 
         ######### Creating vendor operation #############
 
-        $op_code = Carbon::now()->format('YmdHisv') . rand(0,9);
+        $op_code = Carbon::now()->format('ymdHisv') . rand(0,9);
         $status_id = OperationStatus::where('name', 'Pendiente envio fondos')->first()->id;
 
         // Calculando detracción
@@ -874,6 +875,7 @@ class DailyOperationsController extends Controller
             $client_document_number = $operation->client->document_number;
             $localidad = isset($operation->client->district) ? $operation->client->district->name . " - " . $operation->client->district->province->name ." - " . $operation->client->district->province->department->name : "";
             $client_address = $operation->client->address . ", " . $localidad;
+            $client_type = $operation->client->customer_type;
         }
         else{
             $client = Client::find($operation->client->invoice_to);
@@ -885,10 +887,17 @@ class DailyOperationsController extends Controller
             $client_document_number = $client->document_number;
             $localidad = isset($client->district) ? $client->district->name . " - " . $client->district->province->name ." - " . $client->district->province->department->name : "";
             $client_address = $client->address . ", " . $localidad;
+            $client_type = $client->customer_type;
         }
 
         $executive_email = (!is_null($operation->client->executive)) ? $operation->client->executive->user->email : null;
-        
+
+        $detraction = ($operation->detraction_amount > 0 && $client_type == 'PJ') ? "true" : "false";
+        $detraction_type = ($operation->detraction_amount > 0 && $client_type == 'PJ') ? 35 : "";
+        $detraction_total = ($operation->detraction_amount > 0 && $client_type == 'PJ') ? $operation->detraction_amount : "";
+        $detraction_percentage = ($operation->detraction_amount > 0) ? Configuration::where('shortname', 'DETRACTION')->first()->value : "";
+        $detraction_payment = ($operation->detraction_amount > 0 && $client_type == 'PJ') ? 1 : "";
+
         try{
 
             $data = array(
@@ -924,7 +933,11 @@ class DailyOperationsController extends Controller
                 "percepcion_base_imponible"         => "",
                 "total_percepcion"                  => "",
                 "total_incluido_percepcion"         => "",
-                "detraccion"                        => "false",
+                "detraccion"                        => $detraction,
+                "detraccion_tipo"                   => $detraction_type,
+                "detraccion_total"                  => round($detraction_total,2),
+                "detraccion_porcentaje"             => round($detraction_percentage,2),
+                "medio_de_pago_detraccion"          => $detraction_payment,
                 "observaciones"                     => "",
                 "documento_que_se_modifica_tipo"    => "",
                 "documento_que_se_modifica_serie"   => "",
