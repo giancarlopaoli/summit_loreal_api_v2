@@ -894,9 +894,13 @@ class DailyOperationsController extends Controller
 
         $detraction = ($operation->detraction_amount > 0 && $client_type == 'PJ') ? "true" : "false";
         $detraction_type = ($operation->detraction_amount > 0 && $client_type == 'PJ') ? 35 : "";
-        $detraction_total = ($operation->detraction_amount > 0 && $client_type == 'PJ') ? $operation->detraction_amount : "";
+        $detraction_total = ($operation->detraction_amount > 0 && $client_type == 'PJ') ? round($operation->detraction_amount,2) : "";
         $detraction_percentage = ($operation->detraction_amount > 0) ? Configuration::where('shortname', 'DETRACTION')->first()->value : "";
         $detraction_payment = ($operation->detraction_amount > 0 && $client_type == 'PJ') ? 1 : "";
+
+        $currency_detraction = ($operation->type == 'Interbancaria') ? $operation->currency->sign : 'S/';
+
+        $observation = ($operation->detraction_amount > 0 && $client_type == 'PJ') ? "Monto detracción: " . $currency_detraction . round($operation->detraction_amount,2) : "";
 
         try{
 
@@ -935,10 +939,10 @@ class DailyOperationsController extends Controller
                 "total_incluido_percepcion"         => "",
                 "detraccion"                        => $detraction,
                 "detraccion_tipo"                   => $detraction_type,
-                "detraccion_total"                  => round($detraction_total,2),
-                "detraccion_porcentaje"             => round($detraction_percentage,2),
+                "detraccion_total"                  => $detraction_total,
+                "detraccion_porcentaje"             => $detraction_percentage,
                 "medio_de_pago_detraccion"          => $detraction_payment,
-                "observaciones"                     => "",
+                "observaciones"                     => $observation,
                 "documento_que_se_modifica_tipo"    => "",
                 "documento_que_se_modifica_serie"   => "",
                 "documento_que_se_modifica_numero"  => "",
