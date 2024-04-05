@@ -539,7 +539,9 @@ class DailyOperationsController extends Controller
         if(is_null($escrow_account->first())){
             return response()->json([
                 'success' => false,
-                'errors' => 'Error en número de operación',
+                'errors' => [
+                    'Error en número de operación'
+                ]
             ]);
         }
 
@@ -588,7 +590,9 @@ class DailyOperationsController extends Controller
 
                 return response()->json([
                     'success' => false,
-                    'errors' => 'Error en el archivo adjunto',
+                    'errors' => [
+                        'Error en el archivo adjunto'
+                    ]
                 ]);
             }
 
@@ -612,7 +616,9 @@ class DailyOperationsController extends Controller
         } else{
             return response()->json([
                 'success' => false,
-                'errors' => 'Error en el archivo adjunto',
+                'errors' => [
+                    'Error en el archivo adjunto'
+                ]
             ]);
         }
     }
@@ -1236,21 +1242,21 @@ class DailyOperationsController extends Controller
             if($available_amount < $bank_account->first()->amount){
                 return response()->json([
                     'success' => false,
-                    'errors' => 'No se han confirmados los fondos suficientes para atender esta operación.'
+                    'errors' => ['No se han confirmados los fondos suficientes para atender esta operación.']
                 ]);
             }
 
             if(is_null($bank_account->first())){
                 return response()->json([
                     'success' => false,
-                    'errors' => 'Error en número de operación'
+                    'errors' => ['Error en número de operación']
                 ]);
             }
 
             if($bank_account->first()->voucher_id == null){
                 return response()->json([
                     'success' => false,
-                    'errors' => 'No se encontró el comprobante de 2da Firma'
+                    'errors' => ['No se encontró el comprobante de 2da Firma']
                 ]);
             }
             
@@ -1305,14 +1311,18 @@ class DailyOperationsController extends Controller
         if(is_null($escrow_account->first())){
             return response()->json([
                 'success' => false,
-                'errors' => 'Error en número de operación',
+                'errors' => [
+                    'Error en número de operación',
+                ]
             ]);
         }
 
         if($escrow_account->first()->transfer_number != null){
             return response()->json([
                 'success' => false,
-                'errors' => 'El depósito ya había sido confirmado',
+                'errors' => [
+                    'El depósito ya había sido confirmado',
+                ]
             ]);
         }
         else{
@@ -1436,7 +1446,9 @@ class DailyOperationsController extends Controller
 
                     return response()->json([
                         'success' => false,
-                        'errors' => 'Error en el archivo adjunto',
+                        'errors' => [
+                            'Error en el archivo adjunto',
+                        ]
                     ]);
                 }
 
@@ -1445,7 +1457,9 @@ class DailyOperationsController extends Controller
             } else{
                 return response()->json([
                     'success' => false,
-                    'errors' => 'Error en el archivo adjunto',
+                    'errors' => [
+                        'Error en el archivo adjunto',
+                    ]
                 ]);
             }
         }
@@ -1456,7 +1470,9 @@ class DailyOperationsController extends Controller
                 return response()->json([
                     'success' => false,
                     'document' => $document,
-                    'errors' => 'Error: no se encontró el comprobante de transferencia del cliente',
+                    'errors' => [
+                        'Error: no se encontró el comprobante de transferencia del cliente',
+                    ]
                 ]);
             }
         }
@@ -1490,7 +1506,9 @@ class DailyOperationsController extends Controller
 
             return response()->json([
                 'success' => false,
-                'errors' => 'Error al enviar correo',
+                'errors' => [
+                    'Error al enviar correo'
+                ]
             ]);
         }
 
