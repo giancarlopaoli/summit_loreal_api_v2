@@ -75,6 +75,10 @@ class OperationSign extends Mailable
         $consult = new AdminController();
         $instruction = $consult->instruction($this->operation);
 
+        $sent_currency = ($this->operation->type == 'Compra') ? 'S/': (($this->operation->type == 'Venta') ? '$' : $this->operation->currency->sign);
+
+        $received_currency = ($this->operation->type == 'Venta') ? 'S/': (($this->operation->type == 'Compra') ? '$' : $this->operation->currency->sign);
+
         $email = $this
             ->subject('BILLEX | INSTRUCCIÓN DE TRANSFERENCIA')
             ->to(explode(",",Configuration::where('shortname', 'MAILSCORFID')->first()->value))
@@ -90,9 +94,9 @@ class OperationSign extends Mailable
                 "date" => date('d/m/y', strtotime($this->operation->operation_date)),
 
                 "client_name" => $client_name,
-                "sent_currency" => ($this->operation->type == 'Compra') ? 'S/': (($this->operation->type == 'Venta') ? '$' : $this->operation->currency->sign),
+                "sent_currency" => $sent_currency,
                 "sent_amount" => number_format($sent_amount, 2),
-                "received_currency" => ($this->operation->type == 'Venta') ? 'S/': (($this->operation->type == 'Compra') ? '$' : $this->operation->currency->sign),
+                "received_currency" => $received_currency,
                 "received_amount" => number_format($received_amount, 2),
                 "client_account" => $this->operation->bank_accounts,
                 "client_escrow_accounts" => $this->operation->escrow_accounts,
@@ -111,7 +115,8 @@ class OperationSign extends Mailable
                 "counterpart_escrow_accounts" => $this->operation->matches[0]->escrow_accounts,
                 "show_image_counterpart" => ($this->sign == 2) ? 'none' : 'inline',
                 "client_to_sign" => $client_to_sign,
-                "account_to_sign" => $account_to_sign
+                "account_to_sign" => $account_to_sign,
+                "sign_currency" => ($this->sign == 1) ? $sent_currency : $received_currency
             ]);
 
             if($this->sign == 1){
