@@ -1215,6 +1215,31 @@ class DailyOperationsController extends Controller
                 ->where('bank_account_id', $request->bank_account_id)
                 ->where('operation_id', $operation->id);
 
+            // calculando el monto que se ha confirmado en las cuentas de fideicomiso
+            $matches_operation_id = $operation->matches[0]->id;
+            
+            $confirmed_amount = DB::table('escrow_account_operation')
+                ->selectRaw('sum(amount - comission_amount) as confirmed_amount')
+                ->where('operation_id', $matches_operation_id)
+                ->where('transfer_number', 1)
+                ->first()->confirmed_amount;
+
+            $sent_amount = DB::table('bank_account_operation')
+                ->selectRaw('coalesce(sum(amount - comission_amount),0) as sent_amount')
+                ->where('operation_id', $operation->id)
+                ->where('bank_account_id', '!=', $request->bank_account_id)
+                ->where('signed_at', '!=', null)
+                ->first()->sent_amount;
+
+            $available_amount = $confirmed_amount - $sent_amount;
+
+            if($available_amount < $bank_account->first()->amount){
+                return response()->json([
+                    'success' => false,
+                    'errors' => 'No se han confirmados los fondos suficientes para atender esta operación.'
+                ]);
+            }
+
             if(is_null($bank_account->first())){
                 return response()->json([
                     'success' => false,
