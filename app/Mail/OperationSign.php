@@ -21,11 +21,12 @@ class OperationSign extends Mailable
      *
      * @return void
      */
-    public function __construct(Operation $operation, $sign)
+    public function __construct(Operation $operation, $sign, $bank_account_id=null)
     {
         //
         $this->operation = $operation;
         $this->sign = $sign;
+        $this->bank_account_id = $bank_account_id;
     }
 
     /**
@@ -51,9 +52,32 @@ class OperationSign extends Mailable
         $counterpart_received_amount = ($this->operation->matches[0]->type == 'Venta') ? round($this->operation->matches[0]->amount * $this->operation->matches[0]->exchange_rate,2) - $this->operation->matches[0]->comission_amount - $this->operation->matches[0]->igv : (($this->operation->type == 'Compra') ? $this->operation->matches[0]->amount :  round($this->operation->matches[0]->amount + round($this->operation->matches[0]->amount * $this->operation->matches[0]->spread/10000, 2 ), 2));
 
         $operation_id = ($this->sign == 1) ? $this->operation->matches[0]->id : $this->operation->id;
+        
+        $client_to_sign = ($this->sign == 1) ? "Cuenta Destino Contraparte" : 'Cuenta Destino Cliente';
+
+        if($this->sign == 1){
+            $account_to_sign = $this->operation->matches[0]->bank_accounts;
+        }
+        else{
+            $account_to_sign = [];
+
+            foreach ($this->operation->bank_accounts as $account) {
+                if($account->pivot->bank_account_id == $this->bank_account_id){
+                    $account_to_sign[] = $account;
+                }
+            }
+            /*$account_to_sign = DB::table('bank_account_operation')
+                ->where('bank_account_id', $this->bank_account_id)
+                ->where('operation_id', $this->operation->id)
+                ->get();*/
+        }
 
         $consult = new AdminController();
         $instruction = $consult->instruction($this->operation);
+
+        $sent_currency = ($this->operation->type == 'Compra') ? 'S/': (($this->operation->type == 'Venta') ? '$' : $this->operation->currency->sign);
+
+        $received_currency = ($this->operation->type == 'Venta') ? 'S/': (($this->operation->type == 'Compra') ? '$' : $this->operation->currency->sign);
 
         $email = $this
             ->subject('BILLEX | INSTRUCCIÓN DE TRANSFERENCIA')
@@ -70,9 +94,9 @@ class OperationSign extends Mailable
                 "date" => date('d/m/y', strtotime($this->operation->operation_date)),
 
                 "client_name" => $client_name,
-                "sent_currency" => ($this->operation->type == 'Compra') ? 'S/': (($this->operation->type == 'Venta') ? '$' : $this->operation->currency->sign),
+                "sent_currency" => $sent_currency,
                 "sent_amount" => number_format($sent_amount, 2),
-                "received_currency" => ($this->operation->type == 'Venta') ? 'S/': (($this->operation->type == 'Compra') ? '$' : $this->operation->currency->sign),
+                "received_currency" => $received_currency,
                 "received_amount" => number_format($received_amount, 2),
                 "client_account" => $this->operation->bank_accounts,
                 "client_escrow_accounts" => $this->operation->escrow_accounts,
@@ -89,7 +113,10 @@ class OperationSign extends Mailable
                 "counterpart_spread_comission" => $this->operation->matches[0]->comission_spread,
                 "counterpart_bank_account" => $this->operation->matches[0]->bank_accounts,
                 "counterpart_escrow_accounts" => $this->operation->matches[0]->escrow_accounts,
-                "show_image_counterpart" => ($this->sign == 2) ? 'none' : 'inline'
+                "show_image_counterpart" => ($this->sign == 2) ? 'none' : 'inline',
+                "client_to_sign" => $client_to_sign,
+                "account_to_sign" => $account_to_sign,
+                "sign_currency" => ($this->sign == 1) ? $sent_currency : $received_currency
             ]);
 
             if($this->sign == 1){
@@ -101,8 +128,14 @@ class OperationSign extends Mailable
                 }
             }
             else{
-                foreach ($this->operation->matches[0]->documents as $document) {
+                /*foreach ($this->operation->matches[0]->documents as $document) {
                     if($document->type == '2da firma'){
+                        $document = OperationDocument::where('id',$document->id)->where('operation_id', $document->operation_id)->first();
+                        $email->attachFromStorageDisk('s3',env('AWS_ENV').'/operations/' . $document->document_name);
+                    }
+                }*/
+                foreach ($this->operation->documents as $document) {
+                    if($document->type == '2da firma' && $document->id == $account_to_sign[0]['pivot']['voucher_id']){
                         $document = OperationDocument::where('id',$document->id)->where('operation_id', $document->operation_id)->first();
                         $email->attachFromStorageDisk('s3',env('AWS_ENV').'/operations/' . $document->document_name);
                     }

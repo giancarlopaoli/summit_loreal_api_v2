@@ -144,6 +144,31 @@
 
         <table>
             <tr><td><b>Fase de Operación</b></td><td style="color: red"></b>{{ $phase }}</b></td></tr>
+            <tr><td style="color: red"><b>FIRMA QUE SE SOLICITA ENVIAR:</b></td><td></td></tr>
+            
+
+            <tr><td><b>{{ $client_to_sign }}</b></td><td><table border = 1 style="width: 100%;"><tr><th>Banco</th><th>Cuenta</th><th>Monto</th></tr>
+            @foreach ($account_to_sign as $bank_account)
+            <tr>
+              <td><img src="{{$bank_account->bank->image}}" width="30"> {{$bank_account->bank->shortname}}</td>
+              <td>Nro: {{$bank_account->account_number}} <br>CCI: {{$bank_account->cci_number}}</td>
+              <td>{{ $sign_currency }}{{number_format($bank_account->pivot->amount,2)}}</td>
+            </tr>
+            @endforeach
+            </table></td></tr>
+
+        </table>
+        
+        <tr>
+          <td style="padding-top: 20px;width: 100%;
+          background-color: #fff;">
+          </td>
+        </tr>
+
+        <div class="line"></div>
+        <h4 style="margin-bottom: 0px; text-align: center;">Detalle de la Operación</h4>
+
+        <table>
             <tr><td><b>Tipo de Operación</b></td><td>{{ $type }}</td></tr>
             <tr><td><b>Fecha</b></td><td>{{ $date}}</td></tr>
             <tr><td><b>Cliente</b></td><td>{{ $client_name }}</td></tr>
@@ -153,7 +178,7 @@
             <tr><td><b>Fideicomiso deposito Cliente</b></td><td><table border = 1 style="width: 100%;"><tr><th>Banco</th><th>Cuenta</th><th>Monto</th></tr>
             @foreach ($client_escrow_accounts as $escrow_account)
             <tr>
-              <td><img src="{{$escrow_account->bank->image}}" width="30" style="display: {{$show_image_client}}"> {{$escrow_account->bank->shortname}}</td>
+              <td>{{$escrow_account->bank->shortname}}</td>
               <td>Nro: {{$escrow_account->account_number}} <br>CCI: {{$escrow_account->cci_number}}</td>
               <td>{{ $sent_currency }}{{number_format($escrow_account->pivot->amount,2)}}</td>
             </tr>
@@ -179,7 +204,7 @@
             <tr><td><b>Fideicomiso deposito Contraparte</b></td><td><table border = 1 style="width: 100%;"><tr><th>Banco</th><th>Cuenta</th><th>Monto</th></tr>
             @foreach ($counterpart_escrow_accounts as $escrow_account)
             <tr>
-              <td><img src="{{$escrow_account->bank->image}}" width="30" style="display: {{$show_image_counterpart}}"> {{$escrow_account->bank->shortname}}</td>
+              <td>{{$escrow_account->bank->shortname}}</td>
               <td>Nro: {{$escrow_account->account_number}} <br>CCI: {{$escrow_account->cci_number}}</td>
               <td>{{ $received_currency }}{{number_format($escrow_account->pivot->amount,2)}}</td>
             </tr>

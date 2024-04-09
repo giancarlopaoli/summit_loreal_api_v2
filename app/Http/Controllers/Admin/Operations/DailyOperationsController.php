@@ -94,12 +94,13 @@ class DailyOperationsController extends Controller
 
         $graphs = Operation::
             selectRaw("day(operation_date) as dia, sum(amount) as amount, count(amount) as num_operations")
-            ->selectRaw("(select sum(amount) from operations as op2 where month(op2.operation_date) = month(CURRENT_TIMESTAMP) and year(op2.operation_date) = year(CURRENT_TIMESTAMP) and day(op2.operation_date) <= day(operations.operation_date) and operation_status_id in (" . substr($finalizadas, 1, Str::length($finalizadas)-2) . ") and type in ('Compra','Venta')) as accumulated_amount")
+            ->selectRaw("(select sum(amount) from operations as op2 where month(op2.operation_date) = month(CURRENT_TIMESTAMP) and year(op2.operation_date) = year(CURRENT_TIMESTAMP) and day(op2.operation_date) <= day(operations.operation_date) and operation_status_id in (" . substr($finalizadas, 1, Str::length($finalizadas)-2) . ") and type in ('Compra','Venta') and op2.client_id not in (select id from clients where type = 'PL')) as accumulated_amount")
 
-            ->selectRaw("(select sum(amount) from operations as op2 where month(op2.operation_date) = month(CURRENT_TIMESTAMP) and year(op2.operation_date) = year(CURRENT_TIMESTAMP) and day(op2.operation_date) <= day(operations.operation_date) and operation_status_id in (" . substr($finalizadas, 1, Str::length($finalizadas)-2) . ") and type in ('Compra','Venta')) as accumulated_num_operations")
+            ->selectRaw("(select count(amount) from operations as op2 where month(op2.operation_date) = month(CURRENT_TIMESTAMP) and year(op2.operation_date) = year(CURRENT_TIMESTAMP) and day(op2.operation_date) <= day(operations.operation_date) and operation_status_id in (" . substr($finalizadas, 1, Str::length($finalizadas)-2) . ") and type in ('Compra','Venta') and op2.client_id not in (select id from clients where type = 'PL')) as accumulated_num_operations")
 
             ->whereIn('operation_status_id', $finalizadas)
             ->whereIn('type', ['Compra', 'Venta'])
+            ->whereNotIn('client_id', Client::where('type','PL')->get()->pluck('id'))
             ->whereRaw('month(operation_date) = month(CURRENT_TIMESTAMP) and year(operation_date) = year(CURRENT_TIMESTAMP) ')
             ->groupByRaw("day(operation_date)")
             ->orderByRaw('day(operation_date)')
@@ -211,7 +212,7 @@ class DailyOperationsController extends Controller
         return response()->json([
             'success' => true,
             'data' => [
-                'vendors' => Client::select('id','name','last_name','type')->where('type', 'PL')->get()
+                'vendors' => Client::select('id','name','last_name','type')->where('type', 'PL')->where('client_status_id', 3)->get()
             ]
         ]);
     }
@@ -238,7 +239,7 @@ class DailyOperationsController extends Controller
 
         ######### Creating vendor operation #############
 
-        $op_code = Carbon::now()->format('YmdHisv') . rand(0,9);
+        $op_code = Carbon::now()->format('ymdHisv') . rand(0,9);
         $status_id = OperationStatus::where('name', 'Pendiente envio fondos')->first()->id;
 
         // Calculando detracción
@@ -390,23 +391,39 @@ class DailyOperationsController extends Controller
                 'errors' => [
                     'La operación no se encuentra en estado Pendiente envio fondos'
                 ]
-            ], 404);
+            ]);
         }
 
         if($operation->use_escrow_account == 1){
             if($operation->matches->count() > 0) { // Si es operación creadora
                 if($operation->matches[0]->operation_status_id == OperationStatus::where('name', 'Pendiente envio fondos')->first()->id){
-                    $operation->operation_status_id = OperationStatus::where('name', 'Pendiente fondos contraparte')->first()->id;
-                    $operation->funds_confirmation_date = Carbon::now();
-                    $operation->save();
 
-                    ########### Envío operación a WS CORFID
-                    // Notificación Telegram
-                    try {
-                        $consult = new WsCorfidController();
-                        $result = $consult->register_operation($request, $operation)->getData();
-                    } catch (\Exception $e) {
-                        logger('ERROR: envío operación a WS CORFID: DailyOperationsController@confirm_funds', ["error" => $e]);
+                    $escrow_account = DB::table('escrow_account_operation')
+                        ->where('operation_id', $operation->id)
+                        ->where('voucher_id', null)
+                        ->get();
+
+                    if($escrow_account->count() == 0){
+                        $operation->operation_status_id = OperationStatus::where('name', 'Pendiente fondos contraparte')->first()->id;
+                        $operation->funds_confirmation_date = Carbon::now();
+                        $operation->save();
+
+                        ########### Envío operación a WS CORFID
+                        // Notificación Telegram
+                        try {
+                            $consult = new WsCorfidController();
+                            $result = $consult->register_operation($request, $operation)->getData();
+                        } catch (\Exception $e) {
+                            logger('ERROR: envío operación a WS CORFID: DailyOperationsController@confirm_funds', ["error" => $e]);
+                        }
+                    }
+                    else{
+                        return response()->json([
+                            'success' => false,
+                            'errors' => [
+                                'No se han subido los comprobantes en todas las cuentas'
+                            ]
+                        ]);
                     }
                     
                 }
@@ -424,7 +441,7 @@ class DailyOperationsController extends Controller
                         'errors' => [
                             'Error en el estado de la operación emparejadora'
                         ]
-                    ], 404);
+                    ]);
                 }
             }
             elseif ($operation->matched_operation->count() > 0) { // Si es operación emparejadora
@@ -456,7 +473,7 @@ class DailyOperationsController extends Controller
                         'errors' => [
                             'Error en el estado de la operación emparejadora'
                         ]
-                    ], 404);
+                    ]);
                 }
             }
         }
@@ -478,7 +495,7 @@ class DailyOperationsController extends Controller
                         'errors' => [
                             'Error en el estado de la operación emparejadora'
                         ]
-                    ], 404);
+                    ]);
                 }
             }
         }
@@ -506,29 +523,32 @@ class DailyOperationsController extends Controller
     public function upload_voucher(Request $request) {
         $val = Validator::make($request->all(), [
             'operation_id' => 'required|exists:operations,id',
+            'escrow_account_id' => 'required|exists:escrow_accounts,id',
             'file' => 'required|file'
         ]);
         if($val->fails()) return response()->json($val->messages());
 
-        logger('Archivo adjunto: DailyOperationsController@upload_voucher', ["operation_id" => $request->operation_id]);
+        logger('Archivo adjunto: DailyOperationsController@upload_voucher', ["operation_id" => $request->operation_id, "escrow_account_id" => $request->escrow_account_id]);
+
+        $operation_id = $request->operation_id;
+
+        $escrow_account = DB::table('escrow_account_operation')
+            ->where('escrow_account_id', $request->escrow_account_id)
+            ->where('operation_id', $request->operation_id);
+
+        if(is_null($escrow_account->first())){
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'Error en número de operación'
+                ]
+            ]);
+        }
+
 
         if($request->hasFile('file')){
             $file = $request->file('file');
             $path = env('AWS_ENV').'/operations/';
-
-            /*try {
-                $extension = strrpos($file->getClientOriginalName(), ".")? (Str::substr($file->getClientOriginalName(), strrpos($file->getClientOriginalName(), ".") + 1 , Str::length($file->getClientOriginalName()) -strrpos($file->getClientOriginalName(), "."))): "";
-                
-                $now = Carbon::now();
-                $filename = md5($now->toDateTimeString().$file->getClientOriginalName()).".".$extension;
-
-            } catch (\Exception $e) {
-                $filename = $file->getClientOriginalName();
-            }
-
-            if(!strrpos($filename, ".")){
-                $filename = $file->getClientOriginalName();
-            }*/
 
             $operation = Operation::find($request->operation_id);
             $original_name = $file->getClientOriginalName();
@@ -544,12 +564,10 @@ class DailyOperationsController extends Controller
             try {
                 $s3 = Storage::disk('s3')->putFileAs($path, $file, $filename);
 
-                
-
                 // Si es operación de Cliente se elimina comprobantes anteriores
                 if($operation->client->type == 'Cliente'){
                     // eliminando cualquier comprobante anterior
-                    $delete = OperationDocument::where('operation_id', $request->operation_id)
+                    $delete = OperationDocument::where('id', $escrow_account->first()->voucher_id)
                         ->where('type', Enums\DocumentType::Comprobante)
                         ->delete();
                 }
@@ -560,13 +578,21 @@ class DailyOperationsController extends Controller
                     'document_name' => $filename
                 ]);
 
+                if($insert){
+                    $escrow_account->update([
+                        "voucher_id" => $insert->id
+                    ]);
+                }
+
             } catch (\Exception $e) {
                 // Registrando el el log los datos ingresados
                 logger('ERROR: archivo adjunto: DailyOperationsController@upload_voucher', ["error" => $e]);
 
                 return response()->json([
                     'success' => false,
-                    'errors' => 'Error en el archivo adjunto',
+                    'errors' => [
+                        'Error en el archivo adjunto'
+                    ]
                 ]);
             }
 
@@ -590,9 +616,109 @@ class DailyOperationsController extends Controller
         } else{
             return response()->json([
                 'success' => false,
+                'errors' => [
+                    'Error en el archivo adjunto'
+                ]
+            ]);
+        }
+    }
+
+    public function upload_deposit_client(Request $request) {
+        $val = Validator::make($request->all(), [
+            'operation_id' => 'required|exists:operations,id',
+            'bank_account_id' => 'required|exists:bank_accounts,id',
+            'file' => 'required|file'
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+        logger('Archivo adjunto: DailyOperationsController@upload_deposit_client', ["operation_id" => $request->operation_id, "escrow_account_id" => $request->escrow_account_id]);
+
+        $bank_account = DB::table('bank_account_operation')
+            ->where('bank_account_id', $request->bank_account_id)
+            ->where('operation_id', $request->operation_id);
+
+        if(is_null($bank_account->first())){
+            return response()->json([
+                'success' => false,
+                'errors' => 'Error en número de operación',
+            ]);
+        }
+
+        if($request->hasFile('file')){
+            $file = $request->file('file');
+            $path = env('AWS_ENV').'/operations/';
+
+            $operation = Operation::find($request->operation_id);
+            $original_name = $file->getClientOriginalName();
+            $longitud = Str::length($file->getClientOriginalName());
+
+            if($longitud >= 10) {
+                $filename = $operation->code . "_dpst_" . substr($original_name, $longitud - 10, $longitud);
+            }
+            else{
+                $filename = $operation->code . "_dpst_" . $original_name;
+            }
+
+            try {
+                $s3 = Storage::disk('s3')->putFileAs($path, $file, $filename);
+
+                // eliminando cualquier comprobante anterior
+                $delete = OperationDocument::where('id', $bank_account->first()->voucher_id)
+                    ->where('type', Enums\DocumentType::Firma2)
+                    ->delete();
+
+                $insert = OperationDocument::create([
+                    'operation_id' => $request->operation_id,
+                    'type' => Enums\DocumentType::Firma2,
+                    'document_name' => $filename
+                ]);
+
+                if($insert){
+                    $bank_account->update([
+                        "voucher_id" => $insert->id
+                    ]);
+                }
+
+            } catch (\Exception $e) {
+                // Registrando el el log los datos ingresados
+                logger('ERROR: archivo adjunto: DailyOperationsController@upload_deposit_client', ["error" => $e]);
+
+                return response()->json([
+                    'success' => false,
+                    'errors' => 'Error en el archivo adjunto',
+                ]);
+            }
+
+            OperationHistory::create(["operation_id" => $request->operation_id,"user_id" => auth()->id(),"action" => "Comprobante cargado", "detail" => 'filename: ' . $filename]);
+
+            /*// Notificación Telegram
+            try {
+                $consult = new TelegramNotificationsControllers();
+                $notification = $consult->client_voucher($request)->getData();
+            } catch (\Exception $e) {
+                logger('ERROR: notificación telegram: DailyOperationsController@upload_deposit_client', ["error" => $e]);
+            }*/
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'Archivo agregado'
+                ]
+            ]);
+
+        } else{
+            return response()->json([
+                'success' => false,
                 'errors' => 'Error en el archivo adjunto',
             ]);
         }
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'Archivo agregado'
+            ]
+        ]);
     }
 
     public function upload_document(Request $request) {
@@ -731,6 +857,22 @@ class DailyOperationsController extends Controller
             ]);
         }
 
+        if($operation->matches->count() > 0) { // Si es operación creadora
+            $bank_account = DB::table('bank_account_operation')
+            ->where('operation_id', $operation->id)
+            ->where('signed_at', null)
+            ->get();
+
+            if($bank_account->count() > 0){
+                return response()->json([
+                    'success' => false,
+                    'errors' => [
+                        'Aún no se envían todas las firmas para todas las cuentas del cliente'
+                    ]
+                ]);
+            }
+        }
+
         if(is_null($operation->client->invoice_to)){
             $client_name = $operation->client->client_full_name;
             $customer_type = ($operation->client->customer_type == 'PJ') ? 1 : 2;
@@ -739,6 +881,7 @@ class DailyOperationsController extends Controller
             $client_document_number = $operation->client->document_number;
             $localidad = isset($operation->client->district) ? $operation->client->district->name . " - " . $operation->client->district->province->name ." - " . $operation->client->district->province->department->name : "";
             $client_address = $operation->client->address . ", " . $localidad;
+            $client_type = $operation->client->customer_type;
         }
         else{
             $client = Client::find($operation->client->invoice_to);
@@ -750,10 +893,21 @@ class DailyOperationsController extends Controller
             $client_document_number = $client->document_number;
             $localidad = isset($client->district) ? $client->district->name . " - " . $client->district->province->name ." - " . $client->district->province->department->name : "";
             $client_address = $client->address . ", " . $localidad;
+            $client_type = $client->customer_type;
         }
 
         $executive_email = (!is_null($operation->client->executive)) ? $operation->client->executive->user->email : null;
-        
+
+        $detraction = ($operation->detraction_amount > 0 && $client_type == 'PJ') ? "true" : "false";
+        $detraction_type = ($operation->detraction_amount > 0 && $client_type == 'PJ') ? 35 : "";
+        $detraction_total = ($operation->detraction_amount > 0 && $client_type == 'PJ') ? round($operation->detraction_amount,2) : "";
+        $detraction_percentage = ($operation->detraction_amount > 0) ? Configuration::where('shortname', 'DETRACTION')->first()->value : "";
+        $detraction_payment = ($operation->detraction_amount > 0 && $client_type == 'PJ') ? 1 : "";
+
+        $currency_detraction = ($operation->type == 'Interbancaria') ? $operation->currency->sign : 'S/';
+
+        $observation = ($operation->detraction_amount > 0 && $client_type == 'PJ') ? "Monto detracción: " . $currency_detraction . round($operation->detraction_amount,2) : "";
+
         try{
 
             $data = array(
@@ -789,8 +943,12 @@ class DailyOperationsController extends Controller
                 "percepcion_base_imponible"         => "",
                 "total_percepcion"                  => "",
                 "total_incluido_percepcion"         => "",
-                "detraccion"                        => "false",
-                "observaciones"                     => "",
+                "detraccion"                        => $detraction,
+                "detraccion_tipo"                   => $detraction_type,
+                "detraccion_total"                  => $detraction_total,
+                "detraccion_porcentaje"             => $detraction_percentage,
+                "medio_de_pago_detraccion"          => $detraction_payment,
+                "observaciones"                     => $observation,
                 "documento_que_se_modifica_tipo"    => "",
                 "documento_que_se_modifica_serie"   => "",
                 "documento_que_se_modifica_numero"  => "",
@@ -1018,7 +1176,8 @@ class DailyOperationsController extends Controller
 
     public function operation_sign(Request $request, Operation $operation) {
         $val = Validator::make($request->all(), [
-            'sign' => 'required|in:1,2'
+            'sign' => 'required|in:1,2',
+            'bank_account_id' => 'nullable|exists:bank_accounts,id'
         ]);
         if($val->fails()) return response()->json($val->messages());
 
@@ -1057,9 +1216,54 @@ class DailyOperationsController extends Controller
             ]);
         }
         elseif($request->sign == 2){
+
+            $bank_account = DB::table('bank_account_operation')
+                ->where('bank_account_id', $request->bank_account_id)
+                ->where('operation_id', $operation->id);
+
+            // calculando el monto que se ha confirmado en las cuentas de fideicomiso
+            $matches_operation_id = $operation->matches[0]->id;
+            
+            $confirmed_amount = DB::table('escrow_account_operation')
+                ->selectRaw('sum(amount - comission_amount) as confirmed_amount')
+                ->where('operation_id', $matches_operation_id)
+                ->where('transfer_number', 1)
+                ->first()->confirmed_amount;
+
+            $sent_amount = DB::table('bank_account_operation')
+                ->selectRaw('coalesce(sum(amount - comission_amount),0) as sent_amount')
+                ->where('operation_id', $operation->id)
+                ->where('bank_account_id', '!=', $request->bank_account_id)
+                ->where('signed_at', '!=', null)
+                ->first()->sent_amount;
+
+            $available_amount = $confirmed_amount - $sent_amount;
+
+            if($available_amount < $bank_account->first()->amount){
+                return response()->json([
+                    'success' => false,
+                    'errors' => ['No se han confirmados los fondos suficientes para atender esta operación.']
+                ]);
+            }
+
+            if(is_null($bank_account->first())){
+                return response()->json([
+                    'success' => false,
+                    'errors' => ['Error en número de operación']
+                ]);
+            }
+
+            if($bank_account->first()->voucher_id == null){
+                return response()->json([
+                    'success' => false,
+                    'errors' => ['No se encontró el comprobante de 2da Firma']
+                ]);
+            }
             
             // Enviar Correo()
-            $rpta_mail = Mail::send(new OperationSign($operation, $request->sign));
+            $rpta_mail = Mail::send(new OperationSign($operation, $request->sign,$request->bank_account_id));
+
+            $bank_account->update(['signed_at' => Carbon::now()]);
 
             $operation->sign_date = Carbon::now();
             $operation->save();
@@ -1084,6 +1288,57 @@ class DailyOperationsController extends Controller
         ]);
     }
 
+    public function confirm_funds_pl(Request $request, Operation $operation) {
+        $val = Validator::make($request->all(), [
+            'escrow_account_id' => 'required|exists:escrow_accounts,id',
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+
+        if( $operation->operation_status_id != OperationStatus::where('name', 'Fondos enviados')->first()->id){
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'La operación debe encontrarse en estado Fondos enviados.'
+                ]
+            ]);
+        }
+
+        $escrow_account = DB::table('escrow_account_operation')
+            ->where('escrow_account_id', $request->escrow_account_id)
+            ->where('operation_id', $operation->id);
+
+        if(is_null($escrow_account->first())){
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'Error en número de operación',
+                ]
+            ]);
+        }
+
+        if($escrow_account->first()->transfer_number != null){
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'El depósito ya había sido confirmado',
+                ]
+            ]);
+        }
+        else{
+            $escrow_account->update(['transfer_number' => 1]);
+        }
+
+        OperationHistory::create(["operation_id" => $operation->id,"user_id" => auth()->id(),"action" => "Fondos PL confirmados"]);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'operation' => $escrow_account->get()
+            ]
+        ]);
+    }
+
     public function close_operation(Request $request, Operation $operation) {
 
         if($operation->operation_status_id != OperationStatus::wherein('name', ['Fondos enviados'])->first()->id){
@@ -1095,6 +1350,35 @@ class DailyOperationsController extends Controller
             ]); 
         }
         else{
+
+            $escrow_accounts = DB::table('escrow_account_operation')
+                ->where('operation_id', $operation->id)
+                ->get();
+
+            // Si hay más de una cuenta de fideicomiso a depositar
+            if($escrow_accounts->count() > 1 ){
+
+                $escrow_account = DB::table('escrow_account_operation')
+                    ->where('operation_id', $operation->id)
+                    ->where('transfer_number', null)
+                    ->get();
+
+                // Se valida que se haya confirmado el depósito de todas
+                if($escrow_account->count() > 0 ){
+
+                    return response()->json([
+                        'success' => false,
+                        'errors' => [
+                            'No se han confirmado el depósito de todas las cuentas'
+                        ]
+                    ]);
+                }
+            }
+            else{
+                $escrow_accounts = DB::table('escrow_account_operation')
+                ->where('operation_id', $operation->id)
+                ->update(['transfer_number' => 1]);
+            }
 
             $operation->operation_status_id = OperationStatus::where('name', 'Finalizado sin factura')->first()->id;
             $operation->funds_confirmation_date = Carbon::now();
@@ -1162,7 +1446,9 @@ class DailyOperationsController extends Controller
 
                     return response()->json([
                         'success' => false,
-                        'errors' => 'Error en el archivo adjunto',
+                        'errors' => [
+                            'Error en el archivo adjunto',
+                        ]
                     ]);
                 }
 
@@ -1171,7 +1457,9 @@ class DailyOperationsController extends Controller
             } else{
                 return response()->json([
                     'success' => false,
-                    'errors' => 'Error en el archivo adjunto',
+                    'errors' => [
+                        'Error en el archivo adjunto',
+                    ]
                 ]);
             }
         }
@@ -1182,7 +1470,9 @@ class DailyOperationsController extends Controller
                 return response()->json([
                     'success' => false,
                     'document' => $document,
-                    'errors' => 'Error: no se encontró el comprobante de transferencia del cliente',
+                    'errors' => [
+                        'Error: no se encontró el comprobante de transferencia del cliente',
+                    ]
                 ]);
             }
         }
@@ -1216,7 +1506,9 @@ class DailyOperationsController extends Controller
 
             return response()->json([
                 'success' => false,
-                'errors' => 'Error al enviar correo',
+                'errors' => [
+                    'Error al enviar correo'
+                ]
             ]);
         }
 

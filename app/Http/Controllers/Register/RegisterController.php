@@ -751,7 +751,15 @@ class RegisterController extends Controller
                     $mensaje = 'El registro se realizó de manera exitosa.';
                 }
 
-                $rpta_mail = Mail::send(new NewClientNotification($mensaje, $client_id));
+
+                try {
+                    //Enviando mail de notificación de registro de cliente
+                    $rpta_mail = Mail::send(new NewClientNotification($mensaje, $client_id));
+                } catch (\Exception $e) {
+                    $error = true;
+                    logger('ERROR: Register Person: RegisterController@register_person', ["mensaje" => "No se pudo enviar el correo de notificación", "error" => $e]);  
+                }
+
 
                 return response()->json([
                     'success' => true,
@@ -770,8 +778,15 @@ class RegisterController extends Controller
 
             //Enviando confirmación de Registro al equipo Billex
             $mensaje = "El registro no se realizó o se realizó de manera parcial.";
-            $rpta_mail = Mail::send(new NewClientNotification($mensaje, $client_id));
-
+            
+            try {
+                //Enviando mail de notificación de registro de cliente
+                $rpta_mail = Mail::send(new NewClientNotification($mensaje, $client_id));
+            } catch (\Exception $e) {
+                $error = true;
+                logger('ERROR: Register Person: RegisterController@register_person', ["mensaje" => "No se pudo enviar el correo de notificación", "error" => $e]);  
+            }
+            
             return response()->json([
                 'success' => true,
                 'client_id' => $client_id,
