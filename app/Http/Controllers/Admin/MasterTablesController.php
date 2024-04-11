@@ -62,7 +62,7 @@ class MasterTablesController extends Controller
     public function person_document_types() {
         return response()->json([
             'success' => true,
-            'data' => DocumentType::select('id','name','size')->where('active', true)->wherein('name', ['DNI', 'Carné de extranjería','Pasaporte'])->get()
+            'data' => DocumentType::select('id','name','size')->where('active', true)->wherein('name', ['DNI', 'Carné de extranjería','Pasaporte','RUC','No Domiciliado'])->get()
         ]);
     }
 
