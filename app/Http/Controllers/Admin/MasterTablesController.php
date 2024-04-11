@@ -69,7 +69,7 @@ class MasterTablesController extends Controller
     public function associate_document_types() {
         return response()->json([
             'success' => true,
-            'data' => DocumentType::select('id','name','size')->where('active', true)->wherein('name', ['RUC','DNI', 'Carné de extranjería','Pasaporte','Otros (Carta de Identidad, Cedula de identidad, Partida de Nacimiento, etc.)','No Domiciliado'])->get()
+            'data' => DocumentType::select('id','name','size')->where('active', true)->wherein('name', ['RUC','DNI', 'Carné de extranjería','Pasaporte','No Domiciliado'])->get()
         ]);
     }
 
