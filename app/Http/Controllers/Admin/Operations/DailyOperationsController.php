@@ -85,11 +85,11 @@ class DailyOperationsController extends Controller
         #############################################
 
         $indicators = Operation::selectRaw("coalesce(sum(amount),0) as total_amount, count(id) as num_operations")
-            ->selectRaw("(select sum(op1.amount) from operations op1 inner join clients cl on op1.client_id = cl.id where month(op1.operation_date) = $month and year(op1.operation_date) = $year and op1.operation_status_id in (" . substr($finalizadas, 1, Str::length($finalizadas)-2) . ") and cl.type != 'PL') as monthly_amount")
-            ->selectRaw("(select count(op1.amount) from operations op1 inner join clients cl on op1.client_id = cl.id where month(op1.operation_date) = $month and year(op1.operation_date) = $year and op1.operation_status_id in (" . substr($finalizadas, 1, Str::length($finalizadas)-2) . ") and cl.type != 'PL') as monthly_operations")
+            ->selectRaw("(select sum(op1.amount) from operations op1 inner join clients cl on op1.client_id = cl.id where month(op1.operation_date) = $month and year(op1.operation_date) = $year and op1.operation_status_id not in (9,10) and cl.type != 'PL') as monthly_amount")
+            ->selectRaw("(select count(op1.amount) from operations op1 inner join clients cl on op1.client_id = cl.id where month(op1.operation_date) = $month and year(op1.operation_date) = $year and op1.operation_status_id not in (9,10) and cl.type != 'PL') as monthly_operations")
             ->whereRaw("date(operation_date) = '$date'")
             ->whereNotIn('client_id', Client::where('type','PL')->get()->pluck('id'))
-            ->whereIn('operation_status_id', $finalizadas)
+            ->whereNotIn('operation_status_id', [9,10])
             ->get();
 
         $graphs = Operation::
