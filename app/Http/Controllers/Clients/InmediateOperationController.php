@@ -1279,13 +1279,28 @@ class InmediateOperationController extends Controller
             ->selectRaw("(select count(*) from operations inner join bank_account_operation bao on operations.id = bao.operation_id where operations.operations_analyst_id = operations_analysts.id and date(operations.operation_date) = date(now())) + (select count(*) from operations inner join escrow_account_operation eao on operations.id = eao.operation_id where operations.operations_analyst_id = operations_analysts.id and date(operations.operation_date) = date(now())) as nro_cuentas")*/
 
 
-            ->selectRaw("(select sum(if(operations.operation_status_id in (6,7),1, if(operations.operation_status_id in (1,8),2, if(operations.operation_status_id in (2,3,4,5),3,0))) + 
+            /*->selectRaw("(select sum(if(operations.operation_status_id in (6,7),1, if(operations.operation_status_id in (1,8),2, if(operations.operation_status_id in (2,3,4,5),3,0))) + 
                 if(operations.operation_status_id in (1,2,3,4,5), (select count(*) from bank_account_operation bao where operations.id = bao.operation_id) + (select count(*) from escrow_account_operation eao where operations.id = eao.operation_id),0) ) 
                 
-                from operations where operations.operations_analyst_id = operations_analysts.id and date(operations.operation_date) = date(now())) as contador")
+                from operations where operations.operations_analyst_id = operations_analysts.id and date(operations.operation_date) = date(now())) as contador")*/
+
+            ->selectRaw(" coalesce((select sum(if(operations.operation_status_id in (6,7),1, if(operations.operation_status_id in (1,8),2, if(operations.operation_status_id in (2,3,4,5),3,0))) + 
+                if(operations.operation_status_id in (1,2,3,4,5), (select count(*) from bank_account_operation bao where operations.id = bao.operation_id) + (select count(*) from escrow_account_operation eao where operations.id = eao.operation_id),0) ) 
+                
+                from operations where operations.operations_analyst_id = operations_analysts.id and date(operations.operation_date) = date(now())),0) + 
+
+                coalesce((select sum(if(operations.operation_status_id in (6,7),0, if(operations.operation_status_id in (1,8),0, if(operations.operation_status_id in (2,3,4,5),3,0))) + 
+                if(operations.operation_status_id in (1,2,3,4,5), (select count(*) from bank_account_operation bao where operations.id = bao.operation_id) + (select count(*) from escrow_account_operation eao where operations.id = eao.operation_id),0) ) 
+                
+                from operations where operations.operations_analyst_id = operations_analysts.id),0) as contador")
 
             ->orderByRaw('contador')
             ->get();
+/*
+        return response()->json([
+            "operacion" => $analysts
+        ]);*/
+
 
         if($analysts->count() == 0){
             return response()->json([

@@ -1921,7 +1921,7 @@ class DailyOperationsController extends Controller
 
     public function operation_analyst_summary(Request $request) {
         $analysts = OperationsAnalyst::select('id','online','start_time','end_time')
-            ->selectRaw("(select count(*) from operations where operations.operations_analyst_id = operations_analysts.id and operations.operation_status_id not in (6,7,9,10) and date(operations.operation_date) = date(now())) as ops_in_progress")
+            ->selectRaw("(select count(*) from operations where operations.operations_analyst_id = operations_analysts.id and operations.operation_status_id not in (6,7,9,10)) as ops_in_progress")
             ->selectRaw("(select count(*) from operations where operations.operations_analyst_id = operations_analysts.id and operations.operation_status_id in (6,7) and date(operations.operation_date) = date(now())) as ops_finished")
             ->where('status', 'Activo')
             ->with('user:id,name,last_name')
