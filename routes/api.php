@@ -236,6 +236,7 @@ Route::middleware('encryptresponses')->group(function () {
             Route::GET('operation-analysts', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'operation_analyst']);
             Route::PUT('operation-analysts', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'analyst_status']);
             Route::GET('operation-analyst-summary', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'operation_analyst_summary']);
+            Route::GET('executives-summary', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'executives_summary']);
 
             ########## Tiempos de Atención #############
             Route::prefix('times')->group(function () {

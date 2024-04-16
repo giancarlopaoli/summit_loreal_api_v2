@@ -10,6 +10,7 @@ use Carbon\Carbon;
 use App\Models\Client;
 use App\Models\BankAccount;
 use App\Models\EscrowAccount;
+use App\Models\Executive;
 use App\Models\Operation;
 use App\Models\OperationsAnalyst;
 use App\Models\OperationsAnalystLog;
@@ -1960,6 +1961,23 @@ class DailyOperationsController extends Controller
             'success' => true,
             'data' => [
                 'Estado modificado exitosamente'
+            ]
+        ]);
+    }
+
+    public function executives_summary(Request $request) {
+        $analysts = Executive::select('id')
+            ->selectRaw("(select count(*) from operations inner join clients on operations.client_id = clients.id where clients.executive_id = executives.id and operations.operation_status_id not in (6,7,9,10)) as ops_in_progress")
+            ->selectRaw("(select count(*) from operations inner join clients on operations.client_id = clients.id where clients.executive_id = executives.id and operations.operation_status_id in (6,7) and date(operations.operation_date) = date(now())) as ops_finished")
+            ->where('type', 'Tiempo Completo')
+            ->whereNotIn('id', [483,484,2274])
+            ->with('user:id,name,last_name')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'analyst' => $analysts,
             ]
         ]);
     }
