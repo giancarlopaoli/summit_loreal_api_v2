@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Client;
 use App\Models\ExecutiveGoal;
 use App\Models\Lead;
+use App\Models\Operation;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -18,37 +19,38 @@ class DashboardController extends Controller
         $executive_id = (isset($request->executive_id)) ? $request->executive_id : auth()->id();
 
         // Tablero de indicadores globales
-        $tablero_prospectos = Lead::selectRaw("count(id) as nro_prospectos")
-            ->selectRaw("(select count(lt.id) from lead_trackings lt inner join leads ld on lt.lead_id = ld.id where ld.executive_id = $executive_id) as seguimiento_prospectos")
-            ->where('executive_id', $executive_id)->first();
+        $tablero_cartera = DB::table('operations_view')
+            ->selectRaw(" (select count(id) from clients where executive_id = $executive_id and client_status_id = 3) as total_clients")
+            ->selectRaw("sum(amount) as total_amount")
+            ->selectRaw("sum(comission_amount) as total_comissions")
+            ->selectRaw("(select count( distinct op.client_id) from operations_view op where op.executive_id = $executive_id) as unique_clients")
+            ->selectRaw(" coalesce((select count(cl.id) from clients cl where year(cl.registered_at) = year(now()) and cl.executive_id = $executive_id),0) as new_clients")
 
-        $tablero_cartera = Client::join('leads','leads.client_id','=','clients.id')
-            ->selectRaw("count(clients.id) as nro_cartera")
-            ->selectRaw("(select count(lt.id) from client_trackings lt inner join clients ld on lt.client_id = ld.id where ld.executive_id = $executive_id) as seguimiento_cartera")
-            ->where('leads.executive_id', $executive_id)
+            ->where('executive_id', $executive_id)
             ->first();
 
-        
-        $grafico_globales = Client::selectRaw("month(registered_at) as mes, year(registered_at) as anio")
-            ->selectRaw("(select count(id) from leads where month(created_at) = mes and year(created_at) = anio and executive_id = $executive_id) as nro_prospectos")
-            ->selectRaw("(select count(lt.id) from lead_trackings lt inner join leads ld on lt.lead_id = ld.id where ld.executive_id = $executive_id and month(lt.created_at) = mes and year(lt.created_at) = anio) as seguimiento_prospectos")
-            ->selectRaw("(select count(lt.id) from client_trackings lt inner join clients ld on lt.client_id = ld.id where ld.executive_id = $executive_id and month(lt.created_at) = mes and year(lt.created_at) = anio) as seguimiento_cartera")
+        $grafico_globales = DB::table('operations_view')
+            ->selectRaw("year(operation_date) as year")
+            ->selectRaw("sum(if(executive_id =$executive_id, amount,0)) as volume")
+            ->selectRaw("sum(if(executive_id =$executive_id, comission_amount,0)) as comission")
 
-            ->whereRaw('((year(registered_at)-2000)*12 + month(registered_at)) >= (year(now())-2000)*12 + month(now())-6')
-            ->groupByRaw("month(registered_at), year(registered_at)")
-            ->orderByRaw('year(registered_at), month(registered_at)')
+            ->selectRaw("sum(if(executive_id =$executive_id, 1,0)) as unique_clients")
+
+            ->selectRaw(" coalesce((select count(distinct op.client_id) from operations_view op where op.executive_id = $executive_id and year(op.operation_date) = year),0) as unique_clients")
+
+            ->selectRaw(" coalesce((select count(cl.id) from clients cl where year(cl.registered_at) = year and cl.executive_id = $executive_id),0) as new_clients")
+
+            ->groupByRaw("year(operation_date)")
+            ->orderByRaw('year(operation_date)')
             ->get();
 
-        
-        $clientes_conseguidos = Client::selectRaw("month(registered_at) as mes, year(registered_at) as anio")
-            ->selectRaw("(select count(cl2.id) from clients cl2 where month(cl2.registered_at) = month(clients.registered_at) and year(cl2.registered_at) = year(clients.registered_at) and cl2.executive_id = $executive_id ) as nro_clientes")
-            ->whereRaw('((year(registered_at)-2000)*12 + month(registered_at)) >= (year(CURRENT_TIMESTAMP)-2000)*12 + month(CURRENT_TIMESTAMP)-6')
-            ->groupByRaw("month(registered_at), year(registered_at)")
-            ->orderByRaw('year(registered_at), month(registered_at)')
-            ->get();
-
-        
-    
+        /*return response()->json([
+            'success' => true,
+            'data' => [
+                $tablero_cartera,
+                $grafico_globales
+            ]
+        ]);*/
 
         // Operaciones Mensuales
         $grafico_ventas = DB::table('operations_view')
@@ -101,35 +103,22 @@ class DashboardController extends Controller
             ->whereRaw(" operation_month = month(CURRENT_TIMESTAMP) and operation_year = year(CURRENT_TIMESTAMP)")
             ->first();
 
-
-        /*$spreads_pl = DB::table('Comision')
-            ->select('RangoMin', 'RangoMax', 'comision', 'spread', 'spreadAux')
-            ->selectRaw("(select sp.Compra*10000 from spread sp where sp.ComisionId = Comision.ComisionId and sp.Estado = 'ACT' and ProvedorliquidezId = 3166) as r4_compra")
-            ->selectRaw("(select sp.Venta*10000 from spread sp where sp.ComisionId = Comision.ComisionId and sp.Estado = 'ACT' and ProvedorliquidezId = 3166) as r4_venta")
-            ->selectRaw("(select sp.Compra*10000 from spread sp where sp.ComisionId = Comision.ComisionId and sp.Estado = 'ACT' and ProvedorliquidezId = 366) as coril_compra")
-            ->selectRaw("(select sp.Venta*10000 from spread sp where sp.ComisionId = Comision.ComisionId and sp.Estado = 'ACT' and ProvedorliquidezId = 366) as coril_venta")
-            ->selectRaw("(select sp.Compra*10000 from spread sp where sp.ComisionId = Comision.ComisionId and sp.Estado = 'ACT' and ProvedorliquidezId = 4280) as ripley_compra")
-            ->selectRaw("(select sp.Venta*10000 from spread sp where sp.ComisionId = Comision.ComisionId and sp.Estado = 'ACT' and ProvedorliquidezId = 4280) as ripley_venta")
-            ->where('Estado','ACT')
-            ->get();*/
-
-
-
         return response()->json([
             'success' => true,
             'data' => [ 
                 'tablero' => [
-                    'prospectos' => $tablero_prospectos->nro_prospectos,
-                    'seguimiento_prospectos' => $tablero_prospectos->seguimiento_prospectos,
-                    'cartera' => $tablero_cartera->nro_cartera,
-                    'seguimiento_cartera' => $tablero_cartera->seguimiento_cartera
+                    'volume' => $tablero_cartera->total_amount,
+                    'comissions' => $tablero_cartera->total_comissions,
+                    'unique_clients' => $tablero_cartera->unique_clients,
+                    'total_clients' => $tablero_cartera->total_clients,
+                    'new_clients' => $tablero_cartera->new_clients
                 ],
                 'graficos_tablero' => [
-                    'mes' => $grafico_globales->pluck('mes'),
-                    'nro_prospectos' => $grafico_globales->pluck('nro_prospectos'),
-                    'seguimiento_prospectos' => $grafico_globales->pluck('seguimiento_prospectos'),
-                    'nro_clientes' => $clientes_conseguidos->pluck('nro_clientes'),
-                    'seguimiento_cartera' => $grafico_globales->pluck('seguimiento_cartera'),
+                    'year' => $grafico_globales->pluck('year'),
+                    'volume' => $grafico_globales->pluck('volume'),
+                    'comissions' => $grafico_globales->pluck('comission'),
+                    'unique_clients' => $grafico_globales->pluck('unique_clients'),
+                    'new_clients' => $grafico_globales->pluck('new_clients'),
                 ],
                 'ventas_mensuales' => [
                     'periodo' => $grafico_ventas->pluck('mes'),
@@ -138,10 +127,6 @@ class DashboardController extends Controller
                     'comision_ejecutivo' => $grafico_ventas->pluck('comision_ejecutivo'),
                     'nro_operaciones' => $grafico_ventas->pluck('nro_ops'),
                     'clientes_unicos' => $grafico_ventas->pluck('clientes_unicos'),
-                    //'volumen_empresas' => $grafico_ventas->pluck('volumen_empresas'),
-                    //'volumen_personas' => $grafico_ventas->pluck('volumen_personas'),
-                    //'cuenta_empresas' => $grafico_ventas->pluck('cuenta_empresas'),
-                    //'cuenta_personas' => $grafico_ventas->pluck('cuenta_personas'),
                     'volumen_compra' => $grafico_ventas->pluck('volumen_compra'),
                     'volumen_venta' => $grafico_ventas->pluck('volumen_venta'),
                     'meta' => $grafico_ventas->pluck('meta')
@@ -179,19 +164,6 @@ class DashboardController extends Controller
             ->where('operation_executive_id','!=',null)
             ->whereRaw(" operation_month = $month and operation_year = $year")
             ->get();
-
-        /*$cumplimiento_meta_mensual = DB::connection('mysql')->table('goals_achievement')
-            ->select('operation_executive_id','operation_month', 'operation_year','avance','goal')
-            ->selectRaw(" round(cumplimiento,4) as cumplimiento, if( ((operation_executive_id = 2801 or operation_executive_id = 2811) and $year = 2023),0.05, comission_achieved ) as comission_achieved")
-            ->selectRaw("(select sum(round( ov.comission*ov.executive_comission ,2))  from operations_view ov where ov.executive_id = goals_achievement.operation_executive_id and month(ov.creation_date) = goals_achievement.operation_month and year(ov.creation_date) = goals_achievement.operation_year) as comission_earned")
-            ->whereRaw(" operation_month = $month and operation_year = $year")
-            ->orderByRaw('operation_year asc, operation_month')
-            ->get();
-
-        $users = DB::table('Usuario')
-            ->whereIn('UsuarioId', $cumplimiento_meta_mensual->pluck('operation_executive_id'))
-            ->select('UsuarioId as executive_id', 'Nombres', 'Apellidos')
-            ->get();*/
 
         return response()->json([
             'success' => true,
