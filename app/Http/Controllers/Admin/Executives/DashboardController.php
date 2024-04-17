@@ -17,6 +17,7 @@ class DashboardController extends Controller
     public function dashboard(Request $request) {
 
         $executive_id = (isset($request->executive_id)) ? $request->executive_id : auth()->id();
+        $year = (isset($request->year)) ? $request->year : Carbon::now()->year;
 
         // Tablero de indicadores globales
         $tablero_cartera = DB::table('operations_view')
@@ -63,13 +64,6 @@ class DashboardController extends Controller
             ->orderByRaw('year(operation_date) asc, month(operation_date)')
             ->limit(7)
             ->get();
-        
-         /*return response()->json([
-            'success' => true,
-            'data' => [
-                $grafico_ventas
-            ]
-        ]);*/
 
         // Calculo meta diaria
         $meta_diaria = ExecutiveGoal::selectRaw("*, month(now()) as mes, year(now()) as anio")
@@ -102,6 +96,8 @@ class DashboardController extends Controller
             ->where('operation_executive_id', $executive_id)
             ->whereRaw(" operation_month = month(CURRENT_TIMESTAMP) and operation_year = year(CURRENT_TIMESTAMP)")
             ->first();
+
+
 
         return response()->json([
             'success' => true,
@@ -169,6 +165,59 @@ class DashboardController extends Controller
             'success' => true,
             'data' => [
                 'cumplimiento_meta' => $goal_progress
+            ]
+        ]);
+    }
+
+    public function executives_summary(Request $request) {
+        $executive_id = (isset($request->executive_id)) ? $request->executive_id : auth()->id();
+        $year = (isset($request->year)) ? $request->year : Carbon::now()->year;
+
+
+        $tabla = DB::table('operations_view as operations')
+            ->selectRaw("month(operation_date) as mes, $year as year")
+            ->selectRaw(" sum(if(operations.executive_id = $executive_id, 1,0)) as num_operations")
+            ->selectRaw(" sum(if(operations.executive_id = $executive_id, operations.amount,0)) as volume")
+            ->selectRaw(" coalesce(round(sum(if(operations.executive_id = $executive_id, operations.amount,0))/sum(if(operations.executive_id = $executive_id, 1,0)),0),0) as avg_ticket")
+            ->selectRaw(" coalesce((select eg.goal from executive_goals eg where eg.month = mes and eg.executive_id = $executive_id and eg.year = $year limit 1),0) as goal ") 
+
+            ->selectRaw(" round(100*coalesce(sum(if(operations.executive_id = $executive_id, operations.amount,0)) / coalesce((select eg.goal from executive_goals eg where eg.month = mes and eg.executive_id = $executive_id and eg.year = $year limit 1),0),0),0) as goal_achieved ")            
+            ->selectRaw(" sum(if(operations.executive_id = $executive_id, operations.comission_amount,0)) as comision")
+            ->selectRaw(" round(100*coalesce(sum(if(operations.executive_id = $executive_id, operations.comission_amount,0))/sum(if(operations.executive_id = $executive_id, operations.amount*operations.exchange_rate,0)),0),2) as spread")
+            ->selectRaw(" if( coalesce((select sum(ov.amount) from operations_view ov where month(ov.operation_date) +1 = mes and year(ov.operation_date) = $year and ov.executive_id = $executive_id),0) = 0, 0, sum(if(operations.executive_id = $executive_id, operations.amount,0)) - coalesce((select sum(ov.amount) from operations_view ov where month(ov.operation_date) +1 = mes and year(ov.operation_date) = $year and ov.executive_id = $executive_id),0)) as var_volume")
+            ->selectRaw(" count(distinct if(operations.executive_id = $executive_id, client_id,0)) - 1 as unique_clients")
+            ->selectRaw(" coalesce((select count(cl.id) from clients cl where month(cl.registered_at) = mes and year(cl.registered_at) = year and cl.executive_id = $executive_id),0) as new_clients")
+            ->selectRaw(" (select sum(ov.comission_amount) from operations_view ov where month(ov.operation_date) <= mes and year(ov.operation_date) = year and ov.executive_id = $executive_id) as accumulated_comissions")
+
+            ->whereRaw("year(operation_date) = $year")
+            ->whereIn("operations.type", ['Compra','Venta'])
+            ->groupByRaw("month(operation_date)")
+            ->orderByRaw('month(operation_date)')
+            ->get();
+
+        $total = DB::table('operations_view as operations')
+            ->selectRaw("$year as year")
+            ->selectRaw(" sum(if(operations.executive_id = $executive_id, 1,0)) as num_operations")
+            ->selectRaw(" sum(if(operations.executive_id = $executive_id, operations.amount,0)) as volume")
+            ->selectRaw(" coalesce(round(sum(if(operations.executive_id = $executive_id, operations.amount,0))/sum(if(operations.executive_id = $executive_id, 1,0)),0),0) as avg_ticket")
+            ->selectRaw(" coalesce((select sum(eg.goal) from executive_goals eg where eg.executive_id = $executive_id and eg.year = $year limit 1),0) as goal ") 
+
+            ->selectRaw(" round(100*coalesce(sum(if(operations.executive_id = $executive_id, operations.amount,0)) / coalesce((select sum(eg.goal) from executive_goals eg where eg.executive_id = $executive_id and eg.year = $year limit 1),0),0),0) as goal_achieved ")            
+            ->selectRaw(" sum(if(operations.executive_id = $executive_id, operations.comission_amount,0)) as comision")
+            ->selectRaw(" round(100*coalesce(sum(if(operations.executive_id = $executive_id, operations.comission_amount,0))/sum(if(operations.executive_id = $executive_id, operations.amount*operations.exchange_rate,0)),0),2) as spread")
+            ->selectRaw(" count(distinct if(operations.executive_id = $executive_id, client_id,0)) - 1 as unique_clients")
+            ->selectRaw(" coalesce((select count(cl.id) from clients cl where year(cl.registered_at) = year and cl.executive_id = $executive_id),0) as new_clients")
+
+            ->whereRaw("year(operation_date) = $year")
+            ->whereIn("operations.type", ['Compra','Venta'])
+            ->groupByRaw("year(operation_date)")
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'table' => $tabla,
+                'total' => $total
             ]
         ]);
     }

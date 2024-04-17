@@ -454,6 +454,7 @@ Route::middleware('encryptresponses')->group(function () {
                 Route::GET('', [\App\Http\Controllers\Admin\Executives\DashboardController::class, 'dashboard']);
                 Route::GET('daily-times', [\App\Http\Controllers\Admin\Operations\OperationsTimesController::class, 'daily_times']);
                 Route::GET('goal-progress', [\App\Http\Controllers\Admin\Executives\DashboardController::class, 'goal_progress']);
+                Route::GET('executives-summary', [\App\Http\Controllers\Admin\Executives\DashboardController::class, 'executives_summary']);
             });
 
             ########## Leads  #############
