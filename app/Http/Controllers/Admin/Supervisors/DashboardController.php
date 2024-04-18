@@ -32,10 +32,11 @@ class DashboardController extends Controller
             ->limit(7)
             ->get();
 
-        $monthly_indicators = Operation::selectRaw("month(operation_date) as month,year(operation_date) as year")
+        $monthly_indicators = Operation::join("clients","clients.id","=","operations.client_id")
+            ->selectRaw("month(operation_date) as month,year(operation_date) as year")
             ->selectRaw("sum(amount) as volume, count(amount) as num_operations, round(sum(comission_amount),2) as comissions")
-            ->selectRaw("round(100*sum(if(type='Compra',amount,0))/sum(amount),2) as rate_buying")
-            ->selectRaw("round(100*sum(if(type='Venta',amount,0))/sum(amount),2) as rate_selling")
+            ->selectRaw("round(100*sum(if(operations.type='Compra',amount,0))/sum(amount),2) as rate_buying")
+            ->selectRaw("round(100*sum(if(operations.type='Venta',amount,0))/sum(amount),2) as rate_selling")
 
             ->selectRaw("coalesce((select sum(amount) from operations op where month(op.operation_date) = month(operations.operation_date) and year(op.operation_date) = year(operations.operation_date) and op.operation_status_id in (2,3,4,5) and op.type in ('Compra','Venta') and op.client_id not in (select id from clients where type = 'PL')),0) as volume_in_progress")
 
@@ -43,10 +44,10 @@ class DashboardController extends Controller
 
             ->selectRaw("coalesce((select sg.goal from sales_goals sg where sg.year = year(operations.operation_date) and sg.month = month(operations.operation_date)),0) as sales_goal")
 
-            ->selectRaw("(select sum(ov.amount) from operations_view ov where ov.customer_type = 'PJ' and year(ov.operation_date) = year(operations.operation_date) and month(ov.operation_date) = month(operations.operation_date) ) as volume_pj")
-            ->selectRaw("(select sum(ov.amount) from operations_view ov where ov.customer_type = 'PN' and year(ov.operation_date) = year(operations.operation_date) and month(ov.operation_date) = month(operations.operation_date) ) as volume_pn")
-             ->selectRaw("(select count(ov.amount) from operations_view ov where ov.customer_type = 'PJ' and year(ov.operation_date) = year(operations.operation_date) and month(ov.operation_date) = month(operations.operation_date) ) as num_operations_pj")
-            ->selectRaw("(select count(ov.amount) from operations_view ov where ov.customer_type = 'PN' and year(ov.operation_date) = year(operations.operation_date) and month(ov.operation_date) = month(operations.operation_date) ) as num_operations_pn")
+            ->selectRaw(" sum(if(clients.customer_type='PJ', operations.amount,0)) as volume_pj2")
+            ->selectRaw(" sum(if(clients.customer_type='PN', operations.amount,0)) as volume_pn2")
+            ->selectRaw(" sum(if(clients.customer_type='PJ', 1,0)) as num_operations_pj")
+            ->selectRaw(" sum(if(clients.customer_type='PN', 1,0)) as num_operations_pn")
 
             ->selectRaw("(select sum(ov.amount) from operations ov where ov.client_id = 366 and year(ov.operation_date) = year(operations.operation_date) and month(ov.operation_date) = month(operations.operation_date) and ov.operation_status_id = 7 ) as volume_coril")
             ->selectRaw("(select sum(ov.amount) from operations ov where ov.client_id = 2815 and year(ov.operation_date) = year(operations.operation_date) and month(ov.operation_date) = month(operations.operation_date) and ov.operation_status_id = 7 ) as volume_mibanco")
@@ -54,10 +55,10 @@ class DashboardController extends Controller
             ->selectRaw("(select sum(ov.amount) from operations ov where ov.client_id = 4280 and year(ov.operation_date) = year(operations.operation_date) and month(ov.operation_date) = month(operations.operation_date) and ov.operation_status_id = 7 ) as volume_ripley")
             ->selectRaw("(select sum(ov.amount) from operations ov where ov.client_id = 4540 and year(ov.operation_date) = year(operations.operation_date) and month(ov.operation_date) = month(operations.operation_date) and ov.operation_status_id = 7 ) as volume_cajatru")
 
-
             ->whereIn("operations.type", ['Compra','Venta'])
             ->whereIn("operation_status_id", [6,7,8])
-            ->whereNotIn("client_id", Client::where('type', 'PL')->get()->pluck('id') )
+            //->whereNotIn("client_id", Client::where('type', 'PL')->get()->pluck('id') )
+            ->where("clients.type", "Cliente")
             ->whereRaw("((year(operation_date)-2000)*12 + month(operation_date)) >= ((year(now()) - 2000 )*12 + month(now()) -6)")
             ->groupByRaw("month(operation_date), year(operation_date)")
             ->orderByRaw('year(operation_date) asc, month(operation_date)')
@@ -87,6 +88,7 @@ class DashboardController extends Controller
             ->groupByRaw("day(operation_date)")
             ->orderByRaw('day(operation_date)')
             ->get();
+
 
 
         $top_clients = Operation::join('clients', 'clients.id', '=', 'operations.client_id')
