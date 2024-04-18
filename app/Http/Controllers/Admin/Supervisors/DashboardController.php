@@ -17,20 +17,21 @@ class DashboardController extends Controller
     // Dashboard
     public function dashboard(Request $request) {
 
-        $indicators = DB::table('monthly_operations_view')
-            ->selectRaw("sum(amount) as total_volume, sum(operations_number) as num_operations, round(sum(comission_amount),2) as total_comissions")
-            ->selectRaw("(select count(distinct client_id) from operations_view where type in ('Compra','Venta')) as unique_clients")
+        $indicators = DB::table('operations_view')
+            ->selectRaw("sum(amount) as total_volume, count(amount) as num_operations, round(sum(comission_amount),2) as total_comissions")
+            ->selectRaw("count(distinct client_id) as unique_clients")
             ->whereIn("type", ['Compra','Venta'])
             ->first();
 
-        $graphs = DB::table('monthly_operations_view')
-            ->selectRaw("year, sum(amount) as volume, sum(operations_number) as num_operations, round(sum(comission_amount),2) as comissions")
-            ->selectRaw("(select count(distinct client_id) from operations_view where type in ('Compra','Venta') and year(operation_date) = year) as unique_clients")
+        $graphs = DB::table('operations_view')
+            ->selectRaw("year(operation_date) as year, sum(amount) as volume, count(amount) as num_operations, round(sum(comission_amount),2) as comissions")
+            ->selectRaw("count(distinct client_id) as unique_clients")
             ->whereIn("type", ['Compra','Venta'])
-            ->groupByRaw("year")
-            ->orderByRaw('year desc')
+            ->groupByRaw("year(operation_date)")
+            ->orderByRaw('year(operation_date) desc')
             ->limit(7)
             ->get();
+
 
         $monthly_indicators = Operation::join("clients","clients.id","=","operations.client_id")
             ->selectRaw("month(operation_date) as month,year(operation_date) as year")
