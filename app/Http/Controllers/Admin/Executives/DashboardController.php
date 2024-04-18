@@ -213,11 +213,45 @@ class DashboardController extends Controller
             ->groupByRaw("year(operation_date)")
             ->get();
 
+        $positive_variation = DB::table('operations_view')
+            ->selectRaw("client_name")
+
+            ->selectRaw(" coalesce((select sum(ov.amount) from operations_view ov where ov.client_id = operations_view.client_id and month(ov.operation_date) = month(now()) and year(ov.operation_date) = year(now())),0) as current_amount")
+
+            ->selectRaw(" coalesce((select sum(ov.amount) from operations_view ov where ov.client_id = operations_view.client_id and (year(ov.operation_date)*12 + month(ov.operation_date) = year(now())*12 + month(now()) -1 )),0) as previous_amount")
+
+            ->selectRaw(" coalesce((select sum(ov.amount) from operations_view ov where ov.client_id = operations_view.client_id and month(ov.operation_date) = month(now()) and year(ov.operation_date) = year(now())),0) - coalesce((select sum(ov.amount) from operations_view ov where ov.client_id = operations_view.client_id and (year(ov.operation_date)*12 + month(ov.operation_date) = year(now())*12 + month(now()) -1 )),0) as difference")
+
+            ->whereRaw(" (executive_id = $executive_id) and ((year(operation_date)-2000)*12 + MONTH(operation_date)) >= ((year(CURRENT_TIMESTAMP)-2000)*12 + MONTH(CURRENT_TIMESTAMP)-1)")
+            ->groupByRaw("client_name")
+            ->orderByRaw("difference desc")
+            ->havingRaw("difference > 0")
+            ->limit(20)
+            ->get();
+
+        $negative_variation = DB::table('operations_view')
+            ->selectRaw("client_name")
+
+            ->selectRaw(" coalesce((select sum(ov.amount) from operations_view ov where ov.client_id = operations_view.client_id and month(ov.operation_date) = month(now()) and year(ov.operation_date) = year(now())),0) as current_amount")
+
+            ->selectRaw(" coalesce((select sum(ov.amount) from operations_view ov where ov.client_id = operations_view.client_id and (year(ov.operation_date)*12 + month(ov.operation_date) = year(now())*12 + month(now()) -1 )),0) as previous_amount")
+
+            ->selectRaw(" coalesce((select sum(ov.amount) from operations_view ov where ov.client_id = operations_view.client_id and month(ov.operation_date) = month(now()) and year(ov.operation_date) = year(now())),0) - coalesce((select sum(ov.amount) from operations_view ov where ov.client_id = operations_view.client_id and (year(ov.operation_date)*12 + month(ov.operation_date) = year(now())*12 + month(now()) -1 )),0) as difference")
+
+            ->whereRaw(" (executive_id = $executive_id) and ((year(operation_date)-2000)*12 + MONTH(operation_date)) >= ((year(CURRENT_TIMESTAMP)-2000)*12 + MONTH(CURRENT_TIMESTAMP)-1)")
+            ->groupByRaw("client_name")
+            ->orderByRaw("difference asc")
+            ->havingRaw("difference < 0")
+            ->limit(20)
+            ->get();
+
         return response()->json([
             'success' => true,
             'data' => [
                 'table' => $tabla,
-                'total' => $total
+                'total' => $total,
+                'positive_variation' => $positive_variation,
+                'negative_variation' => $negative_variation
             ]
         ]);
     }
