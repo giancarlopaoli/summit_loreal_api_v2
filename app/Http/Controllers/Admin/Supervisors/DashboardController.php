@@ -44,8 +44,8 @@ class DashboardController extends Controller
 
             ->selectRaw("coalesce((select sg.goal from sales_goals sg where sg.year = year(operations.operation_date) and sg.month = month(operations.operation_date)),0) as sales_goal")
 
-            ->selectRaw(" sum(if(clients.customer_type='PJ', operations.amount,0)) as volume_pj2")
-            ->selectRaw(" sum(if(clients.customer_type='PN', operations.amount,0)) as volume_pn2")
+            ->selectRaw(" sum(if(clients.customer_type='PJ', operations.amount,0)) as volume_pj")
+            ->selectRaw(" sum(if(clients.customer_type='PN', operations.amount,0)) as volume_pn")
             ->selectRaw(" sum(if(clients.customer_type='PJ', 1,0)) as num_operations_pj")
             ->selectRaw(" sum(if(clients.customer_type='PN', 1,0)) as num_operations_pn")
 
