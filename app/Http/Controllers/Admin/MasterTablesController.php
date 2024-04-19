@@ -124,4 +124,15 @@ class MasterTablesController extends Controller
                 ->get()
         ]);
     }
+
+    public function executives_full_time_active() {
+        return response()->json([
+            'success' => true,
+            'data' => Executive::select('id','type')
+                ->where('type', 'Tiempo Completo')
+                ->whereNotIn('id',[483,484,2274,2448])
+                ->with('user:id,name,last_name')
+                ->get()
+        ]);
+    }
 }

@@ -191,6 +191,7 @@ Route::middleware('encryptresponses')->group(function () {
         Route::GET('document-types', [\App\Http\Controllers\Register\RegisterController::class, 'document_types']);
 
         Route::GET('executives-full-time', [\App\Http\Controllers\Admin\MasterTablesController::class, 'executives_full_time']);
+        Route::GET('executives-full-time-active', [\App\Http\Controllers\Admin\MasterTablesController::class, 'executives_full_time_active']);
 
         Route::GET('exchange-rate', [\App\Http\Controllers\Admin\DatatecController::class, 'exchange_rate']);
 
@@ -559,7 +560,6 @@ Route::middleware('encryptresponses')->group(function () {
                 ########## dashboard  #############
                 Route::prefix('dashboard')->group(function () {
                     Route::GET('', [\App\Http\Controllers\Admin\Executives\DashboardController::class, 'dashboard']);
-                    Route::GET('daily-times', [\App\Http\Controllers\Admin\Operations\OperationsTimesController::class, 'daily_times']);
                     Route::GET('goal-progress', [\App\Http\Controllers\Admin\Executives\DashboardController::class, 'goal_progress']);
                     Route::GET('executives-summary', [\App\Http\Controllers\Admin\Executives\DashboardController::class, 'executives_summary']);
                 });

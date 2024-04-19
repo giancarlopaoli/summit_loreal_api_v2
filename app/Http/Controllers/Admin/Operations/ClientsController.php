@@ -521,7 +521,7 @@ class ClientsController extends Controller
         ]);
         if($val->fails()) return response()->json($val->messages());
 
-        $client->update($request->only(["email","phone","address", "district_id", "accountable_email","comments"]));
+        $client->update($request->only(["name","email","phone","address", "district_id", "accountable_email","comments"]));
 
         return response()->json([
             'success' => true,
