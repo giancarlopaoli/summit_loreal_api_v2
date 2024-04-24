@@ -201,4 +201,97 @@ class DashboardController extends Controller
             ]
         ]);
     }
+
+    public function executive_summary(Request $request) {
+        $executive_id = (isset($request->executive_id)) ? $request->executive_id : auth()->id();
+        $year = (isset($request->year)) ? $request->year : Carbon::now()->year;
+
+
+        $tabla = DB::table('operations_view as operations')
+            ->selectRaw("month(operation_date) as mes, $year as year, count(*) as num_operations, sum(operations.amount) as volume, coalesce(round(sum(operations.amount)/count(*),0),0) as avg_ticket, sum(operations.comission_amount) as comision")
+
+            ->selectRaw(" coalesce((select eg.goal from sales_goals eg where eg.month = mes and eg.year = $year limit 1),0) as goal ") 
+
+
+            ->selectRaw(" round(100*coalesce(sum(operations.amount) / coalesce((select eg.goal from sales_goals eg where eg.month = mes and eg.year = $year limit 1),0),0),0) as goal_achieved ")    
+
+            ->selectRaw(" round(100*coalesce(sum(operations.comission_amount)/sum(operations.amount*operations.exchange_rate),0),2) as spread")
+
+            ->selectRaw(" if( coalesce((select sum(ov.amount) from operations_view ov where month(ov.operation_date) +1 = mes and year(ov.operation_date) = $year),0) = 0, 0, sum(operations.amount) - coalesce((select sum(ov.amount) from operations_view ov where month(ov.operation_date) +1 = mes and year(ov.operation_date) = $year),0)) as var_volume")
+
+
+            ->selectRaw(" count(distinct client_id) as unique_clients")
+            ->selectRaw(" coalesce((select count(cl.id) from clients cl where month(cl.registered_at) = mes and year(cl.registered_at) = year),0) as new_clients")
+
+            ->selectRaw(" (select sum(ov.comission_amount) from operations_view ov where month(ov.operation_date) <= mes and year(ov.operation_date) = year) as accumulated_comissions")
+
+            ->whereRaw("year(operation_date) = $year")
+            ->whereIn("operations.type", ['Compra','Venta'])
+            ->groupByRaw("month(operation_date)")
+            ->orderByRaw('month(operation_date)')
+            ->get();
+
+        $total = DB::table('operations_view as operations')
+            ->selectRaw("$year as year")
+            ->selectRaw(" count(*) as num_operations")
+            ->selectRaw(" sum(operations.amount) as volume")
+            ->selectRaw(" coalesce(round(sum(operations.amount)/count(*),0),0) as avg_ticket")
+
+            ->selectRaw(" coalesce((select sum(eg.goal) from sales_goals eg where eg.year = $year limit 1),0) as goal ") 
+
+            ->selectRaw(" round(100*coalesce(sum(operations.amount) / coalesce((select sum(eg.goal) from sales_goals eg where eg.year = $year limit 1),0),0),0) as goal_achieved ")
+
+            ->selectRaw(" sum(operations.comission_amount) as comision")
+            ->selectRaw(" round(100*coalesce(sum(operations.comission_amount)/sum(operations.amount*operations.exchange_rate),0),2) as spread")
+
+            ->selectRaw(" count(distinct client_id) as unique_clients")
+            ->selectRaw(" coalesce((select count(cl.id) from clients cl where year(cl.registered_at) = year),0) as new_clients")
+
+            ->whereRaw("year(operation_date) = $year")
+            ->whereIn("operations.type", ['Compra','Venta'])
+            ->groupByRaw("year(operation_date)")
+            ->get();
+
+        $positive_variation = DB::table('operations_view')
+            ->selectRaw("client_name")
+
+            ->selectRaw(" coalesce(sum(if( (year(operation_date)*12 + month(operation_date)) = (year(now())*12 + month(now()) - 1),amount,0))) as  current_amount")
+
+            ->selectRaw(" coalesce(sum(if( (year(operation_date)*12 + month(operation_date)) = (year(now())*12 + month(now()) - 2),amount,0))) as  previous_amount")
+
+            ->selectRaw(" coalesce(sum(if( (year(operation_date)*12 + month(operation_date)) = (year(now())*12 + month(now()) - 1),amount,0))) - coalesce(sum(if( (year(operation_date)*12 + month(operation_date)) = (year(now())*12 + month(now()) - 2),amount,0))) as difference")
+
+            ->whereRaw("((year(operation_date)-2000)*12 + MONTH(operation_date)) >= ((year(CURRENT_TIMESTAMP)-2000)*12 + MONTH(CURRENT_TIMESTAMP)-2)")
+            ->groupByRaw("client_name")
+            ->orderByRaw("difference desc")
+            ->havingRaw("difference > 0")
+            ->limit(20)
+            ->get();
+
+        $negative_variation = DB::table('operations_view')
+            ->selectRaw("client_name")
+
+            ->selectRaw(" coalesce(sum(if( (year(operation_date)*12 + month(operation_date)) = (year(now())*12 + month(now()) - 1),amount,0))) as  current_amount")
+
+            ->selectRaw(" coalesce(sum(if( (year(operation_date)*12 + month(operation_date)) = (year(now())*12 + month(now()) - 2),amount,0))) as  previous_amount")
+
+            ->selectRaw(" coalesce(sum(if( (year(operation_date)*12 + month(operation_date)) = (year(now())*12 + month(now()) - 1),amount,0))) - coalesce(sum(if( (year(operation_date)*12 + month(operation_date)) = (year(now())*12 + month(now()) - 2),amount,0))) as difference")
+
+            ->whereRaw("((year(operation_date)-2000)*12 + MONTH(operation_date)) >= ((year(CURRENT_TIMESTAMP)-2000)*12 + MONTH(CURRENT_TIMESTAMP)-2)")
+            ->groupByRaw("client_name")
+            ->orderByRaw("difference asc")
+            ->havingRaw("difference < 0")
+            ->limit(20)
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'table' => $tabla,
+                'total' => $total,
+                'positive_variation' => $positive_variation,
+                'negative_variation' => $negative_variation
+            ]
+        ]);
+    }
 }

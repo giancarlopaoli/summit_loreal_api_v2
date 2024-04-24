@@ -546,6 +546,7 @@ Route::middleware('encryptresponses')->group(function () {
             Route::prefix('dashboard')->group(function () {
                 Route::GET('', [\App\Http\Controllers\Admin\Supervisors\DashboardController::class, 'dashboard']);
                 Route::GET('sales-progress', [\App\Http\Controllers\Admin\Supervisors\DashboardController::class, 'sales_progress']);
+                Route::GET('executive-summary', [\App\Http\Controllers\Admin\Supervisors\DashboardController::class, 'executive_summary']);
             });
 
             ########## Reports  #############
