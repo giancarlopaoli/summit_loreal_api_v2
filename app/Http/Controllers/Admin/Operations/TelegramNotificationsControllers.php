@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin\Operations;
 
 use App\Http\Controllers\Controller;
 use App\Models\Operation;
+use App\Models\OperationDocument;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -233,9 +234,13 @@ Analista: $analyst";
         $executive = (!is_null($operation->client->executive)) ? $operation->client->executive->user->full_name : 'Sin ejecutivo';
         $analyst = (!is_null($operation->operations_analyst)) ? $operation->operations_analyst->user->full_name : 'No Asignado';
 
-        $start  = new Carbon($operation->funds_confirmation_date);
+        $voucher_time = OperationDocument::where('operation_id', $operation->id)->where('type','Comprobante')->limit(1)->first()->created_at;
+
+        //$start  = new Carbon($operation->funds_confirmation_date);
+        $start  = new Carbon($voucher_time);
         $end    = new Carbon($operation->deposit_date);
         $total_time = $start->diffInMinutes($end);
+
 
         $message = "*Confirmación Depósito a Cliente*
 Cliente: *$client*
