@@ -203,7 +203,6 @@ class DashboardController extends Controller
     }
 
     public function executive_summary(Request $request) {
-        $executive_id = (isset($request->executive_id)) ? $request->executive_id : auth()->id();
         $year = (isset($request->year)) ? $request->year : Carbon::now()->year;
 
 

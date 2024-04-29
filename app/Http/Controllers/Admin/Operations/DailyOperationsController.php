@@ -1923,8 +1923,8 @@ class DailyOperationsController extends Controller
     public function operation_analyst_summary(Request $request) {
         $analysts = OperationsAnalyst::select('id','online','start_time','end_time')
             ->selectRaw("(select count(*) from operations where operations.operations_analyst_id = operations_analysts.id and operations.operation_status_id not in (6,7,9,10)) as ops_in_progress")
-            ->selectRaw("(select count(*) from operations where operations.operations_analyst_id = operations_analysts.id and operations.operation_status_id in (6,7) and date(operations.operation_date) = date(now())) as ops_finished")
-            ->selectRaw("coalesce(round((select sum(TIMESTAMPDIFF(MINUTE,(select od.created_at from operation_documents od where od.operation_id = operations.id and od.type = 'Comprobante' order by id limit 1 ),operations.deposit_date)) from operations where date(operations.operation_date) = date(now()) and operations.operations_analyst_id = operations_analysts.id and operations.operation_status_id in (6,7,8))/(select count(*) from operations where operations.operations_analyst_id = operations_analysts.id and operations.operation_status_id in (6,7,8) and date(operations.operation_date) = date(now())),0),0) as avg_time")
+            ->selectRaw("(select count(*) from operations where operations.operations_analyst_id = operations_analysts.id and operations.operation_status_id in (6,7) and date(operations.deposit_date) = date(now())) as ops_finished")
+            ->selectRaw("coalesce(round((select sum(TIMESTAMPDIFF(MINUTE,(select od.created_at from operation_documents od where od.operation_id = operations.id and od.type = 'Comprobante' order by id limit 1 ),operations.deposit_date)) from operations where date(operations.deposit_date) = date(now()) and operations.operations_analyst_id = operations_analysts.id and operations.operation_status_id in (6,7,8))/(select count(*) from operations where operations.operations_analyst_id = operations_analysts.id and operations.operation_status_id in (6,7,8) and date(operations.deposit_date) = date(now())),0),0) as avg_time")
             ->where('status', 'Activo')
             ->with('user:id,name,last_name')
             ->get();
@@ -1969,7 +1969,7 @@ class DailyOperationsController extends Controller
     public function executives_summary(Request $request) {
         $analysts = Executive::select('id')
             ->selectRaw("(select count(*) from operations inner join clients on operations.client_id = clients.id where clients.executive_id = executives.id and operations.operation_status_id not in (6,7,9,10)) as ops_in_progress")
-            ->selectRaw("(select count(*) from operations inner join clients on operations.client_id = clients.id where clients.executive_id = executives.id and operations.operation_status_id in (6,7) and date(operations.operation_date) = date(now())) as ops_finished")
+            ->selectRaw("(select count(*) from operations inner join clients on operations.client_id = clients.id where clients.executive_id = executives.id and operations.operation_status_id in (6,7) and date(operations.deposit_date) = date(now())) as ops_finished")
             ->where('type', 'Tiempo Completo')
             ->whereNotIn('id', [483,484,2274])
             ->with('user:id,name,last_name')
