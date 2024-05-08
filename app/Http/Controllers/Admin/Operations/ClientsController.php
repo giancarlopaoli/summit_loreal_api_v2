@@ -517,11 +517,12 @@ class ClientsController extends Controller
             'phone' => 'required|string',
             'address' => 'required|string',
             'district_id' => 'required|exists:districts,id',
+            'economic_activity_id' => 'required|exists:economic_activities,id',
             'comments' => 'nullable|string',
         ]);
         if($val->fails()) return response()->json($val->messages());
 
-        $client->update($request->only(["name","email","phone","address", "district_id", "accountable_email","comments"]));
+        $client->update($request->only(["name","email","phone","address", "district_id", "accountable_email","comments", "economic_activity_id", "name", "last_name", "mothers_name", "birthdate"]));
 
         return response()->json([
             'success' => true,
