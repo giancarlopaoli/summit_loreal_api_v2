@@ -75,18 +75,27 @@ class DashboardController extends Controller
 
         // Gráfico avance ventas diarias
         $grafico_ventas_diarias = DB::table('operations_view')
-            ->selectRaw("day(operation_date) as dia, count(amount) as nro_ops, count(distinct client_id) as clientes_unicos, sum(amount) as monto, sum(comission_amount) as comision, sum(round(comission_amount*if(executive_id =$executive_id, executive_comission,0),2)) + sum(round(comission_amount*if(executive2_id =$executive_id, executive2_comission,0),2)) as comision_ejecutivo, 1*$meta_diaria as meta_diaria")
+            ->selectRaw("day(operation_date) as dia, count(amount) as nro_ops, count(distinct client_id) as clientes_unicos, sum(amount) as monto, sum(comission_amount) as comision_billex, sum(round(comission_amount*if(executive_id =$executive_id, executive_comission,0),2)) + sum(round(comission_amount*if(executive2_id =$executive_id, executive2_comission,0),2)) as comision_ejecutivo, 1*$meta_diaria as meta_diaria")
 
-            ->selectRaw("(select sum(amount) from operations_view op2 where (op2.executive_id = $executive_id or op2.executive2_id = $executive_id) and month(op2.operation_date) = month(CURRENT_TIMESTAMP) and year(op2.operation_date) = year(CURRENT_TIMESTAMP) and day(op2.operation_date) <= dia) as monto_acumulado")
+            ->selectRaw("(select sum(amount) from operations_view op2 where (op2.executive_id = $executive_id or op2.executive2_id = $executive_id) and month(op2.operation_date) = month(now()) and year(op2.operation_date) = year(now()) and day(op2.operation_date) <= dia) as monto_acumulado")
 
-            ->selectRaw("(select sum(comission_amount) from operations_view op2 where (op2.executive_id = $executive_id or op2.executive2_id = $executive_id) and month(op2.operation_date) = month(operation_date) and year(op2.operation_date) = year(CURRENT_TIMESTAMP) and day(op2.operation_date) <= dia) as comision_acumulado")
+            ->selectRaw("(select sum(comission_amount) from operations_view op2 where (op2.executive_id = $executive_id or op2.executive2_id = $executive_id) and month(op2.operation_date) = month(now()) and year(op2.operation_date) = year(now()) and day(op2.operation_date) <= dia) as comision_billex_acumulado")
 
-            ->selectRaw("(select sum(round(comission_amount*if(executive_id =$executive_id, executive_comission,0),2)) + sum(round(comission_amount*if(executive2_id =$executive_id, executive2_comission,0),2)) from operations_view op2 where (op2.executive_id = $executive_id or op2.executive2_id = $executive_id) and month(op2.operation_date) = month(operation_date) and year(op2.operation_date) = year(CURRENT_TIMESTAMP) and day(op2.operation_date) <= dia) as comision_ejecutivo_acumulado")
+            ->selectRaw("(select sum(round(comission_amount*if(executive_id =$executive_id, executive_comission,0),2)) + sum(round(comission_amount*if(executive2_id =$executive_id, executive2_comission,0),2)) from operations_view op2 where (op2.executive_id = $executive_id or op2.executive2_id = $executive_id) and month(op2.operation_date) = month(now()) and year(op2.operation_date) = year(now()) and day(op2.operation_date) <= dia) as comision_ejecutivo_acumulado")
             
-            ->whereRaw("(executive_id = $executive_id or executive2_id = $executive_id) and month(operation_date) = month(CURRENT_TIMESTAMP) and year(operation_date) = year(CURRENT_TIMESTAMP) ")
+            ->whereRaw("(executive_id = $executive_id or executive2_id = $executive_id)")
+            ->whereRaw('month(operation_date) = month(now()) and year(operation_date) = year(now())')
             ->groupByRaw("day(operation_date)")
             ->orderByRaw('day(operation_date)')
             ->get();
+
+
+        /*return response()->json([
+            'success' => true,
+            'data' => [
+                $grafico_ventas_diarias
+            ]
+        ]);*/
 
 
         $cumplimiento_meta = DB::table('goals_achievement')
@@ -134,9 +143,10 @@ class DashboardController extends Controller
                     'volumen' => $grafico_ventas_diarias->pluck('monto'),
                     'volumen_acumulado' => $grafico_ventas_diarias->pluck('monto_acumulado'),
                     //'volumen_pendiente' => $grafico_ventas_diarias->pluck('pendiente'),
-                    'comision' => $grafico_ventas_diarias->pluck('comision'),
+                    'comision_billex' => $grafico_ventas_diarias->pluck('comision_billex'),
                     'comision_ejecutivo' => $grafico_ventas_diarias->pluck('comision_ejecutivo'),
-                    'comision_acumulado' => $grafico_ventas_diarias->pluck('comision_acumulado'),
+                    'comision_ejecutivo_acumulado' => $grafico_ventas_diarias->pluck('comision_ejecutivo_acumulado'),
+                    'comision_billex_acumulado' => $grafico_ventas_diarias->pluck('comision_billex_acumulado'),
                     //'comision_pendiente' => $grafico_ventas_diarias->pluck('comision_pendiente'),
                     'nro_operaciones' => $grafico_ventas_diarias->pluck('nro_ops'),
                     'clientes_unicos' => $grafico_ventas_diarias->pluck('clientes_unicos')
