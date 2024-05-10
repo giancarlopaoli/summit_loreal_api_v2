@@ -577,6 +577,20 @@ class RegisterController extends Controller
 
         $now = Carbon::now();
 
+        // Validando si el cliente ya se encuentra registrado
+        $exists_client = Client::where('document_type_id', $request->client['document_type_id'])
+            ->where('document_number', $request->client['document_number'])
+            ->get();
+
+        if($exists_client->count() > 0){
+            return response()->json([
+                'success' => false,
+                'data' => [ 
+                    'errors' => 'El cliente ya se encuentra registrado'
+                ]
+            ]);
+        }
+
         $error = false;
 
         try {
@@ -837,6 +851,20 @@ class RegisterController extends Controller
 
         $now = Carbon::now();
         $error = false;
+
+        // Validando si el cliente ya se encuentra registrado
+        $exists_client = Client::where('document_type_id', $request->client['document_type_id'])
+            ->where('document_number', $request->client['document_number'])
+            ->get();
+
+        if($exists_client->count() > 0){
+            return response()->json([
+                'success' => false,
+                'data' => [ 
+                    'errors' => 'El cliente ya se encuentra registrado'
+                ]
+            ]);
+        }
 
         try {
             //Enviando mensaje de bienvenida al cliente
