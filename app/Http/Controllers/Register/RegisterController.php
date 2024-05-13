@@ -853,8 +853,8 @@ class RegisterController extends Controller
         $error = false;
 
         // Validando si el cliente ya se encuentra registrado
-        $exists_client = Client::where('document_type_id', $request->client['document_type_id'])
-            ->where('document_number', $request->client['document_number'])
+        $exists_client = Client::where('document_type_id', 1)
+            ->where('document_number', $request->client['ruc'])
             ->get();
 
         if($exists_client->count() > 0){
