@@ -124,11 +124,13 @@ class MyOperationsController extends Controller
         if($operation->type == Enums\OperationType::Interbancaria){
             $operation->selling_exchange_rate = round($operation->exchange_rate + $operation->spread/10000,4);
 
-            $comission_pl = round($operation->amount * $operation->spread/10000, 2);
+            $operation->counter_value = round($operation->amount/$operation->exchange_rate*$operation->selling_exchange_rate,2);
+
+            $comission_pl = round($operation->counter_value - $operation->amount, 2);
             
             $operation->sends = round($operation->amount + $comission_pl + $operation->comission_amount + $operation->igv, 2);
 
-            $operation->counter_value = round($operation->amount + $comission_pl, 2);
+            //$operation->counter_value = round($operation->amount + $comission_pl, 2);
         }
 
         $operation->load(

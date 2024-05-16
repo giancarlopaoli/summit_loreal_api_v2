@@ -203,10 +203,15 @@ class AdminController extends Controller
         }
         else{
 
-            $financial_expenses = round($operation->amount * $operation->spread/10000,2);
+            /*$financial_expenses = round($operation->amount * $operation->spread/10000,2);
             $spread = round(($operation->spread + 1)*$operation->exchange_rate - $operation->exchange_rate,2);
             $exchange_rate_selling = round($operation->exchange_rate + $spread/10000, 4) ;
-            $counter_value = $operation->amount + $financial_expenses;
+            $counter_value = $operation->amount + $financial_expenses;*/
+
+            $exchange_rate_selling = round($operation->exchange_rate + $operation->spread/10000, 4);
+            $counter_value = round($operation->amount / $operation->exchange_rate*$exchange_rate_selling,2);
+            $financial_expenses = round($counter_value - $operation->amount,2);
+
 
             $data = [
                 'username' => Str::of($operation->user->name)->ucfirst() . " " . Str::of($operation->user->last_name)->ucfirst(),

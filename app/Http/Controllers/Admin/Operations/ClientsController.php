@@ -38,22 +38,20 @@ class ClientsController extends Controller
 
         $client = Client::select('id','name','last_name','mothers_name','document_type_id','document_number','phone','email','address','birthdate','customer_type','type','client_status_id','accountable_email','billex_approved_at','corfid_approved_at','registered_at','updated_at as last_update')
             ->with('document_type:id,name','status:id,name')
-            ->with('documents');
+            ->with('bank_accounts:id,client_id,bank_id,account_number,cci_number,bank_account_status_id,currency_id','bank_accounts.bank:id,shortname,image','bank_accounts.currency:id,name,sign','bank_accounts.status:id,name')
+            ->with('users:id,name,last_name,phone,status');
+            //->with('documents');
         
         if($request->type == 'pending'){
-            $client = $client->with('bank_accounts:id,client_id,bank_id,account_number,cci_number,bank_account_status_id,currency_id','bank_accounts.bank:id,shortname,image','bank_accounts.currency:id,name,sign','bank_accounts.status:id,name');
-            $client = $client->with('users:id,name,last_name,phone,status');
-
+            
             $client = $client->whereIn('client_status_id', ClientStatus::whereIn('name', ['Registrado','Aprobado Billex','Rechazo parcial'])->get()->pluck('id'));
         }
         elseif($request->type == 'approved'){
-            $client = $client->with('bank_accounts:id,client_id,bank_id,account_number,cci_number,bank_account_status_id,currency_id','bank_accounts.bank:id,shortname,image','bank_accounts.currency:id,name,sign','bank_accounts.status:id,name');
-            $client = $client->with('users:id,name,last_name,phone,status');
+            
             $client = $client->whereIn('client_status_id', ClientStatus::whereIn('name', ['Activo','Pendiente Aprobacion'])->get()->pluck('id'));
         }
         elseif($request->type == 'canceled'){
-            $client = $client->with('bank_accounts:id,client_id,bank_id,account_number,cci_number,bank_account_status_id,currency_id','bank_accounts.bank:id,shortname,image','bank_accounts.currency:id,name,sign','bank_accounts.status:id,name');
-            $client = $client->with('users:id,name,last_name,phone,status');
+            
             $client = $client->whereIn('client_status_id', ClientStatus::whereIn('name', ['Rechazado'])->get()->pluck('id'));
         }
         elseif($request->type == 'corfid'){

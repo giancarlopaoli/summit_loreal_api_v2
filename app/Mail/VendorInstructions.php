@@ -35,7 +35,7 @@ class VendorInstructions extends Mailable
     {
         $sent_amount = ($this->operation->type == 'Compra') ? (round($this->operation->amount * $this->operation->exchange_rate,2) + $this->operation->comission_amount + $this->operation->igv) : $this->operation->amount;
 
-        $received_amount = ($this->operation->type == 'Venta') ? round($this->operation->amount * $this->operation->exchange_rate,2) - $this->operation->comission_amount - $this->operation->igv : (($this->operation->type == 'Venta') ? $this->operation->amount : round($this->operation->amount *(1 + $this->operation->spread/10000), 2 ));
+        $received_amount = ($this->operation->type == 'Venta') ? round($this->operation->amount * $this->operation->exchange_rate,2) - $this->operation->comission_amount - $this->operation->igv : (($this->operation->type == 'Compra') ? $this->operation->amount : round($this->operation->amount/$this->operation->exchange_rate * ($this->operation->exchange_rate + $this->operation->spread/10000), 2 ));
 
         if($this->operation->use_escrow_account == 1){
             $documents = OperationDocument::where('operation_id', $this->operation->id)->where('type', Enums\DocumentType::Comprobante)->get();

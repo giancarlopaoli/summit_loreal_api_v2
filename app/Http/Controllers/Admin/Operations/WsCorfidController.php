@@ -359,7 +359,7 @@ class WsCorfidController extends Controller
 
         $url = env('APP_URL').'/api/res/download-document-operation?operation_id='.$operation->id.'&document_id='.$document->id;
 
-        $gastos_financieros = ($operation->type == 'Interbancaria') ? (round($operation->amount * $operation->spread,2)) : 0;
+        $gastos_financieros = ($operation->type == 'Interbancaria') ? round(round($operation->amount/$operation->exchange_rate * ($operation->exchange_rate+ $operation->spread/10000),2) - $operation->amount,2) : 0;
 
         $params = array(
             "coper01" => ($operation->type == 'Interbancaria') ? "6" : "4",
@@ -383,7 +383,7 @@ class WsCorfidController extends Controller
             
             //Depósito
             "tmdep01" => ($operation->type == 'Compra') ? 1 : (($operation->type == 'Venta') ? 2 : $operation->currency_id),
-            "modep01" => ($operation->type == 'Compra') ? round(round($operation->amount*$operation->exchange_rate,2) + round($operation->comission_amount + $operation->igv, 2),2) : round(($operation->type == 'Venta') ? $operation->amount : ($operation->amount + round($operation->amount*$operation->spread,2) + round($operation->comission_amount,2)),2 ),
+            "modep01" => ($operation->type == 'Compra') ? round(round($operation->amount*$operation->exchange_rate,2) + round($operation->comission_amount + $operation->igv, 2),2) : (($operation->type == 'Venta') ? round($operation->amount,2) : (round($operation->amount/$operation->exchange_rate*($operation->exchange_rate + $operation->spread/10000),2) + round($operation->comission_amount,2) + $operation->igv)),
             
             // Retribución
             "tmret01" => ($operation->type == 'Compra') ? 2 : (($operation->type == 'Venta') ? 1 : $operation->currency_id),

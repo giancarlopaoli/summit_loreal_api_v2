@@ -143,12 +143,17 @@ class InterbankOperationController extends Controller
                 if(!is_null($client_comision->exchange_rate)) $exchange_rate = $client_comision->exchange_rate;
             }
 
-
             // Calculating Vendor comission in base of 6 decimals spread
-            $spread = round (($exchange_rate + ($val_spread / 10000))/$exchange_rate, 6) - 1;
+            /*$spread = round (($exchange_rate + ($val_spread / 10000))/$exchange_rate, 6) - 1;
             $financial_expenses = round($request->amount * $spread, 2 );
 
+            $tcventa = round($exchange_rate + ($val_spread / 10000), 4);*/
+
+            // Nuevos Cálculos
             $tcventa = round($exchange_rate + ($val_spread / 10000), 4);
+            $counter_value = round($request->amount/$exchange_rate*$tcventa,2);
+            $financial_expenses = round($counter_value - $request->amount, 2);
+
 
             // Calculating commission amount
             $total_comission = round($request->amount * ($val_comision / 10000), 2);
@@ -162,7 +167,7 @@ class InterbankOperationController extends Controller
                 'data' => [
                     'transfers' => round($request->amount,2),
                     'financial_expenses' => $financial_expenses,
-                    'counter_value' => round(round($request->amount,2) + $financial_expenses,2),
+                    'counter_value' => $counter_value,
                     'comission' => $comission,
                     'igv' => $igv,
                     'exchange_rate' => $exchange_rate,
@@ -203,7 +208,7 @@ class InterbankOperationController extends Controller
         ]);
         if($val->fails()) return response()->json($val->messages());
 
-        try {
+        //try {
 
             $client = Client::find($request->client_id);
 
@@ -240,7 +245,9 @@ class InterbankOperationController extends Controller
 
             $comission_spread = round(10000*$total_comission / $request->amount,2);
 
-            $spread = round(round($request->financial_expenses / $request->amount,6)*10000,2);
+            //$spread = round(round($request->financial_expenses / $request->amount,6)*10000,2);
+            $tc_venta = round( ($request->amount + $request->financial_expenses)*$request->exchange_rate/$request->amount ,4);
+            $spread = round(($tc_venta - $request->exchange_rate) * 10000, 4);
 
             // Calculando detracción
             $detraction_percentage = Configuration::where('shortname', 'DETRACTION')->first()->value;
@@ -249,8 +256,8 @@ class InterbankOperationController extends Controller
             if($total_comission >= 700 && $request->currency_id == 1) {
                 $detraction_amount = round( ($total_comission) * ($detraction_percentage / 100), 0);
             }
-            elseif($request->currency_id == 2 && ($total_comission*round((1 + $spread/10000) * $request->exchange_rate, 4) >= 700)) {
-                $detraction_amount = round( ($total_comission*round((1 + $spread/10000) * $request->exchange_rate, 4)) * ($detraction_percentage / 100), 0);
+            elseif($request->currency_id == 2 && ($total_comission * $tc_venta >= 700)) {
+                $detraction_amount = round( $total_comission * $tc_venta * ($detraction_percentage / 100), 0);
             }
 
             $now = Carbon::now();
@@ -268,7 +275,7 @@ class InterbankOperationController extends Controller
 
                 $escrow_account_operation = array(
                     "escrow_account_id" => $request->escrow_account_id,
-                    "amount" => $request->amount + round($request->amount * $spread/10000, 2) + $request->comission + $request->igv,
+                    "amount" => $request->amount + $request->financial_expenses + $request->comission + $request->igv,
                     "comission_amount" => $request->comission + $request->igv
                 );
                 $escrow_account_list = array();
@@ -286,7 +293,7 @@ class InterbankOperationController extends Controller
 
                 $vendor_bank_account_operation = array(
                     "bank_account_id" => $request->vendor_bank_account_id,
-                    "amount" => $request->amount + round($request->amount * $spread/10000, 2) + $request->comission + $request->igv,
+                    "amount" => $request->amount + $request->financial_expenses + $request->comission + $request->igv,
                     "comission_amount" => $request->comission + $request->igv
                 );
                 $vendor_bank_account_list = array();
@@ -348,10 +355,10 @@ class InterbankOperationController extends Controller
             ]);
 
 
-        } catch (\Exception $e) {
-            return response()->json(['success' => false,'data' => ['Error al crear operación']]);
+        /*} catch (\Exception $e) {
             logger('Creación de Operación Interbancaria: create_operation@InterbankOperationController', ["error" => $e]);
-        }
+            return response()->json(['success' => false,'data' => ['Error al crear operación']]);
+        }*/
 
         OperationHistory::create(["operation_id" => $operation->id,"user_id" => auth()->id(),"action" => "Operación creada"]);
 
@@ -400,7 +407,7 @@ class InterbankOperationController extends Controller
             'amount' => $operation->amount,
             'currency_id' => $operation->currency_id,
             'exchange_rate' => $operation->exchange_rate,
-            'comission_spread' => $operation->spread,
+            'comission_spread' => 0,
             'comission_amount' => 0,
             'detraction_amount' => $detraction_amount,
             'detraction_percentage' => $detraction_percentage,
@@ -424,10 +431,12 @@ class InterbankOperationController extends Controller
 
                     if(is_null($vendor_bank_account)) return response()->json(['error' => true,'data' => ['Error en la cuenta de destino del proveedor de liquidez.']]);
 
-                    $financial_expenses =  round(round($matched_operation->spread / 10000, 6) * $matched_operation->amount,2);
+                    $tc_venta = round( ($matched_operation->exchange_rate + round($matched_operation->spread / 10000, 6)),4);
+                    $counter_value = round($matched_operation->amount/$matched_operation->exchange_rate*$tc_venta,2);
+                    $financial_expenses = round($counter_value - $matched_operation->amount, 2);
 
                     $matched_operation->bank_accounts()->attach($vendor_bank_account->id, [
-                        'amount' => $matched_operation->amount + $financial_expenses,
+                        'amount' => $counter_value,
                         'comission_amount' => 0,
                         'created_at' => Carbon::now()
                     ]);
@@ -458,10 +467,12 @@ class InterbankOperationController extends Controller
 
                     if(is_null($vendor_bank_account)) return response()->json(['error' => true,'data' => ['Error en la cuenta de destino del proveedor de liquidez.']]);
 
-                    $financial_expenses =  round(round($matched_operation->spread / 10000, 6) * $matched_operation->amount,2);
+                    $tc_venta = round( ($matched_operation->exchange_rate + round($matched_operation->spread / 10000, 6)),4);
+                    $counter_value = round($matched_operation->amount/$matched_operation->exchange_rate*$tc_venta,2);
+                    $financial_expenses = round($counter_value - $matched_operation->amount, 2);
 
                     $matched_operation->bank_accounts()->attach($vendor_bank_account->id, [
-                        'amount' => $matched_operation->amount + $financial_expenses,
+                        'amount' => $counter_value,
                         'comission_amount' => 0,
                         'created_at' => Carbon::now()
                     ]);

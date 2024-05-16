@@ -43,13 +43,13 @@ class OperationSign extends Mailable
 
         $phase = ($this->sign == 1) ? "Primera Firma - " . $counterpart_name : 'Segunda Firma - '. $client_name;
 
-        $sent_amount = ($this->operation->type == 'Compra') ? (round($this->operation->amount * $this->operation->exchange_rate,2) + $this->operation->comission_amount + $this->operation->igv) : (($this->operation->type == 'Venta') ? $this->operation->amount : (round(round($this->operation->matches[0]->amount + round($this->operation->matches[0]->amount * $this->operation->matches[0]->spread/10000, 2 ), 2) + $this->operation->comission_amount + $this->operation->igv,2)));
+        $sent_amount = ($this->operation->type == 'Compra') ? (round($this->operation->amount * $this->operation->exchange_rate,2) + $this->operation->comission_amount + $this->operation->igv) : (($this->operation->type == 'Venta') ? $this->operation->amount : (round(round($this->operation->matches[0]->amount/$this->operation->exchange_rate*($this->operation->exchange_rate+$this->operation->matches[0]->spread/10000), 2) + $this->operation->comission_amount + $this->operation->igv,2)));
 
         $received_amount = ($this->operation->type == 'Venta') ? round($this->operation->amount * $this->operation->exchange_rate,2) - $this->operation->comission_amount - $this->operation->igv : $this->operation->amount;
 
         $counterpart_sent_amount = ($this->operation->matches[0]->type == 'Compra') ? (round($this->operation->matches[0]->amount * $this->operation->matches[0]->exchange_rate,2) + $this->operation->matches[0]->comission_amount + $this->operation->matches[0]->igv) : (($this->operation->matches[0]->type == 'Venta') ? $this->operation->matches[0]->amount : (round($this->operation->matches[0]->amount + $this->operation->matches[0]->comission_amount + $this->operation->matches[0]->igv,2)));
 
-        $counterpart_received_amount = ($this->operation->matches[0]->type == 'Venta') ? round($this->operation->matches[0]->amount * $this->operation->matches[0]->exchange_rate,2) - $this->operation->matches[0]->comission_amount - $this->operation->matches[0]->igv : (($this->operation->type == 'Compra') ? $this->operation->matches[0]->amount :  round($this->operation->matches[0]->amount + round($this->operation->matches[0]->amount * $this->operation->matches[0]->spread/10000, 2 ), 2));
+        $counterpart_received_amount = ($this->operation->matches[0]->type == 'Venta') ? round($this->operation->matches[0]->amount * $this->operation->matches[0]->exchange_rate,2) - $this->operation->matches[0]->comission_amount - $this->operation->matches[0]->igv : (($this->operation->type == 'Compra') ? $this->operation->matches[0]->amount :  round(round($this->operation->matches[0]->amount/$this->operation->exchange_rate*($this->operation->exchange_rate+$this->operation->matches[0]->spread/10000), 2), 2));
 
         $operation_id = ($this->sign == 1) ? $this->operation->matches[0]->id : $this->operation->id;
         
