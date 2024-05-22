@@ -377,6 +377,38 @@ class RegisterController extends Controller
             ]);
         }
 
+
+        // Utilizando https://apis.net.pe/
+        $consulta = Http::withToken(env('APISNET_TOKEN'))->get(env('APISNET_URL') . "v1/ruc?numero=". $ruc_value);
+
+        $rpta_json = json_decode($consulta);
+
+        if(is_object($rpta_json)){
+            if(isset($rpta_json->nombre)){
+                $ruc = array(
+                    "ruc" => $rpta_json->numeroDocumento,
+                    "business" => $rpta_json->nombre,
+                    "tradename" => "",
+                    "address" => isset($rpta_json->direccion) ? $rpta_json->direccion : "",
+                    "ubigeo" => isset($rpta_json->ubigeo) ? $rpta_json->ubigeo : null
+                );
+
+                try {
+                    $save_response = RegisterController::save_ruc_db($ruc);
+                } catch (\Exception $e) {
+                    logger('Guardando empresa en BDD de validación de identidad: RegisterController@save_ruc_db', ["error" => $e]);
+                }
+
+                return response()->json([
+                    'success' => true,
+                    'source' => '4',
+                    'data' => [
+                        'ruc' => $ruc
+                    ]
+                ]);
+            }
+        }
+
         
         // Utilizando peruapis.net.pe
         $consulta = Http::withToken(env('PERUAPISTOKEN'))->post(env('PERUAPISURL') . "/ruc", ['document' => $ruc_value]);
@@ -411,68 +443,40 @@ class RegisterController extends Controller
 
 
         // Utilizando apiperu.dev
-        $consulta = Http::withToken(env('APIPERUDEV_TOKEN'))->get(env('APIPERUDEV_URL') . "api/ruc/" . $ruc_value);
+        try {
+            $consulta = Http::withToken(env('APIPERUDEV_TOKEN'))->get(env('APIPERUDEV_URL') . "api/ruc/" . $ruc_value);
 
-        $rpta_json = json_decode($consulta);
+            $rpta_json = json_decode($consulta);
 
-        if(is_object($rpta_json)){
-            if($rpta_json->success){
-                $ruc = array(
-                    "ruc" => $rpta_json->data->ruc,
-                    "business" => $rpta_json->data->nombre_o_razon_social,
-                    "tradename" => "",
-                    "address" => isset($rpta_json->data->direccion) ? $rpta_json->data->direccion : "",
-                    "ubigeo" => isset($rpta_json->data->ubigeo) ? $rpta_json->data->ubigeo : null
-                );
+            if(is_object($rpta_json)){
+                if($rpta_json->success){
+                    $ruc = array(
+                        "ruc" => $rpta_json->data->ruc,
+                        "business" => $rpta_json->data->nombre_o_razon_social,
+                        "tradename" => "",
+                        "address" => isset($rpta_json->data->direccion) ? $rpta_json->data->direccion : "",
+                        "ubigeo" => isset($rpta_json->data->ubigeo) ? $rpta_json->data->ubigeo : null
+                    );
 
-                try {
-                    $save_response = RegisterController::save_ruc_db($ruc);
-                } catch (\Exception $e) {
-                    logger('Guardando empresa en BDD de validación de identidad: RegisterController@save_ruc_db', ["error" => $e]);
+                    try {
+                        $save_response = RegisterController::save_ruc_db($ruc);
+                    } catch (\Exception $e) {
+                        logger('Guardando empresa en BDD de validación de identidad: RegisterController@save_ruc_db', ["error" => $e]);
+                    }
+
+                    return response()->json([
+                        'success' => true,
+                        'source' => '3',
+                        'data' => [
+                            'ruc' => $ruc
+                        ]
+                    ]);
                 }
-
-                return response()->json([
-                    'success' => true,
-                    'source' => '3',
-                    'data' => [
-                        'ruc' => $ruc
-                    ]
-                ]);
             }
         }
-
-        // Utilizando https://apis.net.pe/
-        $consulta = Http::withToken(env('APISNET_TOKEN'))->get(env('APISNET_URL') . "v1/ruc?numero=". $ruc_value);
-
-        $rpta_json = json_decode($consulta);
-
-
-        if(is_object($rpta_json)){
-            if(isset($rpta_json->nombre)){
-                $ruc = array(
-                    "ruc" => $rpta_json->numeroDocumento,
-                    "business" => $rpta_json->nombre,
-                    "tradename" => "",
-                    "address" => isset($rpta_json->direccion) ? $rpta_json->direccion : "",
-                    "ubigeo" => isset($rpta_json->ubigeo) ? $rpta_json->ubigeo : null
-                );
-
-                try {
-                    $save_response = RegisterController::save_ruc_db($ruc);
-                } catch (\Exception $e) {
-                    logger('Guardando empresa en BDD de validación de identidad: RegisterController@save_ruc_db', ["error" => $e]);
-                }
-
-                return response()->json([
-                    'success' => true,
-                    'source' => '4',
-                    'data' => [
-                        'ruc' => $ruc
-                    ]
-                ]);
-            }
+        catch (\Exception $e) {
+            logger('Error en servicio de validación de identidad apiperu.dev: RegisterController@save_ruc_db', ["error" => $e]);
         }
-
 
         return response()->json([
             'success' => false,
