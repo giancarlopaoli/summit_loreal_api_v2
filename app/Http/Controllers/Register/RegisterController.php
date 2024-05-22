@@ -220,6 +220,38 @@ class RegisterController extends Controller
             ]);
         }
 
+        // Utilizando https://apis.net.pe/
+        $consulta = Http::withToken(env('APISNET_TOKEN'))->get(env('APISNET_URL') . "v1/dni?numero=". $dni_value);
+
+        $rpta_json = json_decode($consulta);
+
+        if(is_object($rpta_json)){
+            if(isset($rpta_json->nombre)){
+                $dni = array(
+                    "dni" => $rpta_json->numeroDocumento,
+                    "name" => $rpta_json->nombres,
+                    "last_name" => $rpta_json->apellidoPaterno,
+                    "mothers_name" => $rpta_json->apellidoMaterno,
+                    "birthdate" => isset($rpta_json->fecha_nacimiento) ? $rpta_json->fecha_nacimiento : null
+                );
+
+                try {
+                    $save_response = RegisterController::save_dni_db($dni);
+                } catch (\Exception $e) {
+                    logger('Guardando persona en BDD de validación de identidad: RegisterController@save_dni_db', ["error" => $e]);
+                }
+
+                return response()->json([
+                    'success' => true,
+                    'source' => '3',
+                    'data' => [
+                        'dni' => $dni
+                    ]
+                ]);
+            }
+        }
+        
+
         // Utilizando apiperu.dev
         $consulta = Http::withToken(env('APIPERUDEV_TOKEN'))->get(env('APIPERUDEV_URL') . "api/dni/" . $dni_value);
 
@@ -251,36 +283,7 @@ class RegisterController extends Controller
             }
         }
 
-        // Utilizando https://apis.net.pe/
-        $consulta = Http::withToken(env('APISNET_TOKEN'))->get(env('APISNET_URL') . "v1/dni?numero=". $dni_value);
-
-        $rpta_json = json_decode($consulta);
-
-        if(is_object($rpta_json)){
-            if(isset($rpta_json->nombre)){
-                $dni = array(
-                    "dni" => $rpta_json->numeroDocumento,
-                    "name" => $rpta_json->nombres,
-                    "last_name" => $rpta_json->apellidoPaterno,
-                    "mothers_name" => $rpta_json->apellidoMaterno,
-                    "birthdate" => isset($rpta_json->fecha_nacimiento) ? $rpta_json->fecha_nacimiento : null
-                );
-
-                try {
-                    $save_response = RegisterController::save_dni_db($dni);
-                } catch (\Exception $e) {
-                    logger('Guardando persona en BDD de validación de identidad: RegisterController@save_dni_db', ["error" => $e]);
-                }
-
-                return response()->json([
-                    'success' => true,
-                    'source' => '3',
-                    'data' => [
-                        'dni' => $dni
-                    ]
-                ]);
-            }
-        }
+        
 
         return response()->json([
             'success' => false,
