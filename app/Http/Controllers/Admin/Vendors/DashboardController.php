@@ -299,6 +299,7 @@ class DashboardController extends Controller
         foreach ($operation['bank_accounts'] as $bank_account_data) {
 
             $escrow_account = EscrowAccount::select('id','bank_id','account_number','cci_number','currency_id')
+                ->where('active',true)
                 ->where('bank_id',$bank_account_data->bank_id)
                 ->where('currency_id', $bank_account_data->currency_id)
                 ->with('currency:id,name,sign')

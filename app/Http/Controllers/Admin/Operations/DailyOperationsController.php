@@ -273,6 +273,7 @@ class DailyOperationsController extends Controller
                 
                 $escrow_account = EscrowAccount::where('bank_id',$bank_account_data->bank_id)
                     ->where('currency_id', $bank_account_data->currency_id)
+                    ->where('active', 1)
                     ->first();
 
                 $vendor_escrow = BankAccount::where('bank_id', $bank_account_data->bank_id)
