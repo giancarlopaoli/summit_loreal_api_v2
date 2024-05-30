@@ -525,7 +525,8 @@ class DailyOperationsController extends Controller
     public function upload_voucher(Request $request) {
         $val = Validator::make($request->all(), [
             'operation_id' => 'required|exists:operations,id',
-            'escrow_account_id' => 'required|exists:escrow_accounts,id',
+            'escrow_account_id' => 'nullable|exists:escrow_accounts,id',
+            'vendor_bank_account_id' => 'nullable|exists:bank_accounts,id',
             'file' => 'required|file'
         ]);
         if($val->fails()) return response()->json($val->messages());
@@ -533,26 +534,42 @@ class DailyOperationsController extends Controller
         logger('Archivo adjunto: DailyOperationsController@upload_voucher', ["operation_id" => $request->operation_id, "escrow_account_id" => $request->escrow_account_id]);
 
         $operation_id = $request->operation_id;
+        $operation = Operation::find($request->operation_id);
 
-        $escrow_account = DB::table('escrow_account_operation')
-            ->where('escrow_account_id', $request->escrow_account_id)
-            ->where('operation_id', $request->operation_id);
+        if($operation->use_escrow_account == 1){
+            $escrow_account = DB::table('escrow_account_operation')
+                ->where('escrow_account_id', $request->escrow_account_id)
+                ->where('operation_id', $request->operation_id);
 
-        if(is_null($escrow_account->first())){
-            return response()->json([
-                'success' => false,
-                'errors' => [
-                    'Error en número de operación'
-                ]
-            ]);
+            if(is_null($escrow_account->first())){
+                return response()->json([
+                    'success' => false,
+                    'errors' => [
+                        'Error en número de operación'
+                    ]
+                ]);
+            }
         }
+        else{
+            $escrow_account = DB::table('vendor_bank_account_operation')
+                ->where('bank_account_id', $request->vendor_bank_account_id)
+                ->where('operation_id', $request->operation_id);
 
+            if(is_null($escrow_account->first())){
+                return response()->json([
+                    'success' => false,
+                    'errors' => [
+                        'Error en número de operación'
+                    ]
+                ]);
+            }
+        }
 
         if($request->hasFile('file')){
             $file = $request->file('file');
             $path = env('AWS_ENV').'/operations/';
 
-            $operation = Operation::find($request->operation_id);
+            
             $original_name = $file->getClientOriginalName();
             $longitud = Str::length($file->getClientOriginalName());
 
