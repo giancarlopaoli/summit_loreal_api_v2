@@ -307,6 +307,7 @@ Route::middleware('encryptresponses')->group(function () {
             ########## Administración de clientes  #############
             Route::prefix('clients')->group(function () {
                 Route::GET('list', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'list']);
+                Route::GET('list2', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'list']);
                 Route::GET('bank-accounts/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'bank_account_list']);
                 Route::PUT('bank-account/{bank_account}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'edit_bank_account']);
                 Route::POST('bank-account/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'add_bank_account']);
@@ -315,11 +316,13 @@ Route::middleware('encryptresponses')->group(function () {
                 Route::GET('bank-account/receipt/{bank_account_receipt}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'download_bank_account_receipt']);
                 Route::PUT('bank-account/approve/{bank_account}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'approve_bank_account']);
                 Route::PUT('bank-account/reject/{bank_account}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'reject_bank_account']);
+                Route::GET('pending-bank-accounts', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'pending_bank_accounts']);
                 
                 Route::GET('{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'detail']);
                 Route::PUT('{client}/accountable-email', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'edit_accountable_email']);
 
-                
+
+
                 Route::GET('user/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'users']);
                 Route::GET('assigned-users/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'assigned_users']);
                 Route::POST('user/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'attach_user']);
@@ -350,7 +353,8 @@ Route::middleware('encryptresponses')->group(function () {
                     Route::PUT('representative/{representative}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'edit_representative']);
                     
                 });
-                
+
+
             });
 
             ########## Administración de Tipo de Cambio  #############

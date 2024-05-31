@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 use App\Enums;
 use App\Models\Client;
 use App\Models\ClientStatus;
@@ -1036,6 +1037,25 @@ class ClientsController extends Controller
             'success' => true,
             'data' => [
                 'Correo contable actualizado exitosamente'
+            ]
+        ]);
+    }
+
+    // Cuentas bancarias pendientes de aprobación
+    public function pending_bank_accounts(Request $request, Client $client) {
+        
+        $clients = DB::table('clients as cl')
+            ->select('cl.id','cl.document_number','ba.id as bank_account_id','ba.account_number','ba.cci_number','ba.bank_account_status_id')
+            ->selectRaw("if(cl.customer_type = 'PN', concat(cl.name,' ', cl.last_name, ' ',cl.mothers_name), cl.name) as client_name")
+            ->join('bank_accounts as ba', 'ba.client_id', '=','cl.id')
+            ->where('cl.client_status_id', 3)
+            ->where('ba.bank_account_status_id', 3)
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'clients' => $clients
             ]
         ]);
     }
