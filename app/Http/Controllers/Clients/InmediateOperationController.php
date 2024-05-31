@@ -830,6 +830,18 @@ class InmediateOperationController extends Controller
                     ->where('active', true)
                     ->first();
 
+                foreach ($escrow_accounts as $escrow) {
+                    // Validando que no se haya enviado la misma cuenta de fideicomiso más de una vez
+                    if($escrow_account->id == $escrow->id){
+                        return response()->json([
+                        'success' => false,
+                            'errors' => [
+                                'No puede enviarse la misma cuenta de fideicomiso más de una vez'
+                            ]
+                        ]);
+                    }
+                }
+
                 if(is_null($escrow_account)) {
                     return response()->json([
                         'success' => false,
@@ -1134,11 +1146,26 @@ class InmediateOperationController extends Controller
                         }
 
                         if(!is_null($escrow_account)){
-                            $matched_operation->escrow_accounts()->attach($escrow_account->id, [
-                                'amount' => $bank_account_data->pivot->amount + $bank_account_data->pivot->comission_amount,
-                                'comission_amount' => 0,
-                                'created_at' => Carbon::now()
-                            ]);
+
+                            $matched_operation_escrow_accounts = DB::table('escrow_account_operation')
+                                ->where('operation_id', $matched_operation->id)
+                                ->where('escrow_account_id', $escrow_account->id)
+                                ->get();
+
+                            
+                                if($matched_operation_escrow_accounts->count() > 0){
+                                    
+                                    DB::table('escrow_account_operation')->where('id', $matched_operation_escrow_accounts->first()->id)
+                                        ->update([
+                                            'amount' => $matched_operation_escrow_accounts->first()->amount + $bank_account_data->pivot->amount + $bank_account_data->pivot->comission_amount]);
+                                }
+                                else{
+                                    $matched_operation->escrow_accounts()->attach($escrow_account->id, [
+                                        'amount' => $bank_account_data->pivot->amount + $bank_account_data->pivot->comission_amount,
+                                        'comission_amount' => 0,
+                                        'created_at' => Carbon::now()
+                                    ]);
+                                }
                         }
                         else{
                             return response()->json([

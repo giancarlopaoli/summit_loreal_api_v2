@@ -876,7 +876,7 @@ class DailyOperationsController extends Controller
             ]);
         }
 
-        if($operation->matches->count() > 0) { // Si es operación creadora
+        if($operation->matches->count() > 0 && $operation->use_escrow_account == 1) { // Si es operación creadora
             $bank_account = DB::table('bank_account_operation')
             ->where('operation_id', $operation->id)
             ->where('signed_at', null)

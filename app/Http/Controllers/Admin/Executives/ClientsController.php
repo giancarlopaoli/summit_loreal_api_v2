@@ -211,7 +211,6 @@ class ClientsController extends Controller
     }
 
     public function create_inmediate_operation(Request $request) {
-        
         $consult = new InmediateOperationController();
         $result = $consult->create_operation($request)->getData();
 
