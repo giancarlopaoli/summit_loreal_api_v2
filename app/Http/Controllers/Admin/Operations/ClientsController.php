@@ -1057,12 +1057,14 @@ class ClientsController extends Controller
             ->get();*/
 
         $bank_account = BankAccount::where('bank_account_status_id',3)
-            ->select('id','client_id','bank_id','account_number','cci_number','currency_id','account_type_id','bank_account_status_id')
+            ->select('bank_accounts.id','client_id','bank_id','account_number','cci_number','currency_id','account_type_id','bank_account_status_id')
+            ->join('clients','clients.id','=','bank_accounts.client_id')
+            ->where('clients.client_status_id','3')
             ->with('bank:id,name,shortname')
             ->with('status:id,name')
             ->with('currency:id,name,sign')
             ->with('receipts')
-            ->with('client:id,name,last_name,mothers_name,customer_type')
+            ->with('client:id,name,last_name,mothers_name,customer_type,client_status_id','client.status:id,name')
             ->get();
 
         return response()->json([
