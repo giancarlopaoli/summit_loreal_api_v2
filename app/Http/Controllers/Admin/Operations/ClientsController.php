@@ -1042,23 +1042,33 @@ class ClientsController extends Controller
     }
 
     // Cuentas bancarias pendientes de aprobación
-    public function pending_bank_accounts(Request $request, Client $client) {
+    public function pending_bank_accounts(Request $request) {
         
-        $clients = DB::table('clients as cl')
+        /*$clients = DB::table('clients as cl')
             ->select('cl.id','cl.document_number','ba.id as bank_account_id','ba.account_number','ba.cci_number','ba.bank_account_status_id')
             ->selectRaw("if(cl.customer_type = 'PN', concat(cl.name,' ', cl.last_name, ' ',cl.mothers_name), cl.name) as client_name")
             ->selectRaw("(select shortname from banks where banks.id = ba.bank_id) as bank_name")
             ->selectRaw("(select name from currencies where currencies.id = ba.currency_id) as currency_name")
             ->selectRaw("(select name from bank_account_statuses where bank_account_statuses.id = ba.bank_account_status_id) as status")
+            ->selectRaw("(select id from bank_account_receipts where bank_account_receipts.bank_account_id = ba.id limit 1) as status")
             ->join('bank_accounts as ba', 'ba.client_id', '=','cl.id')
             ->where('cl.client_status_id', 3)
             ->where('ba.bank_account_status_id', 3)
+            ->get();*/
+
+        $bank_account = BankAccount::where('bank_account_status_id',3)
+            ->select('id','client_id','bank_id','account_number','cci_number','currency_id','account_type_id','bank_account_status_id')
+            ->with('bank:id,name,shortname')
+            ->with('status:id,name')
+            ->with('currency:id,name,sign')
+            ->with('receipts')
+            ->with('client:id,name,last_name,mothers_name,customer_type')
             ->get();
 
         return response()->json([
             'success' => true,
             'data' => [
-                'clients' => $clients
+                'clients' => $bank_account
             ]
         ]);
     }
