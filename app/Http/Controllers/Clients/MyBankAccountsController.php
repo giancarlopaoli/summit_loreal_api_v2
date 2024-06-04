@@ -9,6 +9,8 @@ use App\Models\Client;
 use App\Models\Currency;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\NewAccountNotification;
 
 class MyBankAccountsController extends Controller
 {
@@ -88,6 +90,9 @@ class MyBankAccountsController extends Controller
             'currency_id' => $request->currency_id,
             'updated_by' => auth()->id()
         ]);
+
+        //Enviando mail de notificación de registro de cuenta bancaria
+        $rpta_mail = Mail::send(new NewAccountNotification($client));
 
         return response()->json([
             'success' => true,

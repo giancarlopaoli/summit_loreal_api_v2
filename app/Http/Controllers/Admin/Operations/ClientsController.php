@@ -26,6 +26,7 @@ use Illuminate\Support\Facades\Storage;
 use App\Http\Controllers\Admin\Operations\WsCorfidController;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\ExecutivePresentation;
+use App\Mail\ApprovedAccountNotification;
 
 class ClientsController extends Controller
 {
@@ -141,14 +142,14 @@ class ClientsController extends Controller
 
     //Approve Bank Account
     public function approve_bank_account(Request $request, BankAccount $bank_account) {
-        if($bank_account->status->name != 'Pendiente'){
+        /*if($bank_account->status->name != 'Pendiente'){
             return response()->json([
                 'success' => false,
                 'errors' => [
                     'Solo puede aprobar una cuenta bancaria que se encuentre en estado Pendiente de Aprobación'
                 ]
             ]);
-        }
+        }*/
 
         if($bank_account->cci_number == '' || is_null($bank_account->cci_number)){
             return response()->json([
@@ -163,6 +164,9 @@ class ClientsController extends Controller
         $bank_account->updated_by = auth()->id();
         $bank_account->updated_at = Carbon::now();
         $bank_account->save();
+
+        //Enviando mail de notificación de registro de cuenta bancaria
+        $rpta_mail = Mail::send(new ApprovedAccountNotification($bank_account->client));
 
         return response()->json([
             'success' => true,
@@ -1043,18 +1047,6 @@ class ClientsController extends Controller
 
     // Cuentas bancarias pendientes de aprobación
     public function pending_bank_accounts(Request $request) {
-        
-        /*$clients = DB::table('clients as cl')
-            ->select('cl.id','cl.document_number','ba.id as bank_account_id','ba.account_number','ba.cci_number','ba.bank_account_status_id')
-            ->selectRaw("if(cl.customer_type = 'PN', concat(cl.name,' ', cl.last_name, ' ',cl.mothers_name), cl.name) as client_name")
-            ->selectRaw("(select shortname from banks where banks.id = ba.bank_id) as bank_name")
-            ->selectRaw("(select name from currencies where currencies.id = ba.currency_id) as currency_name")
-            ->selectRaw("(select name from bank_account_statuses where bank_account_statuses.id = ba.bank_account_status_id) as status")
-            ->selectRaw("(select id from bank_account_receipts where bank_account_receipts.bank_account_id = ba.id limit 1) as status")
-            ->join('bank_accounts as ba', 'ba.client_id', '=','cl.id')
-            ->where('cl.client_status_id', 3)
-            ->where('ba.bank_account_status_id', 3)
-            ->get();*/
 
         $bank_account = BankAccount::where('bank_account_status_id',3)
             ->select('bank_accounts.id','client_id','bank_id','account_number','cci_number','currency_id','account_type_id','bank_account_status_id')
