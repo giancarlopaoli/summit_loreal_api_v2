@@ -34,8 +34,10 @@ class NewAccountNotification extends Mailable
 
         return $this->from(env('MAIL_FROM_ADDRESS'), env('MAIL_FROM_NAME'))
             ->subject('BILLEX | Registro de nueva cuenta bancaria: '.$this->client->client_full_name)
+            ->to($this->client->email)
             ->cc(env('MAIL_OPS'))
-            ->cc(env('MAIL_TI'))
+            ->cc($mail_executive)
+            ->bcc(env('MAIL_TI'))
             ->view('new_account_notification')
             ->with([
                 'client_name' => $this->client->client_full_name
