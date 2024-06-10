@@ -36,7 +36,8 @@ class ApprovedAccountNotification extends Mailable
             ->subject('BILLEX | Validación de cuenta bancaria: '.$this->client->client_full_name)
             ->to($this->client->email)
             ->cc(env('MAIL_OPS'))
-            ->cc(env('MAIL_TI'))
+            ->cc($mail_executive)
+            ->bcc(env('MAIL_TI'))
             ->view('approved_account_notification')
             ->with([
                 'client_name' => $this->client->client_full_name
