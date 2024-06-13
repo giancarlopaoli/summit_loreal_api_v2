@@ -91,7 +91,7 @@ class MyOperationsController extends Controller
         }
 
         $operation = $client->operations()
-            ->select('id','client_id','code','class','type','user_id','use_escrow_account','amount','currency_id','exchange_rate','comission_amount','igv','operation_status_id','transfer_number','invoice_url','coupon_id','coupon_code','coupon_type','coupon_value','operation_date','funds_confirmation_date','deposit_date','spread','comission_spread','canceled_at')
+            ->select('id','client_id','code','class','type','user_id','use_escrow_account','amount','currency_id','exchange_rate','comission_amount','igv','operation_status_id','transfer_number','invoice_url','unaffected_invoice_url','coupon_id','coupon_code','coupon_type','coupon_value','operation_date','funds_confirmation_date','deposit_date','spread','comission_spread','canceled_at')
             ->selectRaw("if(type = 3, round(amount + round(amount * spread/10000, 2), 2), round(amount * exchange_rate, 2)) as conversion_amount")
             ->where('code', $operation_id)
             ->where('client_id', $request->client_id)
