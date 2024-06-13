@@ -219,6 +219,7 @@ Route::middleware('encryptresponses')->group(function () {
             Route::POST('voucher-vendor-instruction/{operation}', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'voucher_vendor_instruction']);
             Route::POST('vendor-instruction/{operation}', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'vendor_instruction']);
             Route::POST('invoice/{operation}', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'invoice']);
+            Route::POST('invoice-unaffected/{operation}', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'invoice_unaffected']);
             Route::POST('invoice-mail/{operation}', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'invoice_email']);
             Route::PUT('confirm-funds-pl/{operation}', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'confirm_funds_pl']);
             Route::PUT('close/{operation}', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'close_operation']);
