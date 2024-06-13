@@ -317,11 +317,21 @@
     </tr>
     <tr>
       <td class="buttons" align="center">
-        <p style="font-size: 13px;">En el siguiente Botón podrás descargar tu comprobante electrónico:</p>
+        <p style="font-size: 13px;">En el siguiente Botón podrás descargar tu comprobante electrónico por la comisión de Billex:</p>
         <a href="{{ $invoice_url }}" style="cursor:pointer !important;" target="_blank"><button style="padding-top: 20px;align-items:center !important;margin: 20px 0 0 0;cursor:pointer;"> <p>Descargar Comprobante </p><img src="https://bill-upload.s3.amazonaws.com/static/img/download.png" alt=""></button></a>
 
       </td>
     </tr>
+
+    @if ( !is_null($unaffected_invoice_url))
+      <tr>
+        <td class="buttons" align="center">
+          <p style="font-size: 13px;">Asimismo, te enviamos tu comprobante electrónico por tu operación de cambio:</p>
+          <a href="{{ $unaffected_invoice_url }}" style="cursor:pointer !important;" target="_blank"><button style="padding-top: 20px;align-items:center !important;margin: 20px 0 0 0;cursor:pointer;"> <p>Descargar Comprobante </p><img src="https://bill-upload.s3.amazonaws.com/static/img/download.png" alt=""></button></a>
+
+        </td>
+      </tr>
+    @endif
     <tr>
       <td align="center">
         <p style="font-size: 14px; margin: 30px 0 20px 0;">

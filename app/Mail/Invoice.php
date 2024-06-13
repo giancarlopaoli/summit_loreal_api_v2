@@ -46,7 +46,8 @@ class Invoice extends Mailable
             ->with([
                 "code" => $this->operation->code,
                 "client_name" => $this->operation->client->client_full_name,
-                "invoice_url" => $this->operation->invoice_url
+                "invoice_url" => $this->operation->invoice_url,
+                "unaffected_invoice_url" => $this->operation->unaffected_invoice_url
             ]);
 
         return $email;

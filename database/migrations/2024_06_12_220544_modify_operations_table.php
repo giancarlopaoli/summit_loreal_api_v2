@@ -14,9 +14,9 @@ return new class extends Migration
     public function up()
     {
         Schema::table('operations', function (Blueprint $table) {
-            $table->string('unaffected_invoice_serie',4)->default(false)->nullable()->after('invoice_url');
-            $table->string('unaffected_invoice_number',10)->default(false)->nullable()->after('unaffected_invoice_serie');
-            $table->string('unaffected_invoice_url',255)->default(false)->nullable()->after('unaffected_invoice_number');
+            $table->string('unaffected_invoice_serie',4)->nullable()->after('invoice_url');
+            $table->string('unaffected_invoice_number',10)->nullable()->after('unaffected_invoice_serie');
+            $table->string('unaffected_invoice_url',255)->nullable()->after('unaffected_invoice_number');
         });
     }
 

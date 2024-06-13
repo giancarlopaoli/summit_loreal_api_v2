@@ -988,8 +988,8 @@ class DailyOperationsController extends Controller
                                     
                         array(
                             "unidad_de_medida"          => "ZZ",
-                            "codigo"                    => "001",
-                            "descripcion"               => "SERVICIOS PLATAFORMA BILLEX (" . date("d-m-Y", strtotime($operation->operation_date)) . " - " . strtoupper($operation->type) . " DE " . strtoupper($operation->currency->name) . " " . $operation->currency->sign . $operation->amount . " - TC " . $operation->exchange_rate . " - " . $operation->code . ")",
+                            "codigo"                    => "COMBILL",
+                            "descripcion"               => "SERVICIOS PLATAFORMA BILLEX (" . date("d-m-Y", strtotime($operation->operation_date)) . " - " . strtoupper($operation->type) . " DE " . strtoupper($operation->currency->name) . " " . $operation->currency->sign . $operation->amount . " - TC " . round($operation->exchange_rate,6) . " - " . $operation->code . ")",
                             "cantidad"                  => "1",
                             "valor_unitario"            => round($operation->comission_amount, 2),
                             "precio_unitario"           => round($operation->comission_amount + $operation->igv, 2),
@@ -1037,6 +1037,13 @@ class DailyOperationsController extends Controller
                         }
                         $operation->save();
 
+                        // Generación de Factura inafecta
+                        try {
+                            $invoice = DailyOperationsController::invoice_unaffected($request, $operation);
+                        } catch (\Exception $e) {
+                            logger('ERROR: creación factura inafecta: DailyOperationsController@invoice', ["error" => $e]);
+                        }
+
                         // Notificación Telegram
                         try {
                             $request['operation_id'] = $operation->id;
@@ -1068,7 +1075,7 @@ class DailyOperationsController extends Controller
 
             } catch (\Exception $e) {
                 // Registrando el el log los datos ingresados
-                logger('ERROR: archivo adjunto: DailyOperationsController@invoice', ["error" => $e]);
+                logger('ERROR: Creación de Factura: DailyOperationsController@invoice', ["error" => $e]);
             }
         }
         else{
@@ -1111,6 +1118,16 @@ class DailyOperationsController extends Controller
     public function invoice_unaffected(Request $request, Operation $operation) {
 
         $configurations = new Configuration();
+
+        if(!is_null($operation->unaffected_invoice_url)){
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'La operación inafecta ya se encuentra facturada'
+                ]
+            ]);
+        }
+
 
         if($operation->matches->count() > 0 && $operation->use_escrow_account == 1) { // Si es operación creadora
             $bank_account = DB::table('bank_account_operation')
@@ -1158,7 +1175,7 @@ class DailyOperationsController extends Controller
             $currency = ($operation->type == 'Compra') ? 1 : (($operation->type == 'Venta') ? 2 : $operation->currency_id);
             $total_amount = ($operation->type == 'Compra') ? round($operation->amount * $operation->exchange_rate,2) : (($operation->type == 'Venta') ? $operation->amount : round($operation->amount/$operation->exchange_rate*($operation->exchange_rate+$operation->spread/10000), 2));
 
-            $countervalue = ($operation->type == 'Venta') ? round($operation->amount * $operation->exchange_rate,2) : $operation->amount;
+            $countervalue = round($operation->amount * $operation->exchange_rate,2);
 
 
             try{
@@ -1220,8 +1237,11 @@ class DailyOperationsController extends Controller
                                     
                         array(
                             "unidad_de_medida"          => "ZZ",
-                            "codigo"                    => "002",
-                            "descripcion"               => "OPERACIÓN DE COMPRA - VENTA DE DIVISAS: " . date("d-m-Y", strtotime($operation->operation_date)) . " - " . ($operation->type == "Compra" ? "PEN" : "USD") . $total_amount . " a " . ($operation->type == "Venta" ? "PEN" : "USD") . $countervalue . " - TC " . $operation->exchange_rate,
+                            "codigo"                    => "OPCV",
+                            //"descripcion"               => "OPERACIÓN DE COMPRA - VENTA DE DIVISAS: " . date("d-m-Y", strtotime($operation->operation_date)) . " - " . ($operation->type == "Compra" ? "PEN" : "USD") . $total_amount . " a " . ($operation->type == "Venta" ? "PEN" : "USD") . $countervalue . " - TC " . $operation->exchange_rate,
+
+                            "descripcion"               => "OP " . $operation->code . " - CLIENTE " . ($operation->type == "Compra" ? "COMPRA " : "VENDE ") . $operation->currency->sign . $operation->amount . " - CLIENTE " . ($operation->type == "Compra" ? "ENVIA S/" : "RECIBE S/") . $countervalue . " - TIPO DE CAMBIO: " . round($operation->exchange_rate,4),
+
                             "cantidad"                  => "1",
                             "valor_unitario"            => $total_amount,
                             "precio_unitario"           => $total_amount,
@@ -1236,6 +1256,13 @@ class DailyOperationsController extends Controller
                         )   
                     )
                 );
+
+                /*return response()->json([
+                            'success' => false,
+                            'errors' => [
+                                $data
+                            ]
+                        ]);*/
 
                 // Executing Nubefact API
                 $consulta = Http::withToken(env('NUBEFACT_TOKEN'))->post(env('NUBEFACT_URL'), $data);
