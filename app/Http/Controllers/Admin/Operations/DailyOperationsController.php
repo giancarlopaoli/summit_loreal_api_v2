@@ -1171,8 +1171,8 @@ class DailyOperationsController extends Controller
 
             $executive_email = (!is_null($operation->client->executive)) ? $operation->client->executive->user->email : null;
 
-            $currency = ($operation->type == 'Compra') ? 1 : (($operation->type == 'Venta') ? 2 : $operation->currency_id);
-            $total_amount = ($operation->type == 'Compra') ? round($operation->amount * $operation->exchange_rate,2) : (($operation->type == 'Venta') ? $operation->amount : round($operation->amount/$operation->exchange_rate*($operation->exchange_rate+$operation->spread/10000), 2));
+            $currency = ($operation->type == 'Compra') ? 2 : (($operation->type == 'Venta') ? 1 : $operation->currency_id);
+            $total_amount = ($operation->type == 'Venta') ? round($operation->amount * $operation->exchange_rate,2) : (($operation->type == 'Compra') ? $operation->amount : round($operation->amount/$operation->exchange_rate*($operation->exchange_rate+$operation->spread/10000), 2));
 
             $countervalue = round($operation->amount * $operation->exchange_rate,2);
 
@@ -1237,10 +1237,7 @@ class DailyOperationsController extends Controller
                         array(
                             "unidad_de_medida"          => "ZZ",
                             "codigo"                    => "OPCV",
-                            //"descripcion"               => "OPERACIÓN DE COMPRA - VENTA DE DIVISAS: " . date("d-m-Y", strtotime($operation->operation_date)) . " - " . ($operation->type == "Compra" ? "PEN" : "USD") . $total_amount . " a " . ($operation->type == "Venta" ? "PEN" : "USD") . $countervalue . " - TC " . $operation->exchange_rate,
-
-                            "descripcion"               => "OP " . $operation->code . " - CLIENTE " . ($operation->type == "Compra" ? "COMPRA " : "VENDE ") . $operation->currency->sign . $operation->amount . " - CLIENTE " . ($operation->type == "Compra" ? "ENVIA S/" : "RECIBE S/") . $countervalue . " - TIPO DE CAMBIO: " . round($operation->exchange_rate,4),
-
+                            "descripcion"               => "OP " . $operation->code . " - CLIENTE " . ($operation->type == "Compra" ? "COMPRA " : "VENDE ") . $operation->currency->sign . $operation->amount . " - CLIENTE " . ($operation->type == "Compra" ? "ENVIA S/" : "RECIBE S/") . $countervalue . " - TIPO DE CAMBIO: " . round($operation->exchange_rate, 6),
                             "cantidad"                  => "1",
                             "valor_unitario"            => $total_amount,
                             "precio_unitario"           => $total_amount,
@@ -1255,13 +1252,6 @@ class DailyOperationsController extends Controller
                         )   
                     )
                 );
-
-                /*return response()->json([
-                            'success' => false,
-                            'errors' => [
-                                $data
-                            ]
-                        ]);*/
 
                 // Executing Nubefact API
                 $consulta = Http::withToken(env('NUBEFACT_TOKEN'))->post(env('NUBEFACT_URL'), $data);
