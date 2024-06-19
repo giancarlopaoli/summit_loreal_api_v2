@@ -20,6 +20,7 @@ return new class extends Migration
             $table->decimal('total_igv', 7,2);
             $table->enum('type', ['Producto', 'Servicio']);
             $table->foreignIdFor(\App\Models\Currency::class);
+            $table->decimal('exchange_rate', 5, 4)->nullable();
             $table->decimal('detraction_amount', 7,2)->nullable();
             $table->date('detraction_payment_date', 7,2)->nullable();
             $table->string('serie', 10);

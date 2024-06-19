@@ -13,7 +13,7 @@ class BudgetController extends Controller
     //Areas list
     public function list_areas(Request $request) {
 
-        $areas = Area::select('id','name')->get();
+        $areas = Area::select('id','name','code')->get();
 
         return response()->json([
             'success' => true,
@@ -74,7 +74,7 @@ class BudgetController extends Controller
     //Areas list
     public function list_budgets(Request $request) {
 
-        $budgets = Area::select('id','name')
+        $budgets = Area::select('id','name','code')
             ->with('budgets:id,area_id,code,description,period,initial_budget,final_budget')
             ->get();
 

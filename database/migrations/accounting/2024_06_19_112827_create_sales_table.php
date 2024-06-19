@@ -20,6 +20,7 @@ return new class extends Migration
             $table->decimal('amount', 7,2);
             $table->decimal('igv', 7,2);
             $table->foreignIdFor(\App\Models\Currency::class);
+            $table->decimal('exchange_rate', 5, 4)->nullable();
             $table->decimal('detraction_amount', 7,2)->nullable();
             $table->date('detraction_payment_date', 7,2)->nullable();
             $table->string('invoice_serie', 10);

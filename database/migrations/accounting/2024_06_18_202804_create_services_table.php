@@ -20,6 +20,8 @@ return new class extends Migration
             $table->string('name', 100);
             $table->string('description', 200)->nullable();
             $table->decimal('amount', 7,2);
+            $table->foreignIdFor(\App\Models\Currency::class);
+            $table->decimal('exchange_rate', 5, 4)->nullable();
             $table->enum('frequency', ['Compra única', 'Mensual','Anual','Otro']);
             $table->foreignId('updated_by')->nullable();
             $table->timestamps();

@@ -18,6 +18,7 @@ return new class extends Migration
             $table->date('expense_date', 7,2);
             $table->decimal('amount', 7,2);
             $table->foreignIdFor(\App\Models\Currency::class);
+            $table->decimal('exchange_rate', 5, 4)->nullable();
             $table->enum('type', ['ITF', 'Comisiones bancarias', 'Intereses']);
             $table->string('comments', 200)->nullable();
             $table->foreignIdFor(\App\Models\BusinessBankAccount::class)->constrained();
