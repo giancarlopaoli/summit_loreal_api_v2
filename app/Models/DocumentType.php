@@ -9,6 +9,8 @@ class DocumentType extends Model
 {
     use HasFactory;
 
+    protected $connection = 'mysql';
+
     public function leads() {
         return $this->hasMany(Lead::class);
     }
@@ -27,5 +29,13 @@ class DocumentType extends Model
 
     public function users() {
         return $this->hasMany(User::class);
+    }
+
+    public function payrolls() {
+        return $this->hasMany(Payroll::class);
+    }
+
+    public function suppliers() {
+        return $this->hasMany(Supplier::class);
     }
 }

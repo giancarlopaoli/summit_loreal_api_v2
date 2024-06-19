@@ -139,4 +139,26 @@ class User extends Authenticatable
     {
         return $this->name . ' ' . $this->last_name;
     }
+
+
+
+    public function budgets() {
+        return $this->hasMany(Budget::class, "updated_by");
+    }
+
+    public function payrolls() {
+        return $this->hasMany(Payroll::class, "updated_by");
+    }
+
+    public function payroll_contract_created() {
+        return $this->hasMany(PayrollContracts::class, "created_by");
+    }
+
+    public function payroll_contract_updated() {
+        return $this->hasMany(PayrollContracts::class, "updated_by");
+    }
+
+    public function services() {
+        return $this->hasMany(Service::class, "updated_by");
+    }
 }

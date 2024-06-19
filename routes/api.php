@@ -583,6 +583,26 @@ Route::middleware('encryptresponses')->group(function () {
         });
 
 
+        ########## Módulo de Supervidores  #############
+        Route::prefix('accounting')->middleware('role:contabilidad')->group(function () {
+            
+            ########## dashboard  #############
+            Route::prefix('dashboard')->group(function () {
+
+            });
+
+            ########## Budget  #############
+            Route::prefix('budget')->group(function () {
+                Route::POST('area', [\App\Http\Controllers\Admin\Accounting\BudgetController::class, 'new_area']);
+                Route::GET('areas', [\App\Http\Controllers\Admin\Accounting\BudgetController::class, 'list_areas']);
+
+                Route::POST('', [\App\Http\Controllers\Admin\Accounting\BudgetController::class, 'new_budget']);
+                Route::GET('', [\App\Http\Controllers\Admin\Accounting\BudgetController::class, 'list_budgets']);
+            });
+
+        });
+
+
     });
 
     Route::middleware('auth:sanctum')->get('/user', function (Request $request) {

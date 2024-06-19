@@ -51,4 +51,8 @@ class BankAccount extends Model
     public function receipts() {
         return $this->hasMany(BankAccountReceipt::class);
     }
+
+    public function payroll_payments() {
+        return $this->hasMany(PayrollPayment::class);
+    }
 }

@@ -15,6 +15,8 @@ class Client extends Model
 
     protected $guarded = [];
 
+    protected $connection = 'mysql';
+
     public function representatives() {
         return $this->hasMany(Representative::class)->where('representatives.representative_type', '=', 'Representante Legal');
     }
@@ -123,5 +125,9 @@ class Client extends Model
         else{
             return $this->name . ' ' . $this->last_name . ' ' . $this->mothers_name;
         }
+    }
+
+    public function sales() {
+        return $this->hasMany(Sale::class);
     }
 }
