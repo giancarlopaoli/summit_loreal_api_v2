@@ -173,10 +173,10 @@ class OperationsTimesController extends Controller
                 if(operations.operation_status_id = 4 && op2.operation_status_id = 7 && (operations.sign_date is null),
                 TIMESTAMPDIFF(MINUTE,op2.funds_confirmation_date,now()),
                 if(operations.operation_status_id = 4 && op2.operation_status_id = 7 && (operations.sign_date is not null),
-                TIMESTAMPDIFF(MINUTE,(select od.created_at from operation_documents od where od.operation_id = operations.id and od.type = 'Comprobante' order by id limit 1),now()),
+                TIMESTAMPDIFF(MINUTE,operations.sign_date,now()),
 
                 if((operations.operation_status_id in (6,7,8)) && (op2.operation_status_id in (6,7,8)),
-                TIMESTAMPDIFF(MINUTE,operations.funds_confirmation_date,operations.deposit_date),
+                TIMESTAMPDIFF(MINUTE,(select od.created_at from operation_documents od where od.operation_id = operations.id and od.type = 'Comprobante' order by id limit 1 ),operations.deposit_date),
 
 
                 0)))))))) as currenttime");
