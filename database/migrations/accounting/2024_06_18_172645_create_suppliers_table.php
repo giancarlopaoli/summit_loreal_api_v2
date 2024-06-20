@@ -20,6 +20,9 @@ return new class extends Migration
             $table->string('document_number', 15);
             $table->string('email', 100)->nullable();
             $table->string('phone', 30)->nullable();
+            $table->string('address', 255)->nullable();
+            $table->foreignIdFor(\App\Models\District::class)->nullable();
+            $table->foreignIdFor(\App\Models\Country::class)->nullable();
             $table->string('detraction_account', 30)->nullable();
             $table->string('logo_url', 200)->nullable();
             $table->timestamps();

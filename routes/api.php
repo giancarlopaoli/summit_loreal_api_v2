@@ -308,7 +308,6 @@ Route::middleware('encryptresponses')->group(function () {
             ########## Administración de clientes  #############
             Route::prefix('clients')->group(function () {
                 Route::GET('list', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'list']);
-                Route::GET('list2', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'list']);
                 Route::GET('bank-accounts/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'bank_account_list']);
                 Route::PUT('bank-account/{bank_account}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'edit_bank_account']);
                 Route::POST('bank-account/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'add_bank_account']);
@@ -593,11 +592,19 @@ Route::middleware('encryptresponses')->group(function () {
 
             ########## Budget  #############
             Route::prefix('budget')->group(function () {
-                Route::POST('area', [\App\Http\Controllers\Admin\Accounting\BudgetController::class, 'new_area']);
-                Route::GET('areas', [\App\Http\Controllers\Admin\Accounting\BudgetController::class, 'list_areas']);
+                Route::POST('area', [\App\Http\Controllers\Admin\Accounting\BudgetsController::class, 'new_area']);
+                Route::GET('areas', [\App\Http\Controllers\Admin\Accounting\BudgetsController::class, 'list_areas']);
 
-                Route::POST('', [\App\Http\Controllers\Admin\Accounting\BudgetController::class, 'new_budget']);
-                Route::GET('', [\App\Http\Controllers\Admin\Accounting\BudgetController::class, 'list_budgets']);
+                Route::POST('', [\App\Http\Controllers\Admin\Accounting\BudgetsController::class, 'new_budget']);
+                Route::GET('', [\App\Http\Controllers\Admin\Accounting\BudgetsController::class, 'list_budgets']);
+            });
+
+            ########## Suppliers  #############
+            Route::prefix('supplier')->group(function () {
+                Route::POST('', [\App\Http\Controllers\Admin\Accounting\SuppliersController::class, 'new_supplier']);
+                Route::GET('', [\App\Http\Controllers\Admin\Accounting\SuppliersController::class, 'list_suppliers']);
+                Route::POST('contact/{supplier}', [\App\Http\Controllers\Admin\Accounting\SuppliersController::class, 'new_contact']);
+                Route::POST('bank-account/{supplier}', [\App\Http\Controllers\Admin\Accounting\SuppliersController::class, 'new_bank_account']);
             });
 
         });

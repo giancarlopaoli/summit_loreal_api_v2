@@ -9,7 +9,7 @@ class AccountType extends Model
 {
     use HasFactory;
 
-    protected $connection = 'mysql2';
+    protected $connection = 'mysql';
 
     public function bank_accounts() {
         return $this->hasMany(BankAccount::class);

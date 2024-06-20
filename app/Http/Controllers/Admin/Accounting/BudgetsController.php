@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 use App\Models\Area;
 use App\Models\Budget;
 
-class BudgetController extends Controller
+class BudgetsController extends Controller
 {
     //Areas list
     public function list_areas(Request $request) {
@@ -61,7 +61,7 @@ class BudgetController extends Controller
             'description' => $request->description,
             'period' => $request->period,
             'initial_budget' => $request->initial_budget
-        ]);
+        ]); 
 
         return response()->json([
             'success' => true,
@@ -75,7 +75,7 @@ class BudgetController extends Controller
     public function list_budgets(Request $request) {
 
         $budgets = Area::select('id','name','code')
-            ->with('budgets:id,area_id,code,description,period,initial_budget,final_budget')
+            ->with("budgets:id,area_id,code,description,period,initial_budget,final_budget")
             ->get();
 
         return response()->json([

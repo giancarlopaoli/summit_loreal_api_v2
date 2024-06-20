@@ -17,6 +17,14 @@ class Supplier extends Model
         return $this->belongsTo(DocumentType::class);
     }
 
+    public function district() {
+        return $this->belongsTo(District::class);
+    }
+
+    public function country() {
+        return $this->belongsTo(Country::class);
+    }
+
     public function contacts() {
         return $this->hasMany(SupplierContact::class);
     }
