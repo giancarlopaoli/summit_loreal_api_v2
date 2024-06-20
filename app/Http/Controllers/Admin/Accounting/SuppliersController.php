@@ -20,7 +20,8 @@ class SuppliersController extends Controller
             'phone' => 'nullable|string',
             'detraction_account' => 'nullable|string',
             "address" => 'nullable|string',
-            "district_id" => 'nullable|exists:districts,id'
+            "district_id" => 'nullable|exists:districts,id',
+            "country_id" => 'nullable|exists:countries,id'
         ]);
         if($val->fails()) return response()->json($val->messages());
 
@@ -45,7 +46,8 @@ class SuppliersController extends Controller
             'phone' => $request->phone,
             'detraction_account' => $request->detraction_account,
             'address' => $request->address,
-            'district_id' => $request->district_id
+            'district_id' => $request->district_id,
+            'country_id' => $request->country_id
         ]);
 
         return response()->json([
