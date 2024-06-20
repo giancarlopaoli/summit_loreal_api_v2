@@ -965,14 +965,14 @@ class InmediateOperationController extends Controller
             }
         }
 
-        if( $recibe != $total_amount_bank){
+        /*if( $recibe != $total_amount_bank){
             return response()->json([
                 'success' => false,
                 'errors' => [
                     'La suma de montos enviados en las cuentas bancarias del cliente es incorrecto = ' . $total_amount_bank . '. Debería ser ' . $recibe 
                 ]
             ]);
-        }
+        }*/
 
         if( $envia != $total_amount_escrow){
             return response()->json([
