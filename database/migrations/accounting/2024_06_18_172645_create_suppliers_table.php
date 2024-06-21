@@ -23,8 +23,10 @@ return new class extends Migration
             $table->string('address', 255)->nullable();
             $table->foreignIdFor(\App\Models\District::class)->nullable();
             $table->foreignIdFor(\App\Models\Country::class)->nullable();
+            $table->enum('apply_detraction', ['Si','No'])->default('Si');
             $table->string('detraction_account', 30)->nullable();
             $table->string('logo_url', 200)->nullable();
+            $table->enum('status', ['Activo','Inactivo']);
             $table->timestamps();
         });
     }

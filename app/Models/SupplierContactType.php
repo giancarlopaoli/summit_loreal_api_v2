@@ -11,6 +11,8 @@ class SupplierContactType extends Model
  
     protected $connection = 'mysql2';
 
+    protected $guarded = [];
+
     public function contacts() {
         return $this->hasMany(SupplierContact::class);
     }

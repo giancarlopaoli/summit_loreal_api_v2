@@ -585,6 +585,8 @@ Route::middleware('encryptresponses')->group(function () {
         ########## Módulo de Supervidores  #############
         Route::prefix('accounting')->middleware('role:contabilidad')->group(function () {
             
+            Route::POST('test-data', [\App\Http\Controllers\Admin\Accounting\TestDataController::class, 'test_data']);
+
             ########## dashboard  #############
             Route::prefix('dashboard')->group(function () {
 
@@ -603,8 +605,15 @@ Route::middleware('encryptresponses')->group(function () {
             Route::prefix('supplier')->group(function () {
                 Route::POST('', [\App\Http\Controllers\Admin\Accounting\SuppliersController::class, 'new_supplier']);
                 Route::GET('', [\App\Http\Controllers\Admin\Accounting\SuppliersController::class, 'list_suppliers']);
+                Route::GET('detail/{supplier}', [\App\Http\Controllers\Admin\Accounting\SuppliersController::class, 'detail_supplier']);
+                Route::PUT('edit/{supplier}', [\App\Http\Controllers\Admin\Accounting\SuppliersController::class, 'edit_supplier']);
+                Route::GET('contact-types', [\App\Http\Controllers\Admin\Accounting\SuppliersController::class, 'contact_types']);
                 Route::POST('contact/{supplier}', [\App\Http\Controllers\Admin\Accounting\SuppliersController::class, 'new_contact']);
+                Route::GET('contact/{supplier}', [\App\Http\Controllers\Admin\Accounting\SuppliersController::class, 'list_contacts']);
+                Route::DELETE('contact/{supplier_contact}', [\App\Http\Controllers\Admin\Accounting\SuppliersController::class, 'delete_contact']);
+
                 Route::POST('bank-account/{supplier}', [\App\Http\Controllers\Admin\Accounting\SuppliersController::class, 'new_bank_account']);
+                Route::PUT('bank-account/main/{supplier_bank_account}', [\App\Http\Controllers\Admin\Accounting\SuppliersController::class, 'set_default_account']);
             });
 
         });

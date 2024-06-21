@@ -9,6 +9,8 @@ class District extends Model
 {
     use HasFactory;
 
+    protected $connection = 'mysql';
+
     public function province() {
         return $this->belongsTo(Province::class);
     }

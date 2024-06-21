@@ -21,6 +21,7 @@ return new class extends Migration
             $table->string('email', 100)->nullable();
             $table->string('phone', 30)->nullable();
             $table->foreignIdFor(\App\Models\SupplierContactType::class)->constrained();
+            $table->softDeletes();
             $table->timestamps();
         });
     }
