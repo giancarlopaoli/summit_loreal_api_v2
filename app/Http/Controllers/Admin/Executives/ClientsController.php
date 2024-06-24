@@ -86,8 +86,8 @@ class ClientsController extends Controller
 
     public function client_detail(Request $request, Client $client) {
 
-        $client->load('operations:id,code,class,type,client_id,user_id,use_escrow_account,operation_date,amount,currency_id,exchange_rate,comission_spread,comission_amount,igv,spread,operation_status_id,invoice_url,unaffected_invoice_url','operations.status:id,name','operations.bank_accounts','operations.escrow_accounts','operations.escrow_accounts.bank','tracking_phase:id,name','status:id,name','document_type:id,name','operations.bank_accounts.bank','operations.vendor_bank_accounts','operations.vendor_bank_accounts.bank','operations.documents')
-            ->only(['id','name','last_name','mothers_name','document_type_id','document_number','phone','email','address','birthdate','district_id','economic_activity_id','client_status_id','accountable_email','comments','association_id','registered_at','executive_id','tracking_phase_id','tracking_date','comission_start_date','comission','accepts_publicity','users']);
+        $client->load('operations:id,code,class,type,client_id,user_id,use_escrow_account,operation_date,amount,currency_id,exchange_rate,comission_spread,comission_amount,igv,spread,operation_status_id,invoice_url,unaffected_invoice_url','operations.status:id,name','operations.bank_accounts','operations.escrow_accounts','operations.escrow_accounts.bank','tracking_phase:id,name','status:id,name','document_type:id,name','operations.bank_accounts.bank','operations.vendor_bank_accounts','operations.vendor_bank_accounts.bank','operations.documents','sector:id,name','executive:id,type','executive.user:id,name,last_name')
+            ->only(['id','name','last_name','mothers_name','document_type_id','document_number','phone','email','address','birthdate','district_id','economic_activity_id','client_status_id','accountable_email','comments','association_id','registered_at','executive_id','tracking_phase_id','tracking_date','comission_start_date','comission','accepts_publicity','users','sector']);
 
         $client->tracking_status = !is_null(ClientTracking::where('client_id', $client->id)->orderByDesc('id')->with('status:id,name')->first()) ? ClientTracking::where('client_id', $client->id)->orderByDesc('id')->with('status:id,name')->first()->status : null;
 
@@ -106,6 +106,18 @@ class ClientsController extends Controller
             'success' => true,
             'data' => [
                 "tracking" => $tracking
+            ]
+        ]);
+    }
+
+    public function edit_client(Request $request, Client $client) {
+        
+        $client->update($request->only(["sector_id","comments2"]));
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                "client" => $client
             ]
         ]);
     }

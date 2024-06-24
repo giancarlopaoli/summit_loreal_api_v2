@@ -117,6 +117,10 @@ class Client extends Model
         return $this->belongsTo(TrackingPhase::class);
     }
 
+    public function sector() {
+        return $this->belongsTo(Sector::class);
+    }
+
     public function getClientFullNameAttribute()
     {
         if($this->customer_type == 'PJ'){

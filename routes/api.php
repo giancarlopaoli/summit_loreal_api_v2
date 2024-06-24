@@ -515,6 +515,7 @@ Route::middleware('encryptresponses')->group(function () {
 
                 Route::PUT('{client}/user', [\App\Http\Controllers\Admin\Executives\ClientsController::class, 'update_user']);
                 Route::GET('{client}', [\App\Http\Controllers\Admin\Executives\ClientsController::class, 'client_detail']);
+                Route::PUT('edit/{client}', [\App\Http\Controllers\Admin\Executives\ClientsController::class, 'edit_client']);
 
                 Route::GET('comission/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'comission_list']);
                 Route::POST('comission/{client}', [\App\Http\Controllers\Admin\Operations\ClientsController::class, 'create_comission']);
@@ -602,7 +603,7 @@ Route::middleware('encryptresponses')->group(function () {
             });
 
             ########## Suppliers  #############
-            Route::prefix('supplier')->group(function () {
+            Route::prefix('suppliers')->group(function () {
                 Route::POST('', [\App\Http\Controllers\Admin\Accounting\SuppliersController::class, 'new_supplier']);
                 Route::GET('', [\App\Http\Controllers\Admin\Accounting\SuppliersController::class, 'list_suppliers']);
                 Route::GET('detail/{supplier}', [\App\Http\Controllers\Admin\Accounting\SuppliersController::class, 'detail_supplier']);
