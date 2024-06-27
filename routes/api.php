@@ -617,6 +617,25 @@ Route::middleware('encryptresponses')->group(function () {
                 Route::PUT('bank-account/main/{supplier_bank_account}', [\App\Http\Controllers\Admin\Accounting\SuppliersController::class, 'set_default_account']);
             });
 
+            ########## Services  #############
+            Route::prefix('services')->group(function () {
+
+                Route::middleware('permission:accounting_service_create')->group(function () {
+                    Route::POST('', [\App\Http\Controllers\Admin\Accounting\ServicesController::class, 'new_service']);
+                    Route::GET('budgets', [\App\Http\Controllers\Admin\Accounting\ServicesController::class, 'list_budgets']);
+                    Route::GET('suppliers', [\App\Http\Controllers\Admin\Accounting\ServicesController::class, 'list_suppliers']);
+                });
+
+                Route::GET('', [\App\Http\Controllers\Admin\Accounting\ServicesController::class, 'list_services']);
+
+
+               /* Route::POST('area', [\App\Http\Controllers\Admin\Accounting\BudgetsController::class, 'new_area']);
+                Route::GET('areas', [\App\Http\Controllers\Admin\Accounting\BudgetsController::class, 'list_areas']);
+
+                Route::POST('', [\App\Http\Controllers\Admin\Accounting\BudgetsController::class, 'new_budget']);
+                Route::GET('', [\App\Http\Controllers\Admin\Accounting\BudgetsController::class, 'list_budgets']);*/
+            });
+
         });
 
 

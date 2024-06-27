@@ -71,7 +71,7 @@ class BudgetsController extends Controller
         ]);
     }
 
-    //Areas list
+    //Budgets list
     public function list_budgets(Request $request) {
 
         $budgets = Area::select('id','name','code')

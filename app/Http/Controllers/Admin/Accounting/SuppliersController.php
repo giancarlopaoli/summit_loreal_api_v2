@@ -97,7 +97,7 @@ class SuppliersController extends Controller
     //Suppliers list
     public function list_suppliers(Request $request) {
 
-        $supplier = Supplier::select('id','name','document_type_id','document_number','email','phone')
+        $supplier = Supplier::select('id','name','document_type_id','document_number','email','phone','status')
             ->with('document_type:id,name')
             ->get();
 

@@ -14,7 +14,7 @@ class Service extends Model
     protected $guarded = [];
 
     public function budget() {
-        return $this->belongsTo(Supplier::class);
+        return $this->belongsTo(Budget::class);
     }
 
     public function supplier() {
