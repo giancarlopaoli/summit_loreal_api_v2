@@ -9,6 +9,8 @@ class Country extends Model
 {
     use HasFactory;
 
+    protected $connection = 'mysql'; 
+
     public function clients() {
         return $this->hasMany(Client::class);
     }

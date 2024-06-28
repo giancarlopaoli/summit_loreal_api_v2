@@ -97,4 +97,18 @@ class ServicesController extends Controller
             ]
         ]);
     }
+
+    //Service detail
+    public function detail_service(Request $request, Service $service) {
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'service' => $service
+                            ->load('budget:id,area_id,code,description,period,initial_budget','budget.area:id,name,code')
+                            ->load('supplier:id,name,document_type_id,document_number,email,phone,address,logo_url','supplier.document_type:id,name')
+                            ->load('purchase_invoices')
+            ]
+        ]);
+    }
 }

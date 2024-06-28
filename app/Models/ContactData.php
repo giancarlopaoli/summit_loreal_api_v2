@@ -11,6 +11,8 @@ class ContactData extends Model
 
     protected $guarded = [];
 
+    protected $connection = 'mysql'; 
+
     public function lead_contact() {
         return $this->belongsTo(LeadContact::class);
     }
