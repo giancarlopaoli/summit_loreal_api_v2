@@ -130,7 +130,7 @@ class MasterTablesController extends Controller
             'success' => true,
             'data' => Executive::select('id','type')
                 ->where('type', 'Tiempo Completo')
-                ->whereNotIn('id',[483,484,2274,2448])
+                ->whereNotIn('id',[483,484,2448])
                 ->with('user:id,name,last_name')
                 ->get()
         ]);

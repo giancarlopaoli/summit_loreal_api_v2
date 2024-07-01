@@ -18,6 +18,7 @@ return new class extends Migration
             $table->foreignIdFor(\App\Models\Service::class)->constrained();
             $table->decimal('total_amount', 7,2);
             $table->decimal('total_igv', 7,2);
+            $table->decimal('total_ipm', 7,2);
             $table->enum('type', ['Producto', 'Servicio']);
             $table->foreignIdFor(\App\Models\Currency::class);
             $table->decimal('exchange_rate', 5, 4)->nullable();

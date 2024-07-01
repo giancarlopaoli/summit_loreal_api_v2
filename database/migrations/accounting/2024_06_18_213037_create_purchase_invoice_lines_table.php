@@ -20,6 +20,7 @@ return new class extends Migration
             $table->integer('quantity');
             $table->decimal('unit_amount', 7,2);
             $table->decimal('igv', 7,2);
+            $table->decimal('ipm', 7,2);
             $table->decimal('discount', 7,2);
             $table->timestamps();
         });
