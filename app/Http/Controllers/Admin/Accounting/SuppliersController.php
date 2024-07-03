@@ -118,8 +118,8 @@ class SuppliersController extends Controller
                 'supplier' => $supplier->load('document_type:id,name')
                     ->load('contacts','contacts.contact_type:id,name')
                     ->load('bank_accounts:id,supplier_id,bank_id,account_number,cci_number,currency_id,account_type_id,main','district:id,name,province_id,ubigeo','district.province:id,name,department_id','district.province.department:id,name','bank_accounts.bank:id,name,shortname','bank_accounts.currency:id,name','bank_accounts.account_type:id,name,shortname')
-                    ->load('country')
-                    ->only('id','name','document_type_id','document_number','email','phone','address','district_id','apply_detraction','detraction_account','logo_url','document_type','contacts','bank_accounts','district','country_id','country:id,name,prefix')
+                    ->load('country:id,name,prefix')
+                    ->only('id','name','document_type_id','document_number','email','phone','address','district_id','status','apply_detraction','detraction_account','logo_url','document_type','contacts','bank_accounts','district','country_id','country')
             ]
         ]);
     }
