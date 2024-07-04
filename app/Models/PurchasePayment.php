@@ -13,8 +13,8 @@ class PurchasePayment extends Model
 
     protected $guarded = [];
 
-    public function PurchaseInvoice() {
-        return $this->belongsTo(Service::class);
+    public function purchase_invoice() {
+        return $this->belongsTo(PurchaseInvoice::class);
     }
 
     public function currency() {

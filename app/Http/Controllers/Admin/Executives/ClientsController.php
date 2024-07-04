@@ -61,6 +61,46 @@ class ClientsController extends Controller
         ]);
         if($val->fails()) return response()->json($val->messages());
 
+        if(is_null($request->company_name) && is_null($request->document_number)){
+            return response()->json([
+                'success' => false,
+                'data' => [
+                    'Debe ingresar por lo menos un parámetro de búsqueda'
+                ]
+            ]);
+        }
+
+        if(!is_null($request->document_number)){
+
+            if($request->customer_type == 'PJ' && strlen($request->document_number) < 11){
+                return response()->json([
+                    'success' => false,
+                    'data' => [
+                        'Nro documento debe tener 11 números'
+                    ]
+                ]);
+            }
+
+            if($request->customer_type == 'PN' && strlen($request->document_number) < 8){
+                return response()->json([
+                    'success' => false,
+                    'data' => [
+                        'Nro documento debe tener mínimo 8 números'
+                    ]
+                ]);
+            }
+        }
+
+        if(!is_null($request->company_name) && strlen($request->company_name) < 5){
+            return response()->json([
+                'success' => false,
+                'data' => [
+                    'Debe ingresar mínimo 5 caracteres en búsqueda por Noombre/Razón Social'
+                ]
+            ]);
+        }
+
+
         $clients = Client::select('id','customer_type','document_number','client_status_id','registered_at','executive_id')
             ->selectRaw("if(customer_type ='PN',CONCAT(name,' ',last_name, ' ',mothers_name),name) as client_name")
             ->selectRaw(" (select operation_date from operations op where op.client_id = clients.id and op.operation_status_id in (6,7,8) order by operation_date desc limit 1) as last_operation") 

@@ -28,4 +28,8 @@ class PurchaseInvoice extends Model
     public function payments() {
         return $this->hasMany(PurchasePayment::class);
     }
+
+    public function documents() {
+        return $this->hasMany(AccountingDocument::class);
+    }
 }

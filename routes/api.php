@@ -588,6 +588,13 @@ Route::middleware('encryptresponses')->group(function () {
             
             Route::POST('test-data', [\App\Http\Controllers\Admin\Accounting\TestDataController::class, 'test_data']);
 
+
+            ########## General APIs  #############
+            Route::prefix('general')->group(function () {
+                Route::GET('suppliers', [\App\Http\Controllers\Admin\Accounting\GeneralController::class, 'list_suppliers']);
+                Route::GET('services', [\App\Http\Controllers\Admin\Accounting\GeneralController::class, 'list_services']);
+            });
+
             ########## dashboard  #############
             Route::prefix('dashboard')->group(function () {
 
@@ -628,6 +635,18 @@ Route::middleware('encryptresponses')->group(function () {
 
                 Route::GET('', [\App\Http\Controllers\Admin\Accounting\ServicesController::class, 'list_services']);
                 Route::GET('{service}', [\App\Http\Controllers\Admin\Accounting\ServicesController::class, 'detail_service']);
+            });
+
+            ########## Services  #############
+            Route::prefix('purchases')->group(function () {
+
+                //Route::middleware('permission:accounting_purchase_create')->group(function () {
+                    Route::POST('', [\App\Http\Controllers\Admin\Accounting\PurchasesController::class, 'new_purchase']);
+                //});
+
+                Route::GET('', [\App\Http\Controllers\Admin\Accounting\PurchasesController::class, 'list_purchases']);
+
+
             });
 
         });

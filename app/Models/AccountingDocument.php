@@ -12,4 +12,8 @@ class AccountingDocument extends Model
     protected $connection = 'mysql2';
 
     protected $guarded = [];
+
+    public function purchase_invoice() {
+        return $this->belongsTo(PurchaseInvoice::class);
+    }
 }
