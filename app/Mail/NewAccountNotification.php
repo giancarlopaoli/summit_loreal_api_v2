@@ -37,7 +37,7 @@ class NewAccountNotification extends Mailable
             ->to($this->client->email)
             ->cc(env('MAIL_OPS'))
             ->cc($mail_executive)
-            ->bcc(env('MAIL_TI'))
+            //->bcc(env('MAIL_TI'))
             ->view('new_account_notification')
             ->with([
                 'client_name' => $this->client->client_full_name

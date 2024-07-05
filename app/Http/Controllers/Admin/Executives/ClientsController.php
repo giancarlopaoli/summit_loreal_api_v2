@@ -114,7 +114,7 @@ class ClientsController extends Controller
 
         if($request->document_number != "")  $clients = $clients->where('document_number', 'like', "%".$request->document_number."%");
 
-        $clients = $clients->get();
+        $clients = $clients->limit(10)->get();
 
         return response()->json([
             'success' => true,
