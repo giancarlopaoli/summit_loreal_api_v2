@@ -126,6 +126,14 @@ class SuppliersController extends Controller
 
     // New Supplier
     public function edit_supplier(Request $request, Supplier $supplier) {
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                $request->all()
+            ]
+        ]);
+
         $val = Validator::make($request->all(), [
             'name' => 'required|string',
             'document_type_id' => 'required|in:1,2,3,11',

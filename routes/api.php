@@ -593,6 +593,7 @@ Route::middleware('encryptresponses')->group(function () {
             Route::prefix('general')->group(function () {
                 Route::GET('suppliers', [\App\Http\Controllers\Admin\Accounting\GeneralController::class, 'list_suppliers']);
                 Route::GET('services', [\App\Http\Controllers\Admin\Accounting\GeneralController::class, 'list_services']);
+                Route::GET('download', [\App\Http\Controllers\Admin\Accounting\GeneralController::class, 'download_file']);
             });
 
             ########## dashboard  #############
@@ -614,7 +615,7 @@ Route::middleware('encryptresponses')->group(function () {
                 Route::POST('', [\App\Http\Controllers\Admin\Accounting\SuppliersController::class, 'new_supplier']);
                 Route::GET('', [\App\Http\Controllers\Admin\Accounting\SuppliersController::class, 'list_suppliers']);
                 Route::GET('detail/{supplier}', [\App\Http\Controllers\Admin\Accounting\SuppliersController::class, 'detail_supplier']);
-                Route::PUT('edit/{supplier}', [\App\Http\Controllers\Admin\Accounting\SuppliersController::class, 'edit_supplier']);
+                Route::POST('edit/{supplier}', [\App\Http\Controllers\Admin\Accounting\SuppliersController::class, 'edit_supplier']);
                 Route::GET('contact-types', [\App\Http\Controllers\Admin\Accounting\SuppliersController::class, 'contact_types']);
                 Route::POST('contact/{supplier}', [\App\Http\Controllers\Admin\Accounting\SuppliersController::class, 'new_contact']);
                 Route::GET('contact/{supplier}', [\App\Http\Controllers\Admin\Accounting\SuppliersController::class, 'list_contacts']);
