@@ -115,7 +115,8 @@ class OperationsTimesController extends Controller
     public function daily_times(Request $request) {
         $val = Validator::make($request->all(), [
             'status' => 'required|in:Todos,Pendientes,Finalizadas',
-            'executives' => 'in:true,false'
+            'executives' => 'in:true,false',
+            'operations_analyst_id' => 'nullable|exists:operations_analysts,id'
         ]);
         if($val->fails()) return response()->json($val->messages());
 
@@ -180,6 +181,10 @@ class OperationsTimesController extends Controller
 
 
                 0)))))))) as currenttime");
+
+        if(isset($request->operations_analyst_id)){
+            $report = $report->where('operations.operations_analyst_id', $request->operations_analyst_id);
+        }
 
         if($request->executives == true){
 
