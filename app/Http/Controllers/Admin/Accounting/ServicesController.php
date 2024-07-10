@@ -106,7 +106,7 @@ class ServicesController extends Controller
             'data' => [
                 'service' => $service
                             ->load('budget:id,area_id,code,description,period,initial_budget','budget.area:id,name,code')
-                            ->load('supplier:id,name,document_type_id,document_number,email,phone,address,logo_url','supplier.document_type:id,name')
+                            ->load('supplier:id,name,document_type_id,document_number,email,phone,address,logo_url,district_id,country_id','supplier.document_type:id,name','supplier.district:id,name,ubigeo','supplier.country:id,name')
                             ->load('purchase_invoices')
             ]
         ]);
