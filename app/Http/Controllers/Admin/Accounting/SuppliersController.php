@@ -153,13 +153,13 @@ class SuppliersController extends Controller
             $original_name = $file->getClientOriginalName();
             $longitud = Str::length($file->getClientOriginalName());
 
-            $filename = "logo_" . $insert->id . "_" . substr($original_name, $longitud - 6, $longitud);
+            $filename = "logo_" . $supplier->id . "_" . substr($original_name, $longitud - 6, $longitud);
 
             try {
                 $s3 = Storage::disk('s3')->putFileAs($path, $file, $filename);
 
-                $insert->logo_url = $path . $filename;
-                $insert->save();
+                $supplier->logo_url = $path . $filename;
+                $supplier->save();
 
             } catch (\Exception $e) {
                 // Registrando el el log los datos ingresados
