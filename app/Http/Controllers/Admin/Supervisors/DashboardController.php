@@ -9,6 +9,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use App\Models\SalesGoals;
 use App\Models\Operation;
+use App\Models\Bank;
 use App\Models\OperationStatus;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -104,12 +105,6 @@ class DashboardController extends Controller
             ->havingRaw('count(amount) > 10 ')
             ->limit(10)
             ->get();
-
-
-/*        return response()->json([
-            'test' => true,
-            'data' => $top_clients
-        ]);*/
 
         return response()->json([
             'success' => true,

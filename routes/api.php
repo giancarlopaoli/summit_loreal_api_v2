@@ -558,6 +558,8 @@ Route::middleware('encryptresponses')->group(function () {
             Route::prefix('reports')->group(function () {
                 Route::GET('new-clients', [\App\Http\Controllers\Admin\Supervisors\ReportsController::class, 'new_clients']);
                 Route::GET('monthly-sales', [\App\Http\Controllers\Admin\Supervisors\ReportsController::class, 'monthly_sales']);
+                Route::GET('sectors/sales', [\App\Http\Controllers\Admin\Supervisors\ReportsController::class, 'sectors_sales']);
+                Route::GET('sectors/clients', [\App\Http\Controllers\Admin\Supervisors\ReportsController::class, 'sectors_clients']);
             });
 
 

@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Admin\Supervisors;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use App\Models\Client;
-use Illuminate\Support\Facades\DB;
+use App\Models\Sector;
 
 class ReportsController extends Controller
 {
@@ -71,6 +73,61 @@ class ReportsController extends Controller
             'success' => true,
             'data' => [
                 'report' => $report
+            ]
+        ]);
+    }
+
+    // Reporte ventas por Sectores económicos
+    public function sectors_sales(Request $request) {
+        
+        $clusters_yearly = DB::table('operations as ops')
+            ->join('clients as cl','cl.id','=','ops.client_id')
+            ->join('sectors as sc','sc.id','=','cl.sector_id')
+            ->selectRaw("sum(amount) as amount, sum(comission_amount) as comission_amount, sc.cluster, year(ops.operation_date) as year")
+            ->where('ops.operation_date','>','2022-01-01')
+            ->where('cl.customer_type','PJ')
+            ->where('cl.type','Cliente')
+            ->whereIn('ops.operation_status_id', [6,7])
+            ->groupByRaw("sc.cluster, year(ops.operation_date)")
+            ->get();
+
+        $clusters_monthly= DB::table('operations as ops')
+            ->join('clients as cl','cl.id','=','ops.client_id')
+            ->join('sectors as sc','sc.id','=','cl.sector_id')
+            ->selectRaw("sum(amount) as amount, sum(comission_amount) as comission_amount, sc.cluster, year(ops.operation_date) as year, month(ops.operation_date) as month")
+            ->where('ops.operation_date','>','2023-01-01')
+            ->where('cl.customer_type','PJ')
+            ->where('cl.type','Cliente')
+            ->whereIn('ops.operation_status_id', [6,7])
+            ->groupByRaw("sc.cluster, month(ops.operation_date), year(ops.operation_date)")
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'clusters_monthly' => $clusters_monthly,
+                'clusters_yearly' => $clusters_yearly,
+            ]
+        ]);
+    }
+
+    // Reporte ventas por Sectores económicos
+    public function sectors_clients(Request $request) {
+        $val = Validator::make($request->all(), [
+            'sector_id' => 'required|exists:sectors,id'
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+        $clients = Client::select('id','name','last_name','document_type_id','document_number','sector_id')
+            ->where('customer_type', 'PJ')
+            ->where('type','Cliente')
+            ->where('sector_id', $request->sector_id)
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'clients' => $clients
             ]
         ]);
     }

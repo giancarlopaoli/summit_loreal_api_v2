@@ -106,12 +106,14 @@ class DatatecController extends Controller
             $request['currency_id'] = 1;
         }
 
-        if(($request->moneda == 'usd' && $request->tipo == 'envias') || ($request->moneda == 'pen' && $request->tipo == 'recibes')){
+        if(($request->moneda == 'usd' && $request->tipo == 'envias') || ($request->moneda == 'pen' && $request->tipo == 'envias')){
             $request['type'] = 'venta';
         }
         else{
             $request['type'] = 'compra';
         }
+
+        //return response()->json($request->all());
 
         $consult = new InmediateOperationController();
         $result = $consult->quote_operation($request)->getData();
