@@ -106,6 +106,16 @@ class DashboardController extends Controller
             ->limit(10)
             ->get();
 
+        $banks = Bank::select('banks.id','banks.name','banks.shortname')
+            ->join("escrow_accounts as ea","ea.bank_id","=","banks.id")
+            ->selectRaw("(select coalesce(sum(round((eao.amount+eao.comission_amount)/if(op.type='compra',op.exchange_rate,1),2)),0) from operations op inner join escrow_account_operation eao on eao.operation_id = op.id inner join escrow_accounts ea on ea.id = eao.escrow_account_id where op.operation_status_id in (6,7) and op.type in ('Compra','Venta') and op.client_id not in (select id from clients where clients.type = 'PL') and ea.bank_id = banks.id and year(op.operation_date) = year(now())) as yearly_amount")
+            ->selectRaw("(select coalesce(sum(round((eao.amount+eao.comission_amount)/if(op.type='compra',op.exchange_rate,1),2)),0) from operations op inner join escrow_account_operation eao on eao.operation_id = op.id inner join escrow_accounts ea on ea.id = eao.escrow_account_id where op.operation_status_id in (6,7) and op.type in ('Compra','Venta') and op.client_id not in (select id from clients where clients.type = 'PL') and ea.bank_id = banks.id and year(op.operation_date) = year(now()) and month(op.operation_date) = month(now())) as monthly_amount")
+            ->selectRaw("(select coalesce(count(op.id),0) from operations op inner join escrow_account_operation eao on eao.operation_id = op.id inner join escrow_accounts ea on ea.id = eao.escrow_account_id where op.operation_status_id in (6,7) and op.type in ('Compra','Venta') and op.client_id not in (select id from clients where clients.type = 'PL') and ea.bank_id = banks.id and year(op.operation_date) = year(now())) as yearly_operations")
+            ->selectRaw("(select coalesce(count(op.id),0) from operations op inner join escrow_account_operation eao on eao.operation_id = op.id inner join escrow_accounts ea on ea.id = eao.escrow_account_id where op.operation_status_id in (6,7) and op.type in ('Compra','Venta') and op.client_id not in (select id from clients where clients.type = 'PL') and ea.bank_id = banks.id and year(op.operation_date) = year(now()) and month(op.operation_date) = month(now())) as monthly_operations")
+            ->where("ea.active",1)
+            ->groupByRaw("banks.id,banks.name,banks.shortname")
+            ->get();
+
         return response()->json([
             'success' => true,
             'data' => [ 
@@ -158,6 +168,7 @@ class DashboardController extends Controller
                     'comissions' => $top_clients->pluck('comissions'),
                     'num_operations' => $top_clients->pluck('num_operations')
                 ],
+                'banks' => $banks
             ]
         ]);
     }
