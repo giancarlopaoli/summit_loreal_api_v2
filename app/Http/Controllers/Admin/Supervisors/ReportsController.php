@@ -77,6 +77,21 @@ class ReportsController extends Controller
         ]);
     }
 
+    // Sectores económicos por cluster
+    public function sectors_clusters(Request $request) {
+
+        $clusters = Sector::select('id','name','cluster')
+            ->orderBy("cluster")
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'clusters' => $clusters
+            ]
+        ]);
+    }
+
     // Reporte ventas por Sectores económicos
     public function sectors_sales(Request $request) {
         

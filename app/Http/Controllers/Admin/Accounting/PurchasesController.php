@@ -33,8 +33,8 @@ class PurchasesController extends Controller
                 'due_date' => 'required|date',
                 'service_month' => 'nullable|numeric',
                 'service_year' => 'nullable|numeric',
-                //'file' => 'required|file',
-                //'detail' => 'required|array'
+                'file' => 'required|file',
+                'detail' => 'required|array'
             ]);
             if($val->fails()) return response()->json($val->messages());
 
