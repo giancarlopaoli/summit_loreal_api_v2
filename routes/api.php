@@ -249,6 +249,7 @@ Route::middleware('encryptresponses')->group(function () {
             Route::prefix('wscorfid')->group(function () {
                 Route::POST('register-operation/{operation}', [\App\Http\Controllers\Admin\Operations\WsCorfidController::class, 'register_operation']);
                 Route::POST('register-client/{client}', [\App\Http\Controllers\Admin\Operations\WsCorfidController::class, 'register_client']);
+                Route::GET('corfid-report', [\App\Http\Controllers\Admin\Operations\WsCorfidController::class, 'reporte_ws_corfid']);
             });
 
             ########## Operaciones contravalor recaudado  #############

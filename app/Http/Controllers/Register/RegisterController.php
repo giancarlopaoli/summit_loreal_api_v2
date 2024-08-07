@@ -662,7 +662,8 @@ class RegisterController extends Controller
                 'tracking_phase_id' => null,
                 'tracking_date' => $now,
                 'comission' => $comission,
-                'use_bank_accounts' => false
+                'use_bank_accounts' => false,
+                'sector_id' => 13
             ]);
 
             
@@ -891,9 +892,11 @@ class RegisterController extends Controller
             // Looking for a existing lead       
             $lead = Lead::where('contact_type', 'Juridica')->where('document_number', $request->client['ruc'])->get();
 
+            $sector = null;
             // Retrieving executive
             if($lead->count() > 0){
                 $executive = Executive::where('id', $lead[0]->executive_id)->first();
+                $sector = $lead[0]->sector_id;
 
                 if(!is_null($executive)){
                     // Si es freelance, se agrega ejecutivo en tabla executives_comission
@@ -933,7 +936,8 @@ class RegisterController extends Controller
                 'registered_at' => Carbon::now(),
                 'tracking_date' => Carbon::now(),
                 'comission' => $comission,
-                'use_bank_accounts' => false
+                'use_bank_accounts' => false,
+                'sector_id' => $sector
             ]);
 
             $mensaje = 'El registro se realizó de manera exitosa.';

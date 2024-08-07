@@ -780,4 +780,77 @@ class WsCorfidController extends Controller
             'msg' => "Operación " .$request->estado . " exitosamente"
         ]);
     }
+
+    ##### Reporte masivo corfid
+    public function reporte_ws_corfid(Request $request, Operation $operation) {
+
+        $operations = Operation::with('bank_accounts')
+            ->where('operation_date', '>=','2024-07-01')
+            ->where('operation_date', '<=','2024-08-01')
+            ->whereIn('operation_status_id', [6,7])
+            ->whereNotIn('client_id', Client::select('id')->where('type','PL')->get())
+            ->get();
+
+        $ops = array();
+
+        // Retribución
+        
+        foreach ($operations as $operation) {
+
+            $retribution_list = array();
+            foreach ($operation->bank_accounts as $key => $value) {
+
+                $banco_pago_al_cliente = null;
+                try{
+                    if($operation->matches[0]->escrow_accounts->count() == 1){
+                        $banco_pago_al_cliente = $operation->matches[0]->escrow_accounts[0]->corfid_id;
+                    }
+                    else{
+                        foreach ($operation->matches[0]->escrow_accounts as $key1 => $value1) {
+                            
+                            if(($value->pivot->amount + $value->pivot->comission_amount) == ($value1->pivot->amount + $value1->pivot->comission_amount)){
+                                $banco_pago_al_cliente = $value1->corfid_id;
+                                break;
+                            }
+                        }
+                    }
+
+                    $retribution = array(
+                        "tmret01" => ($operation->type == 'Compra') ? 2 : ($operation->type == 'Venta' ? 1 : $operation->currency_id),
+                        "moret01" => $value->pivot->amount,
+                        "idbret01" => $value->bank->corfid_id,
+                        "ncret01" => $value->account_number,
+                        "cciret01" => $value->cci_number,
+                        "mocoer01" => $operation->currency_id,
+                        "mocofr01" => $value->pivot->comission_amount,
+                        "idcbret01" => $banco_pago_al_cliente,
+                    );
+                    
+                    array_push($retribution_list, $retribution);
+                } catch (\Exception $e) {
+
+                }
+                    
+            }
+
+            $op = array(
+                "nref01" => $operation->code,
+                "tope01" => ($operation->type == 'Compra') ? 'C' : ($operation->type == 'Venta' ? 'V' : 'T'),
+                "tmone01" => ($operation->type == 'Compra') ? 1 : ($operation->type == 'Venta' ? 2 : $operation->currency_id),
+                "mont01" => $operation->amount,
+                "tcamb01" => $operation->exchange_rate,
+            );
+
+            $op['retribution_list'] = array();
+
+            array_push($op['retribution_list'], $retribution_list);
+
+            array_push($ops, $op);
+        }
+
+        return response()->json([
+            'operations' => $ops
+        ]);
+
+    }
 }
