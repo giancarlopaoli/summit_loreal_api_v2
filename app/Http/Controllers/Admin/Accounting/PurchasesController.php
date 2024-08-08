@@ -167,7 +167,7 @@ class PurchasesController extends Controller
         $year = Carbon::now()->year;
 
         $purchases = PurchaseInvoice::select('id','service_id','total_amount','total_igv','type','invoice_type', 'serie','number','issue_date','due_date','status')
-            ->with('service:id,budget_id,name,supplier_id');
+            ->with('service:id,budget_id,name,supplier_id','service.supplier:id,name,logo_url');
 
         if(!is_null($request->status)){
             $purchases = $purchases->where('status',$request->status);
