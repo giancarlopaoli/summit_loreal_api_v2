@@ -18,9 +18,11 @@ class WsCorfidController extends Controller
     // Registro de operaciones
     public function register_operation(Request $request, Operation $operation) {
         
-        // Error si la operación ya fue enviada con mensaje satisfactorio
-        if($operation->corfid_id == 1) return response()->json(['success' => false, 'data' => 'La operación ya fue enviada a corfid']);
-
+        if($request->json != "true"){
+            // Error si la operación ya fue enviada con mensaje satisfactorio
+            if($operation->corfid_id == 1) return response()->json(['success' => false, 'data' => 'La operación ya fue enviada a corfid']);
+        }
+        
         if(($operation->type == 'Compra' || $operation->type == 'Venta') && $operation->matches->count() > 0){
             if($operation->client->type == 'Cliente' && $operation->matches[0]->client->type == 'Cliente'){
                 $type = 3;

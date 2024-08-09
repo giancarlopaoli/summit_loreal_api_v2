@@ -17,8 +17,8 @@ class ServicesController extends Controller
 
         $year = Carbon::now()->year;
 
-        $budgets = Budget::select('id','code','description','initial_budget','area_id')
-            ->where('period', $year)
+        $budgets = Budget::select('id','code','description','initial_budget','area_id','period')
+            ->where('period', '>=', $year)
             ->with('area:id,name,code')
             ->get();
 
