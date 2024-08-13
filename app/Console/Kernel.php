@@ -60,7 +60,20 @@ class Kernel extends ConsoleKernel
         // Expiring Negotiated Operations
         $schedule->job(new Jobs\ExpireNegotiatedOperation)
             ->everyMinute();
-        
+
+        if(env('APP_ENV') == 'production'){
+            // Executing daily DB Backups
+            $schedule->command('backup:run --only-db')
+                ->weekdays()->at("23:30");
+
+            // Executing Backups cleanup
+            $schedule->command('backup:clean')
+                ->weekdays()->at("23:30");
+
+            // Monitoring Backups
+            $schedule->command('backup:monitor')
+                ->weekdays()->at("23:59");
+        }
     }
 
     /**
