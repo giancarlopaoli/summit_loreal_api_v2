@@ -28,4 +28,8 @@ class Service extends Model
     public function purchase_invoices() {
         return $this->hasMany(PurchaseInvoice::class);
     }
+
+    public function currency() {
+        return $this->belongsTo(Currency::class);
+    }
 }

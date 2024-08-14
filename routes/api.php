@@ -650,7 +650,15 @@ Route::middleware('encryptresponses')->group(function () {
                 //});
 
                 Route::GET('', [\App\Http\Controllers\Admin\Accounting\PurchasesController::class, 'list_purchases']);
+                Route::GET('{purchase_invoice}', [\App\Http\Controllers\Admin\Accounting\PurchasesController::class, 'purchase_detail']);
 
+                Route::middleware('permission:accounting_purchase_reopen')->group(function () {
+                    Route::PUT('reopen/{purchase_invoice}', [\App\Http\Controllers\Admin\Accounting\PurchasesController::class, 'reopen_purchase']);
+                });
+
+                Route::GET('edit/{purchase_invoice}', [\App\Http\Controllers\Admin\Accounting\PurchasesController::class, 'request_edit']);
+                Route::POST('validate/{purchase_invoice}', [\App\Http\Controllers\Admin\Accounting\PurchasesController::class, 'validate_purchase']);
+                Route::DELETE('{purchase_invoice}', [\App\Http\Controllers\Admin\Accounting\PurchasesController::class, 'delete']);
 
             });
 
