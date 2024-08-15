@@ -30,6 +30,7 @@ class GeneralController extends Controller
 
         $services = Service::select('id','budget_id','name')
             ->with('budget:id,area_id,code,period','budget.area:id,name,code')
+            ->where('status','Activo')
             ->get();
 
         return response()->json([

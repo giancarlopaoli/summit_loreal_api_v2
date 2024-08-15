@@ -17,8 +17,8 @@ class ServicesController extends Controller
 
         $year = Carbon::now()->year;
 
-        $budgets = Budget::select('id','code','description','initial_budget','area_id','period')
-            ->where('period', '>=', $year)
+        $budgets = Budget::select('id','code','description','initial_budget','area_id','period','status')
+            ->where('status', 'Activo')
             ->with('area:id,name,code')
             ->get();
 
@@ -69,7 +69,8 @@ class ServicesController extends Controller
             'amount' => $request->amount,
             'currency_id' => $request->currency_id,
             'exchange_rate' => isset($request->exchange_rate) ? $request->exchange_rate : null,
-            'frequency' => $request->frequency
+            'frequency' => $request->frequency,
+            'status' => 'Activo'
         ]); 
 
         return response()->json([
@@ -85,7 +86,7 @@ class ServicesController extends Controller
 
         $year = Carbon::now()->year;
 
-        $services = Service::select('id','budget_id','supplier_id','name','description','amount','currency_id','exchange_rate','frequency')
+        $services = Service::select('id','budget_id','supplier_id','name','description','amount','currency_id','exchange_rate','frequency','status')
             ->with('budget:id,area_id,code,description,period,initial_budget','budget.area:id,name,code')
             ->with('supplier:id,name')
             ->get();

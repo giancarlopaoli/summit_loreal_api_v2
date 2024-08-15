@@ -21,6 +21,7 @@ return new class extends Migration
             $table->integer('period');
             $table->decimal('initial_budget', 7,2);
             $table->decimal('final_budget', 7,2)->nullable();
+            $table->enum('status', ['Activo', 'Inactivo']);
             $table->foreignId('updated_by')->nullable();
             $table->timestamps();
         });

@@ -60,7 +60,8 @@ class BudgetsController extends Controller
             'code' => $request->code,
             'description' => $request->description,
             'period' => $request->period,
-            'initial_budget' => $request->initial_budget
+            'initial_budget' => $request->initial_budget,
+            'status' => 'Activo'
         ]); 
 
         return response()->json([
@@ -75,7 +76,7 @@ class BudgetsController extends Controller
     public function list_budgets(Request $request) {
 
         $budgets = Area::select('id','name','code')
-            ->with("budgets:id,area_id,code,description,period,initial_budget,final_budget")
+            ->with("budgets:id,area_id,code,description,period,initial_budget,final_budget,status")
             ->get();
 
         return response()->json([

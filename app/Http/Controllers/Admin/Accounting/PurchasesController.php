@@ -113,7 +113,7 @@ class PurchasesController extends Controller
 
                 } catch (\Exception $e) {
                     // Registrando el el log los datos ingresados
-                    logger('ERROR: subiendo logo proveedor: new_supplier@SuppliersController', ["error" => $e]);
+                    logger('ERROR: subiendo factura proveedor: new_supplier@PurchasesController', ["error" => $e]);
 
                     return response()->json([
                         'success' => false,
@@ -206,6 +206,7 @@ class PurchasesController extends Controller
                 'purchase_invoice' => $purchase_invoice
                             ->load('service:id,budget_id,supplier_id,name,description,amount,currency_id,frequency','service.budget:id,area_id,code,description,period','service.budget.area:id,name,code','service.supplier:id,name,document_number,logo_url','service.currency:id,name,sign')
                             ->load('currency:id,name,sign')
+                            ->load('lines:id,purchase_invoice_id,description,quantity,unit_amount,igv,ipm')
                             ->load('payments')
             ]
         ]);
@@ -246,6 +247,7 @@ class PurchasesController extends Controller
                 'purchase_invoice' => $purchase_invoice
                             ->load('service:id,budget_id,supplier_id,name,description,amount,currency_id,frequency','service.budget:id,area_id,code,description,period','service.budget.area:id,name,code','service.supplier:id,name,document_number,logo_url','service.currency:id,name,sign')
                             ->load('currency:id,name,sign')
+                            ->load('lines:id,purchase_invoice_id,description,quantity,unit_amount,igv,ipm')
                             ->load('payments')
             ]
         ]);
@@ -355,7 +357,7 @@ class PurchasesController extends Controller
 
             } catch (\Exception $e) {
                 // Registrando el el log los datos ingresados
-                logger('ERROR: subiendo logo proveedor: validate_purchase@SuppliersController', ["error" => $e]);
+                logger('ERROR: subiendo factura proveedor: validate_purchase@PurchasesController', ["error" => $e]);
 
                 return response()->json([
                     'success' => false,
@@ -400,6 +402,140 @@ class PurchasesController extends Controller
             'success' => true,
             'data' => [
                 'Compra eliminada exitosamente'
+            ]
+        ]);
+    }
+
+    //Detractions pending
+    public function pending_detractions(Request $request) {
+
+        $pending_detractions = PurchaseInvoice::select('id','service_id','detraction_amount','detraction_payment_date','serie','number','issue_date')
+            ->where('status', 'Pendiente pago')
+            ->where('detraction_amount', '>', 0)
+            ->with('service:id,supplier_id','service.supplier:id,name,document_type_id,document_number,detraction_account')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'pending_detractions' => $pending_detractions
+            ]
+        ]);
+    }
+
+    //Detractions register massive payment
+    public function detraction_register(Request $request) {
+        $val = Validator::make($request->all(), [
+            'purchases' => 'required|array'
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+        //Detracciones registradas
+        $detractions = PurchaseInvoice::where('detraction_url', "pagoMasivo")->get();
+
+        if($detractions->count() > 0){
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'Existen detracciones en proceso de pago. Confirme el pago o cancele el proceso actual para enviar un nuevo proceso.'
+                ]
+            ]);
+        }
+
+        PurchaseInvoice::whereIn('id', $request->purchases)->update(["detraction_url" => "pagoMasivo"]);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'Pago de detracciones masivo registrado exitosamente.'
+            ]
+        ]);
+    }
+
+    //Detractions pending
+    public function detractions_in_progress(Request $request) {
+
+        $massive_detractions = PurchaseInvoice::select('id','service_id','detraction_amount','detraction_payment_date','serie','number','issue_date')
+            ->where('status', 'Pendiente pago')
+            ->where('detraction_url', 'pagoMasivo')
+            ->with('service:id,supplier_id','service.supplier:id,name,document_type_id,document_number,detraction_account')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'massive_detractions' => $massive_detractions,
+            ]
+        ]);
+    }
+
+    //Detractions confirmen payment
+    public function detraction_payment(Request $request) {
+        $val = Validator::make($request->all(), [
+                'date' => 'required|date',
+                'file' => 'required|file',
+            ]);
+            if($val->fails()) return response()->json($val->messages());
+
+        //Detracciones registradas
+        $detractions = PurchaseInvoice::where('detraction_url', "pagoMasivo");
+
+        if($detractions->get()->count() == 0){
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'No se encontraron detracciones en proceso de pago masivo.'
+                ]
+            ]);
+        }
+
+        if($request->hasFile('file')){
+            $file = $request->file('file');
+            $path = env('AWS_ENV').'/accounting/purchases/';
+            
+            $original_name = $file->getClientOriginalName();
+            $longitud = Str::length($file->getClientOriginalName());
+
+            $filename = "invoice_" . $detractions->get()[0]->id . "_det_" . substr($original_name, $longitud - 6, $longitud);
+
+            try {
+                $s3 = Storage::disk('s3')->putFileAs($path, $file, $filename);
+
+                $detractions->update([
+                    'detraction_payment_date' => $request->date,
+                    'detraction_url' => $path . $filename
+                ]);
+
+            } catch (\Exception $e) {
+                // Registrando el el log los datos ingresados
+                logger('ERROR: subiendo constancia pago detracciones: detraction_payment@PurchasesController', ["error" => $e]);
+
+                return response()->json([
+                    'success' => false,
+                    'errors' => [
+                        'Error en el archivo adjunto'
+                    ]
+                ]);
+            }
+        }
+        
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'Pago registrado exitosamente.'
+            ]
+        ]);
+    }
+
+    //Detractions cancel massive payment
+    public function detraction_cancel(Request $request) {
+
+        PurchaseInvoice::where('detraction_url', "pagoMasivo")->update(["detraction_url" => null]);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'Proceso de pago de detracciones masiva cancelaco exitosamente'
             ]
         ]);
     }

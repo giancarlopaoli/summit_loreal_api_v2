@@ -660,6 +660,15 @@ Route::middleware('encryptresponses')->group(function () {
                 Route::POST('validate/{purchase_invoice}', [\App\Http\Controllers\Admin\Accounting\PurchasesController::class, 'validate_purchase']);
                 Route::DELETE('{purchase_invoice}', [\App\Http\Controllers\Admin\Accounting\PurchasesController::class, 'delete']);
 
+                ########## Detractions  #############
+                Route::prefix('detractions')->group(function () {
+                    Route::GET('pending', [\App\Http\Controllers\Admin\Accounting\PurchasesController::class, 'pending_detractions']);
+                    Route::POST('massive', [\App\Http\Controllers\Admin\Accounting\PurchasesController::class, 'detraction_register']);
+                    Route::GET('payment', [\App\Http\Controllers\Admin\Accounting\PurchasesController::class, 'detractions_in_progress']);
+                    Route::POST('payment', [\App\Http\Controllers\Admin\Accounting\PurchasesController::class, 'detraction_payment']);
+                    Route::DELETE('massive', [\App\Http\Controllers\Admin\Accounting\PurchasesController::class, 'detraction_cancel']);
+
+                });
             });
 
         });
