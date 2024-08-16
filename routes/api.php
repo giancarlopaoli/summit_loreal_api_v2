@@ -598,6 +598,9 @@ Route::middleware('encryptresponses')->group(function () {
                 Route::GET('suppliers', [\App\Http\Controllers\Admin\Accounting\GeneralController::class, 'list_suppliers']);
                 Route::GET('services', [\App\Http\Controllers\Admin\Accounting\GeneralController::class, 'list_services']);
                 Route::GET('download', [\App\Http\Controllers\Admin\Accounting\GeneralController::class, 'download_file']);
+                Route::GET('refund-accounts', [\App\Http\Controllers\Admin\Accounting\GeneralController::class, 'refund_accounts']);
+                Route::GET('business-accounts', [\App\Http\Controllers\Admin\Accounting\GeneralController::class, 'business_accounts']);
+                Route::GET('supplier-accounts/{supplier}', [\App\Http\Controllers\Admin\Accounting\GeneralController::class, 'supplier_accounts']);
             });
 
             ########## dashboard  #############
@@ -648,9 +651,8 @@ Route::middleware('encryptresponses')->group(function () {
                 //Route::middleware('permission:accounting_purchase_create')->group(function () {
                     Route::POST('', [\App\Http\Controllers\Admin\Accounting\PurchasesController::class, 'new_purchase']);
                 //});
-
+                
                 Route::GET('', [\App\Http\Controllers\Admin\Accounting\PurchasesController::class, 'list_purchases']);
-                Route::GET('{purchase_invoice}', [\App\Http\Controllers\Admin\Accounting\PurchasesController::class, 'purchase_detail']);
 
                 Route::middleware('permission:accounting_purchase_reopen')->group(function () {
                     Route::PUT('reopen/{purchase_invoice}', [\App\Http\Controllers\Admin\Accounting\PurchasesController::class, 'reopen_purchase']);
@@ -659,6 +661,7 @@ Route::middleware('encryptresponses')->group(function () {
                 Route::GET('edit/{purchase_invoice}', [\App\Http\Controllers\Admin\Accounting\PurchasesController::class, 'request_edit']);
                 Route::POST('validate/{purchase_invoice}', [\App\Http\Controllers\Admin\Accounting\PurchasesController::class, 'validate_purchase']);
                 Route::DELETE('{purchase_invoice}', [\App\Http\Controllers\Admin\Accounting\PurchasesController::class, 'delete']);
+                Route::POST('payment/{purchase_invoice}', [\App\Http\Controllers\Admin\Accounting\PurchasesController::class, 'register_payment']);
 
                 ########## Detractions  #############
                 Route::prefix('detractions')->group(function () {
@@ -667,9 +670,12 @@ Route::middleware('encryptresponses')->group(function () {
                     Route::GET('payment', [\App\Http\Controllers\Admin\Accounting\PurchasesController::class, 'detractions_in_progress']);
                     Route::POST('payment', [\App\Http\Controllers\Admin\Accounting\PurchasesController::class, 'detraction_payment']);
                     Route::DELETE('massive', [\App\Http\Controllers\Admin\Accounting\PurchasesController::class, 'detraction_cancel']);
-
+                    Route::POST('{purchase_invoice}', [\App\Http\Controllers\Admin\Accounting\PurchasesController::class, 'register_individual_detraction']);
                 });
             });
+                
+                Route::GET('{purchase_invoice}', [\App\Http\Controllers\Admin\Accounting\PurchasesController::class, 'purchase_detail']);
+
 
         });
 

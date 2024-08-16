@@ -28,13 +28,14 @@ return new class extends Migration
             $table->date('birthdate');
             $table->enum('gender', ['Masculino', 'Femenino']);
             $table->enum('marital_status', ['Soltero', 'Casado', 'Viudo', 'Divorciado']);
-            $table->enum('type', ['Planilla', 'Independiente']);
+            $table->enum('type', ['Planilla', 'Independiente','Practicante']);
             $table->foreignIdFor(\App\Models\Budget::class)->constrained();
-            $table->foreignIdFor(\App\Models\Afp::class)->constrained();
+            $table->foreignIdFor(\App\Models\Afp::class)->nullable()->constrained();
             $table->string('afp_cussp', 30)->nullable();
             $table->string('account_number', 30)->nullable();
             $table->string('cci_number', 35)->nullable();
             $table->foreignIdFor(\App\Models\Bank::class)->nullable();
+            $table->foreignId(\App\Models\Executive::class)->nullable();
             $table->foreignId('updated_by')->nullable();
             $table->timestamps();
         });

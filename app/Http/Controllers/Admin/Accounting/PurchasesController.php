@@ -406,6 +406,22 @@ class PurchasesController extends Controller
         ]);
     }
 
+    //Register purchase payment
+    public function register_payment(Request $request, PurchaseInvoice $purchase_invoice) {
+
+
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'Pago registrado exitosamente'
+            ]
+        ]);
+    }
+
+
+
+
     //Detractions pending
     public function pending_detractions(Request $request) {
 
@@ -536,6 +552,36 @@ class PurchasesController extends Controller
             'success' => true,
             'data' => [
                 'Proceso de pago de detracciones masiva cancelaco exitosamente'
+            ]
+        ]);
+    }
+
+
+    //Detractions register individual payment
+    public function register_individual_detraction(Request $request) {
+        $val = Validator::make($request->all(), [
+            'purchases' => 'required|array'
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+        //Detracciones registradas
+        $detractions = PurchaseInvoice::where('detraction_url', "pagoMasivo")->get();
+
+        if($detractions->count() > 0){
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'Existen detracciones en proceso de pago. Confirme el pago o cancele el proceso actual para enviar un nuevo proceso.'
+                ]
+            ]);
+        }
+
+        PurchaseInvoice::whereIn('id', $request->purchases)->update(["detraction_url" => "pagoMasivo"]);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'Pago de detracciones masivo registrado exitosamente.'
             ]
         ]);
     }

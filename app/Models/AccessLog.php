@@ -9,6 +9,8 @@ class AccessLog extends Model
 {
     use HasFactory;
 
+    protected $connection = 'mysql';
+
     public function user() {
         return $this->belongsTo(User::class);
     }

@@ -9,6 +9,8 @@ class Executive extends Model
 {
     use HasFactory;
 
+    protected $connection = 'mysql';
+
     public function leads() {
         return $this->hasMany(Lead::class);
     }

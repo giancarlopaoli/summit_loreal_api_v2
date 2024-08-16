@@ -194,7 +194,7 @@
       <td align="center" class="information">
         <h2>¡Hola! {{ $name }}</h2>
         <p>Te saluda {{ $executive_name }}, soy tu ejecutivo de Billex y la persona encargada de tu cuenta.</p>
-        <p>Quería darte nuevamente la bienvenida y cortante que te acompañare en cada momento de tus operaciones para ayudarte a conseguir el tipo de cambio más competitivo.</p>
+        <p>Quería darte nuevamente la bienvenida y contarte que te acompañare en cada momento de tus operaciones para ayudarte a conseguir el tipo de cambio más competitivo.</p>
         <p>Por otra parte, te enviaré información relevante como reportes sobre el tipo de cambio, invitaciones a nuestros eventos online y otros contenidos de gran valor para tu negocio.</p>
         <p>Sin otro particular, quedaré atento a cualquier consulta o requerimiento que puedas tener.</p>
       </td>

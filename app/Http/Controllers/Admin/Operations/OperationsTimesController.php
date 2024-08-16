@@ -218,7 +218,7 @@ class OperationsTimesController extends Controller
             ->join('Operacion as op2', 'op2.OperacionId', '=', 'OperacionEmparejar.OperacionEmparejador')
             ->join('Cliente as cl', 'op.ClienteId', '=', 'cl.ClienteId')
             ->join('Cliente as cl2', 'op2.ClienteId', '=', 'cl2.ClienteId')
-            ->whereIn('op2.ClienteId', [4540,366,2815,3166,4280])
+            ->whereIn('op2.ClienteId', [4540,366,2815,3166,4280,4960])
             ->whereIn('op.EstadoId', ['FAC','FSF','PFA'])
             ->where('op.FechaOperacion', '>=', '2022-09-12')
             ->whereRaw("MONTH(op.FechaOperacion) = $month and YEAR(op.FechaOperacion) = $year")

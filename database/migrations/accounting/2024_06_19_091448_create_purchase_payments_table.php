@@ -25,6 +25,7 @@ return new class extends Migration
             $table->enum('status', ['Ingresado', 'Pagado','Cancelado']);
             $table->foreignIdFor(\App\Models\BusinessBankAccount::class)->constrained();
             $table->foreignIdFor(\App\Models\SupplierBankAccount::class)->nullable()->constrained();
+            $table->foreignIdFor(\App\Models\RefundBankAccount::class)->nullable()->constrained();
             $table->timestamps();
         });
     }

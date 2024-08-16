@@ -9,6 +9,8 @@ class ClientComission extends Model
 {
     use HasFactory;
 
+    protected $connection = 'mysql';
+
     protected $fillable = [
         'comission_open',
         'comission_close',

@@ -57,6 +57,7 @@ class DashboardController extends Controller
             ->selectRaw("(select sum(ov.amount) from operations ov where ov.client_id = 4280 and year(ov.operation_date) = year(operations.operation_date) and month(ov.operation_date) = month(operations.operation_date) and ov.operation_status_id = 7 ) as volume_ripley")
             ->selectRaw("(select sum(ov.amount) from operations ov where ov.client_id = 4540 and year(ov.operation_date) = year(operations.operation_date) and month(ov.operation_date) = month(operations.operation_date) and ov.operation_status_id = 7 ) as volume_cajatru")
             ->selectRaw("(select sum(ov.amount) from operations ov where ov.client_id = 4889 and year(ov.operation_date) = year(operations.operation_date) and month(ov.operation_date) = month(operations.operation_date) and ov.operation_status_id = 7 ) as volume_bcp")
+            ->selectRaw("(select sum(ov.amount) from operations ov where ov.client_id = 4960 and year(ov.operation_date) = year(operations.operation_date) and month(ov.operation_date) = month(operations.operation_date) and ov.operation_status_id = 7 ) as volume_cajaarequipa")
 
             ->whereIn("operations.type", ['Compra','Venta'])
             ->whereIn("operation_status_id", [6,7,8])

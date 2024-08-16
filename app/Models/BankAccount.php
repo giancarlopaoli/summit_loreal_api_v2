@@ -12,6 +12,8 @@ class BankAccount extends Model
 
     protected $guarded = [];
 
+    protected $connection = 'mysql';
+
     public function type() {
         return $this->belongsTo(AccountType::class);
     }

@@ -6,6 +6,9 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
+use App\Models\BusinessBankAccount;
+use App\Models\SupplierBankAccount;
+use App\Models\RefundBankAccount;
 use App\Models\Service;
 use App\Models\Supplier;
 
@@ -61,5 +64,60 @@ class GeneralController extends Controller
         }
 
         return Storage::disk('s3')->download($request->url_file);
+    }
+
+    //Refund bank accounts
+    public function refund_accounts(Request $request) {
+
+        $refund_accounts = RefundBankAccount::select('id','user_id','bank_id','account_number','cci_number','currency_id','account_type_id','status')
+            ->with('user:id,name,last_name')
+            ->with('bank:id,name,shortname')
+            ->with('account_type:id,name,shortname')
+            ->with('currency:id,name,sign')
+            ->where('status','Activo')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'refund_accounts' => $refund_accounts
+            ]
+        ]);
+    }
+
+    //Business bank accounts
+    public function business_accounts(Request $request) {
+
+        $business_accounts = BusinessBankAccount::select('id','bank_id','alias','account_number','cci_number','currency_id','account_type_id','status')
+            ->with('bank:id,name,shortname')
+            ->with('account_type:id,name,shortname')
+            ->with('currency:id,name,sign')
+            ->where('status','Activo')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'business_accounts' => $business_accounts
+            ]
+        ]);
+    }
+
+    //Supplier bank accounts
+    public function supplier_accounts(Request $request, Supplier $supplier) {
+
+        /*$SupplierBankAccount = BusinessBankAccount::select('id','bank_id','alias','account_number','cci_number','currency_id','account_type_id','status')
+            ->with('bank:id,name,shortname')
+            ->with('account_type:id,name,shortname')
+            ->with('currency:id,name,sign')
+            ->where('status','Activo')
+            ->get();*/
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'supplier_accounts' => $supplier->bank_accounts->where('status','Activo')
+            ]
+        ]);
     }
 }

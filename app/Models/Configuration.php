@@ -9,6 +9,8 @@ class Configuration extends Model
 {
     use HasFactory;
 
+    protected $connection = 'mysql';
+
     protected $fillable = [
         'value',
         'updated_by'

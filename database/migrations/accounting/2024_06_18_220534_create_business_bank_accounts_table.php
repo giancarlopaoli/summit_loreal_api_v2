@@ -22,6 +22,7 @@ return new class extends Migration
             $table->string('comments', 150)->nullable();
             $table->foreignIdFor(\App\Models\AccountType::class);
             $table->foreignIdFor(\App\Models\Currency::class);
+            $table->enum('status', ['Activo', 'Inactivo']);
             $table->timestamps();
         });
     }

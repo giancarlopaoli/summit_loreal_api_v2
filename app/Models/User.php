@@ -161,4 +161,8 @@ class User extends Authenticatable
     public function services() {
         return $this->hasMany(Service::class, "updated_by");
     }
+
+    public function refund_bank_accounts() {
+        return $this->hasMany(RefundBankAccount::class);
+    }
 }
