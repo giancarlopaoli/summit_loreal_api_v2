@@ -22,7 +22,7 @@ return new class extends Migration
             $table->foreignIdFor(\App\Models\Currency::class);
             $table->string('transfer_number', 50)->nullable();
             $table->string('comments', 200)->nullable();
-            $table->enum('status', ['Ingresado', 'Pagado','Cancelado']);
+            $table->enum('status', ['Pendiente', 'Pagado','Cancelado']);
             $table->foreignIdFor(\App\Models\BusinessBankAccount::class)->constrained();
             $table->foreignIdFor(\App\Models\SupplierBankAccount::class)->nullable()->constrained();
             $table->foreignIdFor(\App\Models\RefundBankAccount::class)->nullable()->constrained();

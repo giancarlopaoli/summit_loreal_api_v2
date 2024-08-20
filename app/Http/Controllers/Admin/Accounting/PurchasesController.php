@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use App\Models\AccountingDocument;
 use App\Models\PurchaseInvoice;
+use App\Models\PurchasePayment;
 use App\Models\Supplier;
 use Carbon\Carbon;
 
@@ -408,8 +409,106 @@ class PurchasesController extends Controller
 
     //Register purchase payment
     public function register_payment(Request $request, PurchaseInvoice $purchase_invoice) {
+        $val = Validator::make($request->all(), [
+            'payment_method' => 'required|in:Efectivo,Cheque,Transferencia bancaria,Reembolso',
+            'type' => 'required|in:Pendiente,Pagado',
+            'amount' => 'nullable|numeric',
+            'currency_id' => 'required|exists:currencies,id',
+            'comments' => 'nullable|string',
+            'business_bank_account_id' => 'required|exists:mysql2.business_bank_accounts,id',
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+        if($request->payment_method == 'Efectivo' || $request->payment_method == 'Cheque'){
+            if($request->type == 'Pendiente'){
+                return response()->json([
+                    'success' => false,
+                    'errors' => [
+                        'No se puede registrar un pago pendiene para el método de pago seleccionado'
+                    ]
+                ]);
+            }
+        }
+
+        if($request->payment_method == 'Transferencia bancaria'){
+            $val = Validator::make($request->all(), [
+                'supplier_bank_account_id' => 'required|exists:mysql2.supplier_bank_accounts,id',
+            ]);
+            if($val->fails()) return response()->json($val->messages());
+        }
+
+        if($request->payment_method == 'Reembolso'){
+            $val = Validator::make($request->all(), [
+                'refund_bank_account_id' => 'required|exists:mysql2.refund_bank_accounts,id',
+            ]);
+            if($val->fails()) return response()->json($val->messages());
+        }
 
 
+        if($request->type == 'Pendiente'){
+            $purchase_invoice->payments()->create([
+                'payment_method' => $request->payment_method,
+                'amount' => $request->amount,
+                'currency_id' => $request->currency_id,
+                'comments' => $request->comments,
+                'status' => $request->type,
+                'business_bank_account_id' => $request->business_bank_account_id,
+                'supplier_bank_account_id' => ($request->payment_method == 'Transferencia bancaria') ? $request->supplier_bank_account_id : null,
+                'refund_bank_account_id' => ($request->payment_method == 'Reembolso') ? $request->refund_bank_account_id : null
+            ]);
+        }
+        elseif ($request->type == 'Pagado') {
+            $val = Validator::make($request->all(), [
+                'payment_date' => 'required|date',
+                'transfer_number' => 'nullable|string',
+                'file' => 'nullable|file',
+            ]);
+            if($val->fails()) return response()->json($val->messages());
+
+            $purchase_payment = $purchase_invoice->payments()->create([
+                'payment_date' => $request->payment_date,
+                'payment_method' => $request->payment_method,
+                'amount' => $request->amount,
+                'currency_id' => $request->currency_id,
+                'transfer_number' => $request->transfer_number,
+                'comments' => $request->comments,
+                'status' => $request->type,
+                'business_bank_account_id' => $request->business_bank_account_id,
+                'supplier_bank_account_id' => ($request->payment_method == 'Transferencia bancaria') ? $request->supplier_bank_account_id : null,
+                'refund_bank_account_id' => ($request->payment_method == 'Reembolso') ? $request->refund_bank_account_id : null
+            ]);
+
+            if($request->hasFile('file')){
+                $file = $request->file('file');
+                $path = env('AWS_ENV').'/accounting/purchases/';
+                
+                $original_name = $file->getClientOriginalName();
+                $longitud = Str::length($file->getClientOriginalName());
+
+                $filename = "purchase_payment_" . $purchase_payment->id . "_" . substr($original_name, $longitud - 6, $longitud);
+
+                try {
+                    $s3 = Storage::disk('s3')->putFileAs($path, $file, $filename);
+
+                    AccountingDocument::create([
+                        'name' => $path . $filename,
+                        'purchase_payment_id' => $purchase_payment->id,
+                        'type' => 'Invoice'
+                    ]);
+
+                } catch (\Exception $e) {
+                    // Registrando el el log los datos ingresados
+                    logger('ERROR: subiendo comprobante de pago: register_payment@PurchasesController', ["error" => $e]);
+
+                    return response()->json([
+                        'success' => false,
+                        'errors' => [
+                            'Error en el archivo adjunto'
+                        ]
+                    ]);
+                }
+            }
+        }
 
         return response()->json([
             'success' => true,
@@ -419,7 +518,27 @@ class PurchasesController extends Controller
         ]);
     }
 
+    //Delete purchase payment
+    public function delete_payment(Request $request, PurchasePayment $purchase_payment) {
+        
+        if($purchase_payment->status != 'Pendiente'){
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'Solo se pueden eliminar pagos en estado Pendiente'
+                ]
+            ]);
+        }
 
+        $purchase_payment->delete();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'Pago eliminado exitosamente'
+            ]
+        ]);
+    }
 
 
     //Detractions pending
@@ -488,10 +607,10 @@ class PurchasesController extends Controller
     //Detractions confirmen payment
     public function detraction_payment(Request $request) {
         $val = Validator::make($request->all(), [
-                'date' => 'required|date',
-                'file' => 'required|file',
-            ]);
-            if($val->fails()) return response()->json($val->messages());
+            'date' => 'required|date',
+            'file' => 'required|file',
+        ]);
+        if($val->fails()) return response()->json($val->messages());
 
         //Detracciones registradas
         $detractions = PurchaseInvoice::where('detraction_url', "pagoMasivo");
@@ -558,32 +677,48 @@ class PurchasesController extends Controller
 
 
     //Detractions register individual payment
-    public function register_individual_detraction(Request $request) {
+    public function register_individual_detraction(Request $request, PurchaseInvoice $purchase_invoice) {
         $val = Validator::make($request->all(), [
-            'purchases' => 'required|array'
+            'date' => 'required|date',
+            'file' => 'required|file',
         ]);
         if($val->fails()) return response()->json($val->messages());
 
-        //Detracciones registradas
-        $detractions = PurchaseInvoice::where('detraction_url', "pagoMasivo")->get();
+        if($request->hasFile('file')){
+            $file = $request->file('file');
+            $path = env('AWS_ENV').'/accounting/purchases/';
+            
+            $original_name = $file->getClientOriginalName();
+            $longitud = Str::length($file->getClientOriginalName());
 
-        if($detractions->count() > 0){
-            return response()->json([
-                'success' => false,
-                'errors' => [
-                    'Existen detracciones en proceso de pago. Confirme el pago o cancele el proceso actual para enviar un nuevo proceso.'
-                ]
-            ]);
+            $filename = "invoice_" . $purchase_invoice->id . "_det_" . substr($original_name, $longitud - 6, $longitud);
+
+            try {
+                $s3 = Storage::disk('s3')->putFileAs($path, $file, $filename);
+
+                $purchase_invoice->update([
+                    'detraction_payment_date' => $request->date,
+                    'detraction_url' => $path . $filename
+                ]);
+
+            } catch (\Exception $e) {
+                // Registrando el el log los datos ingresados
+                logger('ERROR: subiendo constancia pago detracciones: register_individual_detraction@PurchasesController', ["error" => $e]);
+
+                return response()->json([
+                    'success' => false,
+                    'errors' => [
+                        'Error en el archivo adjunto'
+                    ]
+                ]);
+            }
         }
-
-        PurchaseInvoice::whereIn('id', $request->purchases)->update(["detraction_url" => "pagoMasivo"]);
-
+        
         return response()->json([
             'success' => true,
             'data' => [
-                'Pago de detracciones masivo registrado exitosamente.'
+                'Pago registrado exitosamente.'
             ]
         ]);
     }
-    
 }

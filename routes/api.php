@@ -662,6 +662,7 @@ Route::middleware('encryptresponses')->group(function () {
                 Route::POST('validate/{purchase_invoice}', [\App\Http\Controllers\Admin\Accounting\PurchasesController::class, 'validate_purchase']);
                 Route::DELETE('{purchase_invoice}', [\App\Http\Controllers\Admin\Accounting\PurchasesController::class, 'delete']);
                 Route::POST('payment/{purchase_invoice}', [\App\Http\Controllers\Admin\Accounting\PurchasesController::class, 'register_payment']);
+                Route::DELETE('payment/{purchase_payment}', [\App\Http\Controllers\Admin\Accounting\PurchasesController::class, 'delete_payment']);
 
                 ########## Detractions  #############
                 Route::prefix('detractions')->group(function () {
@@ -675,7 +676,7 @@ Route::middleware('encryptresponses')->group(function () {
 
                 Route::GET('{purchase_invoice}', [\App\Http\Controllers\Admin\Accounting\PurchasesController::class, 'purchase_detail']);
 
-                
+
             });
                 
 
