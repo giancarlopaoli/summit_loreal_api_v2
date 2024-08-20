@@ -672,9 +672,12 @@ Route::middleware('encryptresponses')->group(function () {
                     Route::DELETE('massive', [\App\Http\Controllers\Admin\Accounting\PurchasesController::class, 'detraction_cancel']);
                     Route::POST('{purchase_invoice}', [\App\Http\Controllers\Admin\Accounting\PurchasesController::class, 'register_individual_detraction']);
                 });
+
+                Route::GET('{purchase_invoice}', [\App\Http\Controllers\Admin\Accounting\PurchasesController::class, 'purchase_detail']);
+
+                
             });
                 
-                Route::GET('{purchase_invoice}', [\App\Http\Controllers\Admin\Accounting\PurchasesController::class, 'purchase_detail']);
 
 
         });

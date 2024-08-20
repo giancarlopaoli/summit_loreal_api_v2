@@ -116,7 +116,12 @@ class GeneralController extends Controller
         return response()->json([
             'success' => true,
             'data' => [
-                'supplier_accounts' => $supplier->bank_accounts->where('status','Activo')
+                'supplier_accounts' => $supplier->bank_accounts
+                                        ->where('status','Activo')
+                                        ->load('bank:id,name,shortname')
+                                        ->load('account_type:id,name,shortname')
+                                        ->load('currency:id,name,sign')
+                                        ->where('status','Activo')
             ]
         ]);
     }
