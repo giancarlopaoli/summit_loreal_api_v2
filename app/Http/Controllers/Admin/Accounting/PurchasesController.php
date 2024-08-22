@@ -540,6 +540,9 @@ class PurchasesController extends Controller
         ]);
     }
 
+########################################################################
+
+
 
     //Detractions pending
     public function pending_detractions(Request $request) {
@@ -721,4 +724,24 @@ class PurchasesController extends Controller
             ]
         ]);
     }
+
+########################################################################
+    
+    //Detractions pending
+    public function pending_payments(Request $request) {
+
+        $pending_payments = PurchasePayment::get();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'pending_payments' => $pending_payments->load('purchase_invoice:id,service_id,total_amount,total_igv,type,currency_id','purchase_invoice.service:id,budget_id,supplier_id','purchase_invoice.service.supplier:id,name,document_type_id,document_number','purchase_invoice.service.supplier.document_type:id,name')
+                    ->load('business_bank_account:id,bank_id,alias,account_number,cci_number,account_type_id,currency_id','business_bank_account.bank:id,name,shortname','business_bank_account.currency:id,name,sign','business_bank_account.account_type:id,name,shortname')
+                    ->load('supplier_bank_account:id,bank_id,account_number,cci_number,account_type_id,currency_id','supplier_bank_account.bank:id,name,shortname','supplier_bank_account.currency:id,name,sign','supplier_bank_account.account_type:id,name,shortname')
+                    ->load('refund_bank_account:id,user_id,bank_id,account_number,cci_number,account_type_id,currency_id','refund_bank_account.bank:id,name,shortname','refund_bank_account.currency:id,name,sign','refund_bank_account.account_type:id,name,shortname','refund_bank_account.user:id,name,last_name,document_type_id,document_number','refund_bank_account.user.document_type:id,name')
+            ]
+        ]);
+    }
+
+
 }

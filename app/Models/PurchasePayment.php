@@ -28,4 +28,8 @@ class PurchasePayment extends Model
     public function supplier_bank_account() {
         return $this->belongsTo(SupplierBankAccount::class);
     }
+    
+    public function refund_bank_account() {
+        return $this->belongsTo(RefundBankAccount::class);
+    }
 }

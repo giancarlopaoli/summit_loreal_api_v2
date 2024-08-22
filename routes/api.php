@@ -592,7 +592,6 @@ Route::middleware('encryptresponses')->group(function () {
             
             Route::POST('test-data', [\App\Http\Controllers\Admin\Accounting\TestDataController::class, 'test_data']);
 
-
             ########## General APIs  #############
             Route::prefix('general')->group(function () {
                 Route::GET('suppliers', [\App\Http\Controllers\Admin\Accounting\GeneralController::class, 'list_suppliers']);
@@ -676,7 +675,14 @@ Route::middleware('encryptresponses')->group(function () {
 
                 Route::GET('{purchase_invoice}', [\App\Http\Controllers\Admin\Accounting\PurchasesController::class, 'purchase_detail']);
 
-
+                ########## Payments  #############
+                Route::prefix('payments')->group(function () {
+                    Route::GET('pending', [\App\Http\Controllers\Admin\Accounting\PurchasesController::class, 'pending_payments']);
+                    Route::POST('massive', [\App\Http\Controllers\Admin\Accounting\PurchasesController::class, 'payments_register']);
+                    Route::GET('massive', [\App\Http\Controllers\Admin\Accounting\PurchasesController::class, 'payments_in_progress']);
+                    Route::POST('confirm', [\App\Http\Controllers\Admin\Accounting\PurchasesController::class, 'confirm_payment']);
+                    Route::DELETE('massive', [\App\Http\Controllers\Admin\Accounting\PurchasesController::class, 'detraction_cancel']);
+                });
             });
                 
 
