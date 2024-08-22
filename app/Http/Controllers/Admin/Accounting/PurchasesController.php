@@ -202,6 +202,18 @@ class PurchasesController extends Controller
     //Purchase detail
     public function purchase_detail(Request $request, PurchaseInvoice $purchase_invoice) {
 
+        $detraction_amount = (!is_null($purchase_invoice->detraction_payment_date)) ? $purchase_invoice->detraction_amount : 0;
+
+        $paid = PurchasePayment::selectRaw("sum(amount) + (select if(detraction_payment_date is null,0,detraction_amount) from purchase_invoices where id = " . $purchase_invoice->id . ") as pagado")
+            ->where('purchase_invoice_id', $purchase_invoice->id)
+            ->where('status', 'Pagado')
+            ->first()->pagado*1.0;
+
+        $pending = ($purchase_invoice->total_amount + $purchase_invoice->total_igv + $purchase_invoice->total_ipm);
+
+        $purchase_invoice->paid = $paid;
+        $purchase_invoice->pending = $pending;
+
         return response()->json([
             'success' => true,
             'data' => [
