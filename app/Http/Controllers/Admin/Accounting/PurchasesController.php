@@ -210,6 +210,7 @@ class PurchasesController extends Controller
                             ->load('currency:id,name,sign')
                             ->load('lines:id,purchase_invoice_id,description,quantity,unit_amount,igv,ipm')
                             ->load('payments:id,purchase_invoice_id,payment_date,payment_method,amount,currency_id,transfer_number,status,business_bank_account_id,supplier_bank_account_id,refund_bank_account_id','payments.documents','payments.business_bank_account','payments.supplier_bank_account','payments.refund_bank_account','payments.refund_bank_account.user:id,name,last_name','payments.currency:id,name,sign')
+                            ->load('documents:id,purchase_invoice_id,name,type')
             ]
         ]);
     }
