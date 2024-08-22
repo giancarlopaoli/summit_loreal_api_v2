@@ -312,7 +312,7 @@ class PurchasesController extends Controller
             'total_amount' => $amount,
             'total_igv' => $igv,
             'currency_id' => $request->currency_id,
-            'exchange_rate' => isset($request->exchange_rate) ? $request->exchange_rate : null,
+            'exchange_rate' => !is_null($request->exchange_rate) ? $request->exchange_rate : null,
             'serie' => $request->serie,
             'number' => $request->number,
             'detraction_amount' => $detraction_amount,
