@@ -681,12 +681,10 @@ Route::middleware('encryptresponses')->group(function () {
                     Route::POST('massive', [\App\Http\Controllers\Admin\Accounting\PurchasesController::class, 'payments_register']);
                     Route::GET('massive', [\App\Http\Controllers\Admin\Accounting\PurchasesController::class, 'payments_in_progress']);
                     Route::POST('confirm', [\App\Http\Controllers\Admin\Accounting\PurchasesController::class, 'confirm_payment']);
-                    Route::DELETE('massive', [\App\Http\Controllers\Admin\Accounting\PurchasesController::class, 'detraction_cancel']);
+                    Route::DELETE('massive', [\App\Http\Controllers\Admin\Accounting\PurchasesController::class, 'payments_cancel']);
                 });
             });
                 
-
-
         });
 
 

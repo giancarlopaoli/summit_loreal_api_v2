@@ -16,4 +16,8 @@ class AccountingDocument extends Model
     public function purchase_invoice() {
         return $this->belongsTo(PurchaseInvoice::class);
     }
+
+    public function purchase_payment() {
+        return $this->belongsTo(PurchasePayment::class);
+    }
 }

@@ -32,4 +32,8 @@ class PurchasePayment extends Model
     public function refund_bank_account() {
         return $this->belongsTo(RefundBankAccount::class);
     }
+
+    public function documents() {
+        return $this->hasMany(AccountingDocument::class);
+    }
 }

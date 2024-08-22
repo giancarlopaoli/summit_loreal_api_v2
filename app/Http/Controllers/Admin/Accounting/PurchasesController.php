@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use App\Models\AccountingDocument;
+use App\Models\BusinessBankAccount;
 use App\Models\PurchaseInvoice;
 use App\Models\PurchasePayment;
 use App\Models\Supplier;
@@ -208,7 +209,7 @@ class PurchasesController extends Controller
                             ->load('service:id,budget_id,supplier_id,name,description,amount,currency_id,frequency','service.budget:id,area_id,code,description,period','service.budget.area:id,name,code','service.supplier:id,name,document_number,logo_url','service.currency:id,name,sign')
                             ->load('currency:id,name,sign')
                             ->load('lines:id,purchase_invoice_id,description,quantity,unit_amount,igv,ipm')
-                            ->load('payments')
+                            ->load('payments:id,purchase_invoice_id,payment_date,payment_method,amount,currency_id,transfer_number,status,business_bank_account_id,supplier_bank_account_id,refund_bank_account_id','payments.documents','payments.business_bank_account','payments.supplier_bank_account','payments.refund_bank_account','payments.refund_bank_account.user:id,name,last_name','payments.currency:id,name,sign')
             ]
         ]);
     }
@@ -260,7 +261,6 @@ class PurchasesController extends Controller
             'service_id' => 'required|exists:mysql2.services,id',
             'type' => 'required|in:Producto,Servicio',
             'currency_id' => 'required|exists:currencies,id',
-            'exchange_rate' => 'nullable|numeric',
             'serie' => 'required|string',
             'number' => 'required|string',
             'issue_date' => 'required|date',
@@ -673,7 +673,7 @@ class PurchasesController extends Controller
         return response()->json([
             'success' => true,
             'data' => [
-                'Proceso de pago de detracciones masiva cancelaco exitosamente'
+                'Proceso de pago de detracciones masiva cancelado exitosamente'
             ]
         ]);
     }
@@ -727,10 +727,10 @@ class PurchasesController extends Controller
 
 ########################################################################
     
-    //Detractions pending
+    //Pending Payments
     public function pending_payments(Request $request) {
 
-        $pending_payments = PurchasePayment::get();
+        $pending_payments = PurchasePayment::where('status','Pendiente')->get();
 
         return response()->json([
             'success' => true,
@@ -743,5 +743,141 @@ class PurchasesController extends Controller
         ]);
     }
 
+
+    //Massive payment register
+    public function payments_register(Request $request) {
+        $val = Validator::make($request->all(), [
+            'payments' => 'required|array'
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+        //Pagos Registrados
+        $payments = PurchasePayment::where('status', "Masivo")->get();
+
+        if($payments->count() > 0){
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'Existen pagos en proceso. Confirme el pago o cancele el proceso actual para enviar un nuevo proceso.'
+                ]
+            ]);
+        }
+
+        PurchasePayment::whereIn('id', $request->payments)->update(["status" => "Masivo"]);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'Pago masivo registrado exitosamente.'
+            ]
+        ]);
+    }
+
+    //Payments in progress
+    public function payments_in_progress(Request $request) {
+
+        $pending_payments = PurchasePayment::where('status','Masivo')->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'pending_payments' => BusinessBankAccount::select('id','bank_id','alias','account_number','cci_number','account_type_id','currency_id')
+                    ->with('bank:id,name,shortname')
+                    ->with('account_type:id,name,shortname')
+                    ->with('currency:id,name,sign')
+                    ->with(['purchase_payments' => function ($query) {
+                        $query->where('status', 'Masivo');
+                    }, 
+                    'purchase_payments.purchase_invoice:id,service_id,total_amount,total_igv,type,currency_id','purchase_payments.purchase_invoice.service:id,budget_id,supplier_id','purchase_payments.purchase_invoice.service.supplier:id,name,document_type_id,document_number','purchase_payments.purchase_invoice.service.supplier.document_type:id,name',
+                    'purchase_payments.currency:id,name,sign',
+                    'purchase_payments.business_bank_account:id,bank_id,alias,account_number,cci_number,account_type_id,currency_id','purchase_payments.business_bank_account.bank:id,name,shortname','purchase_payments.business_bank_account.currency:id,name,sign','purchase_payments.business_bank_account.account_type:id,name,shortname',
+                    'purchase_payments.supplier_bank_account:id,bank_id,account_number,cci_number,account_type_id,currency_id','purchase_payments.supplier_bank_account.bank:id,name,shortname','purchase_payments.supplier_bank_account.currency:id,name,sign','purchase_payments.supplier_bank_account.account_type:id,name,shortname',
+                    'purchase_payments.refund_bank_account:id,user_id,bank_id,account_number,cci_number,account_type_id,currency_id','purchase_payments.refund_bank_account.bank:id,name,shortname','purchase_payments.refund_bank_account.currency:id,name,sign','purchase_payments.refund_bank_account.account_type:id,name,shortname','purchase_payments.refund_bank_account.user:id,name,last_name,document_type_id,document_number','purchase_payments.refund_bank_account.user.document_type:id,name'
+
+                    ])
+                    ->where('status','Activo')
+                    ->get()
+            ]
+        ]);
+    }
+
+    //Payments confirmation
+    public function confirm_payment(Request $request) {
+        $val = Validator::make($request->all(), [
+            'date' => 'required|date',
+            'file' => 'required|file',
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+        //Pagos registrados
+        $payments = PurchasePayment::where('status','Masivo');
+
+        if($payments->get()->count() == 0){
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'No se encontraron Pagos en proceso de pago masivo.'
+                ]
+            ]);
+        }
+
+        if($request->hasFile('file')){
+            $file = $request->file('file');
+            $path = env('AWS_ENV').'/accounting/purchases/';
+            
+            $original_name = $file->getClientOriginalName();
+            $longitud = Str::length($file->getClientOriginalName());
+
+            $filename = "purchase_payment_" . $payments->get()[0]->id . "_" . substr($original_name, $longitud - 6, $longitud);
+
+            try {
+                $s3 = Storage::disk('s3')->putFileAs($path, $file, $filename);
+
+                foreach ($payments->get() as $key => $value) {
+                    AccountingDocument::create([
+                        'name' => $path . $filename,
+                        'purchase_payment_id' => $value['id'],
+                        'type' => 'Payment'
+                    ]);
+                }
+
+                $payments->update([
+                    'payment_date' => $request->date,
+                    'status' => 'Pagado'
+                ]);
+
+            } catch (\Exception $e) {
+                // Registrando el el log los datos ingresados
+                logger('ERROR: subiendo constancia pago masivo: confirm_payment@PurchasesController', ["error" => $e]);
+
+                return response()->json([
+                    'success' => false,
+                    'errors' => [
+                        'Error en el archivo adjunto'
+                    ]
+                ]);
+            }
+        }
+        
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'Pago confirmado exitosamente.'
+            ]
+        ]);
+    }
+
+    //Cancel massive payment
+    public function payments_cancel(Request $request) {
+
+        PurchasePayment::where('status', "Masivo")->update(["status" => 'Pendiente']);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'Proceso de pago masivo cancelado exitosamente'
+            ]
+        ]);
+    }
 
 }
