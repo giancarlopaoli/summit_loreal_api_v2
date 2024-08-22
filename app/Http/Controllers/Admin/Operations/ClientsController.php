@@ -295,7 +295,7 @@ class ClientsController extends Controller
                 },'bank_accounts:id,client_id,alias,bank_id,account_number,cci_number,main,bank_account_status_id,account_type_id,currency_id','bank_accounts.bank:id,name,shortname','bank_accounts.currency:id,name','bank_accounts.account_type:id,name,shortname','bank_accounts.status:id,name'])
                 ->load(['users' => function ($query) {
                         $query->wherePivot('status', '!=', 'Inactivo');
-                    }],'users.document_type:id,name','document_type:id,name','documents:id,client_id,name,type','status:id,name')
+                    },'users.document_type:id,name','document_type:id,name','documents:id,client_id,name,type','status:id,name'])
                 ->load('representatives:id,client_id,representative_type,document_type_id,document_number,names,last_name,mothers_name,pep,pep_company,pep_position','representatives.document_type:id,name')
                 ->load('business_associates:id,client_id,representative_type,document_type_id,document_number,names,last_name,mothers_name,pep,pep_company,pep_position,share','business_associates.document_type:id,name')
                 ->load('district:id,name,province_id,ubigeo','district.province:id,name,department_id','district.province.department:id,name')
