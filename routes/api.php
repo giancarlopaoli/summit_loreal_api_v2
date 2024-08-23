@@ -684,6 +684,21 @@ Route::middleware('encryptresponses')->group(function () {
                     Route::DELETE('massive', [\App\Http\Controllers\Admin\Accounting\PurchasesController::class, 'payments_cancel']);
                 });
             });
+
+            ########## Sales  #############
+            Route::prefix('sales')->group(function () {
+
+                ########## Self Detractions  #############
+                Route::prefix('selfdetractions')->group(function () {
+                    Route::GET('pending', [\App\Http\Controllers\Admin\Accounting\SalesController::class, 'pending_selfdetractions']);
+                    Route::POST('massive', [\App\Http\Controllers\Admin\Accounting\SalesController::class, 'selfdetraction_register']);
+                    Route::GET('massive', [\App\Http\Controllers\Admin\Accounting\SalesController::class, 'selfdetractions_in_progress']);
+                    Route::POST('massive/{operation}', [\App\Http\Controllers\Admin\Accounting\SalesController::class, 'selfdetraction_payment']);
+                    Route::DELETE('massive', [\App\Http\Controllers\Admin\Accounting\SalesController::class, 'selfdetraction_cancel']);
+                    Route::GET('massive/{operation}', [\App\Http\Controllers\Admin\Accounting\SalesController::class, 'download_selfdetraction']);
+                });
+                
+            });
                 
         });
 

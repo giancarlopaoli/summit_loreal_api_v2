@@ -134,4 +134,8 @@ class Client extends Model
     public function sales() {
         return $this->hasMany(Sale::class);
     }
+
+    public function client_invoice_to() {
+        return $this->belongsTo(Client::class, "invoice_to");
+    }
 }
