@@ -13,6 +13,8 @@ use App\Models\OperationHistory;
 use App\Models\Sale;
 use Carbon\Carbon;
 use App\Enums;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\SelfDetraction;
 
 class SalesController extends Controller
 {
@@ -151,7 +153,11 @@ class SalesController extends Controller
             OperationHistory::create(["operation_id" => $request->operation->id,"user_id" => auth()->id(),"action" => "Comprobante detracción cargado", "detail" => 'filename: ' . $filename]);
 
             /// Envío de correo a cliente
-
+            try {
+                $rpta_mail = Mail::send(new SelfDetraction($operation));
+            } catch (\Exception $e) {
+                logger('ERROR: SelfDetraction Email: selfdetraction_payment@SalesController', ["error" => $e]);
+            }
 
             return response()->json([
                 'success' => true,

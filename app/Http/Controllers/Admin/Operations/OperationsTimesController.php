@@ -131,11 +131,11 @@ class OperationsTimesController extends Controller
         }
         elseif($request->status == 'Finalizadas'){
             $status = $finalizadas;
-            $str_where_time = "date(operations.operation_date) = date(now())";
+            $str_where_time = "date(operations.deposit_date) = date(now())";
         }
         else{
             $status = $todas;
-            $str_where_time = "date(operations.operation_date) = date(now())";
+            $str_where_time = "date(operations.deposit_date) = date(now())";
         }
 
         $report = Operation::select('operations.id','operations.code','operations.class','operations.type','operations.client_id','operations.user_id','operations.operations_analyst_id','operations.amount','operations.currency_id','operations.operation_status_id','operations.operation_date','operations.sign_date')

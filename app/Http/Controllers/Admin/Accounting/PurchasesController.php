@@ -204,9 +204,8 @@ class PurchasesController extends Controller
 
         $detraction_amount = (!is_null($purchase_invoice->detraction_payment_date)) ? $purchase_invoice->detraction_amount : 0;
 
-        $paid = PurchasePayment::selectRaw("sum(amount) + (select if(detraction_payment_date is null,0,detraction_amount) from purchase_invoices where id = " . $purchase_invoice->id . ") as pagado")
+        $paid = PurchasePayment::selectRaw("if(status ='Pagado', sum(amount),0) + (select if(detraction_payment_date is null,0,detraction_amount) from purchase_invoices where id = " . $purchase_invoice->id . ") as pagado")
             ->where('purchase_invoice_id', $purchase_invoice->id)
-            ->where('status', 'Pagado')
             ->first()->pagado*1.0;
 
         $pending = ($purchase_invoice->total_amount + $purchase_invoice->total_igv + $purchase_invoice->total_ipm);
