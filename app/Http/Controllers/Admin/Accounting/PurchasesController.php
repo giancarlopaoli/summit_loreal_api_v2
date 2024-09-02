@@ -208,7 +208,7 @@ class PurchasesController extends Controller
             ->where('purchase_invoice_id', $purchase_invoice->id)
             ->first()->pagado*1.0;
 
-        $pending = ($purchase_invoice->total_amount + $purchase_invoice->total_igv + $purchase_invoice->total_ipm);
+        $pending = ($purchase_invoice->total_amount + $purchase_invoice->total_igv + $purchase_invoice->total_ipm) - $paid;
 
         $purchase_invoice->paid = $paid;
         $purchase_invoice->pending = $pending;
