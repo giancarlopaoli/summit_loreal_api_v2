@@ -64,7 +64,8 @@ class Kernel extends ConsoleKernel
         if(env('APP_ENV') == 'production'){
             // Executing daily DB Backups
             $schedule->command('backup:run --only-db')
-                ->weekdays()->at("23:30");
+                //->weekdays()->at("23:30");
+                ->weekdays()->at("09:30");
 
             // Executing Backups cleanup
             $schedule->command('backup:clean')
