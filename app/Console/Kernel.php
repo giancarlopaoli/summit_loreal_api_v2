@@ -61,11 +61,10 @@ class Kernel extends ConsoleKernel
         $schedule->job(new Jobs\ExpireNegotiatedOperation)
             ->everyMinute();
 
-        //if(env('APP_ENV') == 'production'){
+        if(env('APP_ENV') == 'production'){
             // Executing daily DB Backups
             $schedule->command('backup:run --only-db')
-                //->weekdays()->at("23:30");
-                ->weekdays()->at("10:27");
+                ->weekdays()->at("23:30");
 
             // Executing Backups cleanup
             $schedule->command('backup:clean')
@@ -74,7 +73,7 @@ class Kernel extends ConsoleKernel
             // Monitoring Backups
             $schedule->command('backup:monitor')
                 ->weekdays()->at("23:59");
-        //}
+        }
     }
 
     /**
