@@ -65,7 +65,7 @@ class Kernel extends ConsoleKernel
             // Executing daily DB Backups
             $schedule->command('backup:run --only-db')
                 //->weekdays()->at("23:30");
-                ->everyMinute();
+                ->weekdays()->at("10:27");
 
             // Executing Backups cleanup
             $schedule->command('backup:clean')
