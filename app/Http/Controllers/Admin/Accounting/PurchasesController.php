@@ -204,7 +204,7 @@ class PurchasesController extends Controller
 
         $detraction_amount = (!is_null($purchase_invoice->detraction_payment_date)) ? $purchase_invoice->detraction_amount : 0;
 
-        $paid = PurchasePayment::selectRaw("if(status ='Pagado', sum(amount),0) + (select if(detraction_payment_date is null,0,detraction_amount) from purchase_invoices where id = " . $purchase_invoice->id . ") as pagado")
+        $paid = PurchasePayment::selectRaw("sum(if(status ='Pagado',amount,0)) + (select if(detraction_payment_date is null,0,detraction_amount) from purchase_invoices where id = " . $purchase_invoice->id . ") as pagado")
             ->where('purchase_invoice_id', $purchase_invoice->id)
             ->first()->pagado*1.0;
 
@@ -436,10 +436,19 @@ class PurchasesController extends Controller
                 return response()->json([
                     'success' => false,
                     'errors' => [
-                        'No se puede registrar un pago pendiene para el método de pago seleccionado'
+                        'No se puede registrar un pago pendiente para el método de pago seleccionado'
                     ]
                 ]);
             }
+        }
+
+        if($purchase_invoice->status == 'Pagado'){
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'La factura ya se encuentra en estado Pagado'
+                ]
+            ]);
         }
 
         if($request->payment_method == 'Transferencia bancaria'){
@@ -454,6 +463,48 @@ class PurchasesController extends Controller
                 'refund_bank_account_id' => 'required|exists:mysql2.refund_bank_accounts,id',
             ]);
             if($val->fails()) return response()->json($val->messages());
+        }
+
+        $paid = PurchasePayment::selectRaw("sum(if(status ='Pagado',amount,0)) + (select if(detraction_payment_date is null,0,detraction_amount) from purchase_invoices where id = " . $purchase_invoice->id . ") as pagado")
+            ->where('purchase_invoice_id', $purchase_invoice->id)
+            ->first()->pagado*1.0;
+
+        $pending = ($purchase_invoice->total_amount + $purchase_invoice->total_igv + $purchase_invoice->total_ipm) - $paid;
+
+        if($request->type == 'Pagado'){
+            if($request->amount > $pending){
+                return response()->json([
+                    'success' => false,
+                    'errors' => [
+                        'El monto de pago ingresado es mayor que el pendiente en la factura'
+                    ]
+                ]);
+            }
+        }
+
+        $paid_total = PurchasePayment::selectRaw("sum(amount) + (select detraction_amount from purchase_invoices where id = " . $purchase_invoice->id . ") as pagado")
+            ->where('purchase_invoice_id', $purchase_invoice->id)
+            ->first()->pagado*1.0;
+
+        $pending = ($purchase_invoice->total_amount + $purchase_invoice->total_igv + $purchase_invoice->total_ipm) - $paid_total;
+
+
+        /*return response()->json([
+                'success' => false,
+                'errors' => [
+                    ($purchase_invoice->total_amount + $purchase_invoice->total_igv + $purchase_invoice->total_ipm),
+                    $paid_total,
+                    $pending
+                ]
+            ]);*/
+
+        if($request->amount > $pending){
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'El monto de pago ingresado es mayor que el pendiente en la factura'
+                ]
+            ]);
         }
 
 
@@ -522,10 +573,38 @@ class PurchasesController extends Controller
             }
         }
 
+        $registro = PurchasesController::invoice_paid($purchase_invoice)->getdata();
+
+        return response()->json([
+            $registro
+        ]);
+
         return response()->json([
             'success' => true,
             'data' => [
                 'Pago registrado exitosamente'
+            ]
+        ]);
+    }
+
+    //Validating Paid purchase
+    public function invoice_paid(PurchaseInvoice $purchase_invoice) {
+
+        $paid = PurchasePayment::selectRaw("sum(if(status ='Pagado',amount,0)) + (select if(detraction_payment_date is null,0,detraction_amount) from purchase_invoices where id = " . $purchase_invoice->id . ") as pagado")
+            ->where('purchase_invoice_id', $purchase_invoice->id)
+            ->first()->pagado*1.0;
+
+        $pending = ($purchase_invoice->total_amount + $purchase_invoice->total_igv + $purchase_invoice->total_ipm) - $paid;
+
+        if($pending == 0){
+            $purchase_invoice->status='Pagado';
+            $purchase_invoice->save();
+        }
+
+        return response()->json([
+            'success' => 'test invoice',
+            'data' => [
+                $purchase_invoice
             ]
         ]);
     }
@@ -559,7 +638,8 @@ class PurchasesController extends Controller
     //Detractions pending
     public function pending_detractions(Request $request) {
 
-        $pending_detractions = PurchaseInvoice::select('id','service_id','detraction_amount','detraction_payment_date','serie','number','issue_date')
+        $pending_detractions = PurchaseInvoice::select('id','service_id','total_amount','detraction_amount','detraction_payment_date','serie','number','issue_date','serie','number')
+            ->selectRaw("concat(year(issue_date),if(month(issue_date)<10,concat(0,month(issue_date)),month(issue_date))) as period")
             ->where('status', 'Pendiente pago')
             ->where('detraction_amount', '>', 0)
             ->with('service:id,supplier_id','service.supplier:id,name,document_type_id,document_number,detraction_account')
@@ -605,7 +685,8 @@ class PurchasesController extends Controller
     //Detractions pending
     public function detractions_in_progress(Request $request) {
 
-        $massive_detractions = PurchaseInvoice::select('id','service_id','detraction_amount','detraction_payment_date','serie','number','issue_date')
+        $massive_detractions = PurchaseInvoice::select('id','service_id','total_amount','detraction_amount','detraction_payment_date','serie','number','issue_date','serie','number')
+            ->selectRaw("concat(year(issue_date),if(month(issue_date)<10,concat(0,month(issue_date)),month(issue_date))) as period")
             ->where('status', 'Pendiente pago')
             ->where('detraction_url', 'pagoMasivo')
             ->with('service:id,supplier_id','service.supplier:id,name,document_type_id,document_number,detraction_account')
@@ -799,7 +880,7 @@ class PurchasesController extends Controller
                     ->with(['purchase_payments' => function ($query) {
                         $query->where('status', 'Masivo');
                     }, 
-                    'purchase_payments.purchase_invoice:id,service_id,total_amount,total_igv,type,currency_id','purchase_payments.purchase_invoice.service:id,budget_id,supplier_id','purchase_payments.purchase_invoice.service.supplier:id,name,document_type_id,document_number','purchase_payments.purchase_invoice.service.supplier.document_type:id,name',
+                    'purchase_payments.purchase_invoice:id,service_id,total_amount,total_igv,type,currency_id,serie,number,issue_date','purchase_payments.purchase_invoice.service:id,budget_id,supplier_id','purchase_payments.purchase_invoice.service.supplier:id,name,document_type_id,document_number','purchase_payments.purchase_invoice.service.supplier.document_type:id,name',
                     'purchase_payments.currency:id,name,sign',
                     'purchase_payments.business_bank_account:id,bank_id,alias,account_number,cci_number,account_type_id,currency_id','purchase_payments.business_bank_account.bank:id,name,shortname','purchase_payments.business_bank_account.currency:id,name,sign','purchase_payments.business_bank_account.account_type:id,name,shortname',
                     'purchase_payments.supplier_bank_account:id,bank_id,account_number,cci_number,account_type_id,currency_id','purchase_payments.supplier_bank_account.bank:id,name,shortname','purchase_payments.supplier_bank_account.currency:id,name,sign','purchase_payments.supplier_bank_account.account_type:id,name,shortname',
@@ -890,5 +971,6 @@ class PurchasesController extends Controller
             ]
         ]);
     }
+
 
 }
