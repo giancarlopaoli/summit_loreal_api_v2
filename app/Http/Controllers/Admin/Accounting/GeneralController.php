@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
 use App\Models\BusinessBankAccount;
+use App\Models\Client;
 use App\Models\SupplierBankAccount;
 use App\Models\RefundBankAccount;
 use App\Models\Service;
@@ -122,6 +123,23 @@ class GeneralController extends Controller
                                         ->load('account_type:id,name,shortname')
                                         ->load('currency:id,name,sign')
                                         ->where('status','Activo')
+            ]
+        ]);
+    }
+
+    //Suppliers list
+    public function list_clients(Request $request) {
+
+        $clients = Client::select('id','document_type_id','document_number')
+            ->selectRaw("if(customer_type = 'PN',concat(name,' ',last_name,' ',mothers_name),name) as client_name")
+            ->where('client_status_id',3)
+            ->with('document_type:id,name')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'clients' => $clients
             ]
         ]);
     }

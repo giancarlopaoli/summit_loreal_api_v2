@@ -488,16 +488,6 @@ class PurchasesController extends Controller
 
         $pending = ($purchase_invoice->total_amount + $purchase_invoice->total_igv + $purchase_invoice->total_ipm) - $paid_total;
 
-
-        /*return response()->json([
-                'success' => false,
-                'errors' => [
-                    ($purchase_invoice->total_amount + $purchase_invoice->total_igv + $purchase_invoice->total_ipm),
-                    $paid_total,
-                    $pending
-                ]
-            ]);*/
-
         if($request->amount > $pending){
             return response()->json([
                 'success' => false,
@@ -576,10 +566,6 @@ class PurchasesController extends Controller
         $registro = PurchasesController::invoice_paid($purchase_invoice)->getdata();
 
         return response()->json([
-            $registro
-        ]);
-
-        return response()->json([
             'success' => true,
             'data' => [
                 'Pago registrado exitosamente'
@@ -600,13 +586,6 @@ class PurchasesController extends Controller
             $purchase_invoice->status='Pagado';
             $purchase_invoice->save();
         }
-
-        return response()->json([
-            'success' => 'test invoice',
-            'data' => [
-                $purchase_invoice
-            ]
-        ]);
     }
 
     //Delete purchase payment
@@ -729,6 +708,8 @@ class PurchasesController extends Controller
 
             $filename = "invoice_" . $detractions->get()[0]->id . "_det_" . substr($original_name, $longitud - 6, $longitud);
 
+            $ids = $detractions->pluck('id');
+
             try {
                 $s3 = Storage::disk('s3')->putFileAs($path, $file, $filename);
 
@@ -748,6 +729,10 @@ class PurchasesController extends Controller
                     ]
                 ]);
             }
+        }
+
+        foreach ($ids as $id) {
+            $registro = PurchasesController::invoice_paid(PurchaseInvoice::find($id));
         }
         
         return response()->json([
@@ -779,6 +764,42 @@ class PurchasesController extends Controller
         ]);
         if($val->fails()) return response()->json($val->messages());
 
+        if($purchase_invoice->detraction_amount == 0 || is_null($purchase_invoice->detraction_amount)){
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'No se encuentró monto de pago de detracción'
+                ]
+            ]);
+        }
+
+        if($purchase_invoice->status == 'Pagado'){
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'La factura ya se encuentra pagada'
+                ]
+            ]);
+        }
+
+        if($purchase_invoice->detraction_url == 'pagoMasivo'){
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'La detracción se encuentra en proceso de pago masivo'
+                ]
+            ]);
+        }
+
+        if(!is_null($purchase_invoice->detraction_amount) && !is_null($purchase_invoice->detraction_url)){
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'La detracción ya se encuentra pagada'
+                ]
+            ]);
+        }
+
         if($request->hasFile('file')){
             $file = $request->file('file');
             $path = env('AWS_ENV').'/accounting/purchases/';
@@ -808,6 +829,8 @@ class PurchasesController extends Controller
                 ]);
             }
         }
+
+        $registro = PurchasesController::invoice_paid($purchase_invoice);
         
         return response()->json([
             'success' => true,
@@ -933,6 +956,8 @@ class PurchasesController extends Controller
                     ]);
                 }
 
+                $ids = $payments->pluck('purchase_invoice_id');
+
                 $payments->update([
                     'payment_date' => $request->date,
                     'status' => 'Pagado'
@@ -949,6 +974,10 @@ class PurchasesController extends Controller
                     ]
                 ]);
             }
+        }
+
+        foreach ($ids as $id) {
+            $registro = PurchasesController::invoice_paid(PurchaseInvoice::find($id));
         }
         
         return response()->json([

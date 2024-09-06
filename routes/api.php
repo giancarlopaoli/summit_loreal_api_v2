@@ -600,6 +600,7 @@ Route::middleware('encryptresponses')->group(function () {
                 Route::GET('refund-accounts', [\App\Http\Controllers\Admin\Accounting\GeneralController::class, 'refund_accounts']);
                 Route::GET('business-accounts', [\App\Http\Controllers\Admin\Accounting\GeneralController::class, 'business_accounts']);
                 Route::GET('supplier-accounts/{supplier}', [\App\Http\Controllers\Admin\Accounting\GeneralController::class, 'supplier_accounts']);
+                Route::GET('clients', [\App\Http\Controllers\Admin\Accounting\GeneralController::class, 'list_clients']);
             });
 
             ########## dashboard  #############
@@ -687,6 +688,11 @@ Route::middleware('encryptresponses')->group(function () {
 
             ########## Sales  #############
             Route::prefix('sales')->group(function () {
+
+                Route::POST('', [\App\Http\Controllers\Admin\Accounting\SalesController::class, 'new_sale']);
+                Route::GET('', [\App\Http\Controllers\Admin\Accounting\SalesController::class, 'list_sales']);
+                Route::POST('email', [\App\Http\Controllers\Admin\Accounting\SalesController::class, 'email_sale']);
+
 
                 ########## Self Detractions  #############
                 Route::prefix('selfdetractions')->group(function () {

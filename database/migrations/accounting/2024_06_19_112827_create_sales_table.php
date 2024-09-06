@@ -15,7 +15,7 @@ return new class extends Migration
     {
         Schema::connection('mysql2')->create('sales', function (Blueprint $table) {
             $table->id();
-            $table->string('description', 200);
+            $table->string('description', 200)->nullable();
             $table->foreignIdFor(\App\Models\Client::class);
             $table->decimal('amount', 7,2);
             $table->decimal('igv', 7,2);
@@ -28,6 +28,7 @@ return new class extends Migration
             $table->string('invoice_number', 15);
             $table->string('invoice_url', 255);
             $table->date('invoice_issue_date', 7,2);
+            $table->date('invoice_expire_date', 7,2)->nullable();
             $table->enum('status', ['Aceptada', 'Anulada']);
             $table->timestamps();
         });
