@@ -266,7 +266,8 @@ class SuppliersController extends Controller
             'account_number' => $request->account_number,
             'cci_number' => $request->cci_number,
             'account_type_id' => $request->account_type_id,
-            'currency_id' => $request->currency_id
+            'currency_id' => $request->currency_id,
+            'status' => 'Activo'
         ]);
 
         return response()->json([

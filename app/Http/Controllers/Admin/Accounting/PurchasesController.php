@@ -563,7 +563,7 @@ class PurchasesController extends Controller
             }
         }
 
-        $registro = PurchasesController::invoice_paid($purchase_invoice)->getdata();
+        $registro = PurchasesController::invoice_paid($purchase_invoice);
 
         return response()->json([
             'success' => true,
