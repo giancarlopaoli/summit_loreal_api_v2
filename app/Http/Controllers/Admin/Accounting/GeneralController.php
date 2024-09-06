@@ -107,13 +107,6 @@ class GeneralController extends Controller
     //Supplier bank accounts
     public function supplier_accounts(Request $request, Supplier $supplier) {
 
-        /*$SupplierBankAccount = BusinessBankAccount::select('id','bank_id','alias','account_number','cci_number','currency_id','account_type_id','status')
-            ->with('bank:id,name,shortname')
-            ->with('account_type:id,name,shortname')
-            ->with('currency:id,name,sign')
-            ->where('status','Activo')
-            ->get();*/
-
         return response()->json([
             'success' => true,
             'data' => [

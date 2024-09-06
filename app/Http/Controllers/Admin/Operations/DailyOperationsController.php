@@ -1038,11 +1038,11 @@ class DailyOperationsController extends Controller
                         $operation->save();
 
                         // Generación de Factura inafecta
-                        //try {
+                        try {
                             $invoice = DailyOperationsController::invoice_unaffected($request, $operation);
-                        /*} catch (\Exception $e) {
+                        } catch (\Exception $e) {
                             logger('ERROR: creación factura inafecta: DailyOperationsController@invoice', ["error" => $e]);
-                        }*/
+                        }
 
                         // Notificación Telegram
                         try {
