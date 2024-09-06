@@ -122,6 +122,7 @@ class GeneralController extends Controller
                                         ->load('bank:id,name,shortname')
                                         ->load('account_type:id,name,shortname')
                                         ->load('currency:id,name,sign')
+                                        ->load('supplier:id,name')
                                         ->where('status','Activo')
             ]
         ]);
