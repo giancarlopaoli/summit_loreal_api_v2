@@ -151,11 +151,11 @@ class User extends Authenticatable
     }
 
     public function payroll_contract_created() {
-        return $this->hasMany(PayrollContracts::class, "created_by");
+        return $this->hasMany(PayrollContract::class, "created_by");
     }
 
     public function payroll_contract_updated() {
-        return $this->hasMany(PayrollContracts::class, "updated_by");
+        return $this->hasMany(PayrollContract::class, "updated_by");
     }
 
     public function services() {
@@ -164,5 +164,9 @@ class User extends Authenticatable
 
     public function refund_bank_accounts() {
         return $this->hasMany(RefundBankAccount::class);
+    }
+
+    public function sales() {
+        return $this->hasMany(Sale::class, "created_by");
     }
 }

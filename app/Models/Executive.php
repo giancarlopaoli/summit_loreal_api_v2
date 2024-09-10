@@ -19,6 +19,10 @@ class Executive extends Model
         return $this->hasMany(ExecutivesComission::class);
     }
 
+    public function history() {
+        return $this->hasMany(ExecutivesHistory::class);
+    }
+
     public function goals() {
         return $this->hasMany(ExecutivesGoal::class);
     }

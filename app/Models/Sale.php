@@ -28,4 +28,8 @@ class Sale extends Model
     public function payments() {
         return $this->hasMany(SalePayment::class);
     }
+
+    public function creator() {
+        return $this->belongsTo(User::class, "created_by");
+    }
 }

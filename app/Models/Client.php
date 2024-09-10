@@ -45,6 +45,10 @@ class Client extends Model
         return $this->hasMany(ExecutivesComission::class);
     }
 
+    public function executives_histories() {
+        return $this->hasMany(ExecutivesHistory::class);
+    }
+
     public function country() {
         return $this->belongsTo(Country::class);
     }
