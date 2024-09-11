@@ -691,7 +691,7 @@ Route::middleware('encryptresponses')->group(function () {
 
                 Route::POST('', [\App\Http\Controllers\Admin\Accounting\SalesController::class, 'new_sale']);
                 Route::GET('', [\App\Http\Controllers\Admin\Accounting\SalesController::class, 'list_sales']);
-                Route::POST('email', [\App\Http\Controllers\Admin\Accounting\SalesController::class, 'email_sale']);
+                Route::POST('email/{sale}', [\App\Http\Controllers\Admin\Accounting\SalesController::class, 'email_invoice']);
 
 
                 ########## Self Detractions  #############

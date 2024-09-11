@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use App\Models\Client;
 use App\Models\Operation;
@@ -15,9 +16,11 @@ use App\Models\OperationHistory;
 use App\Models\Sale;
 use Carbon\Carbon;
 use App\Enums;
-use Illuminate\Support\Facades\Mail;
 use App\Mail\SelfDetraction;
+use App\Mail\InvoiceSale;
 use App\Models\Configuration;
+
+use App\Models\OperationStatus;
 
 class SalesController extends Controller
 {
@@ -269,6 +272,39 @@ class SalesController extends Controller
             'success' => true,
             'data' => [
                 'sales' => $sales->get()
+            ]
+        ]);
+    }
+
+    public function email_invoice(Request $request, Sale $sale) {
+
+        // Enviando Mail de facturación
+        try {
+            if(!is_null($sale->invoice_url)){
+                $rpta_mail = Mail::send(new InvoiceSale($sale));
+            }
+            else{
+                return response()->json([
+                    'success' => false,
+                    'data' => [
+                        'No se encontró el url de la factura'
+                    ]
+                ]);
+            }
+        } catch (\Exception $e) {
+            logger('ERROR: Invoice Email: DailyOperationsController@invoice', ["error" => $e]);
+            return response()->json([
+                'success' => false,
+                'data' => [
+                    'Error al enviar el email'
+                ]
+            ]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'Email de factura enviado exitosamente'
             ]
         ]);
     }

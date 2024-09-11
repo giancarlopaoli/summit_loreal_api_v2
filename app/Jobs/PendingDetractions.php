@@ -33,9 +33,11 @@ class PendingDetractions implements ShouldQueue
     public function handle()
     {
         $operations = Operation::where('operation_date', '>=', '2024-01-01')
+            ->join('clients as cl','cl.id','=','operations.client_id')
             ->where('operation_status_id', OperationStatus::where('name', 'Facturado')->first()->id)
-            ->whereRaw("( (detraction_amount > 0) or (type = 'Interbancaria' and currency_id = 2 and ( (comission_amount + igv) * exchange_rate > 690)))")
+            ->whereRaw("( (detraction_amount > 0) or (operations.type = 'Interbancaria' and currency_id = 2 and ( (comission_amount + igv) * exchange_rate > 690)))")
             ->where('detraction_paid', false)
+            ->where('cl.customer_type', 'PJ')
             ->get();
 
         foreach ($operations as $op) {
