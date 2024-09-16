@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
 use App\Models\BusinessBankAccount;
 use App\Models\Client;
+use App\Models\Executive;
 use App\Models\SupplierBankAccount;
 use App\Models\RefundBankAccount;
 use App\Models\Service;
@@ -134,6 +135,20 @@ class GeneralController extends Controller
             'success' => true,
             'data' => [
                 'clients' => $clients
+            ]
+        ]);
+    }
+
+    //Executives full time list
+    public function list_suppliers(Request $request) {
+
+        $executive = Executive::select('*')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'executive' => $executive
             ]
         ]);
     }

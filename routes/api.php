@@ -573,6 +573,14 @@ Route::middleware('encryptresponses')->group(function () {
                     Route::GET('goal-progress', [\App\Http\Controllers\Admin\Executives\DashboardController::class, 'goal_progress']);
                     Route::GET('executives-summary', [\App\Http\Controllers\Admin\Executives\DashboardController::class, 'executives_summary']);
                 });
+
+                ########## Reasignación de ejecutivos a clientes #############
+                Route::prefix('reasignment')->group(function () {
+                    Route::GET('clients', [\App\Http\Controllers\Admin\Supervisors\ReasignmentController::class, 'clients']);
+                    Route::GET('clients/{client}', [\App\Http\Controllers\Admin\Supervisors\ReasignmentController::class, 'client_detail']);
+                    Route::GET('executives', [\App\Http\Controllers\Admin\Supervisors\ReasignmentController::class, 'executives']);
+                    Route::POST('clients/{client}', [\App\Http\Controllers\Admin\Supervisors\ReasignmentController::class, 'reasign']);
+                });
             });                
 
         });
