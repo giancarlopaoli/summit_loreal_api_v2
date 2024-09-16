@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use App\Models\Client;
+use App\Models\ExecutivesHistory;
+use Carbon\Carbon;
 
 class ReasignmentController extends Controller
 {
@@ -59,6 +61,62 @@ class ReasignmentController extends Controller
             'success' => true,
             'data' => [
                 'client' => $client2
+            ]
+        ]);
+    }
+
+    // Client detail
+    public function reasign(Request $request, Client $client) {
+        $val = Validator::make($request->all(), [
+            'new_executive_id' => 'required|exists:executives,id',
+            'fix_comission' => 'required|in:0,1',
+            'start_date' => 'required|date',
+            'executive_history' => 'required|in:0,1'
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+        if($client->executive_id == $request->new_executive_id){
+            return response()->json([
+                'success' => false,
+                'data' => [
+                    'El nuevo ejecutivo no puede ser igual al anterior.'
+                ]
+            ]);
+        }
+
+        if($request->fix_comission == 1){
+            $val = Validator::make($request->all(), [
+                'comission' => 'required|numeric',
+            ]);
+            if($val->fails()) return response()->json($val->messages());
+            $comission = $request->comission;
+        }
+        else{
+            $comission = 0;
+        }
+
+
+        if($request->executive_history == 1){
+            $client->executive->history()->create([
+                "client_id" => $client->id,
+                "comission" => $client->comission,
+                "start_date" => $client->comission_start_date,
+                "end_date" => $request->start_date
+            ]);
+        }
+
+        $client->executive_id = $request->new_executive_id;
+        $client->comission_start_date = $request->start_date;
+        $client->fix_comission = $request->fix_comission;
+        $client->comission = $comission;
+        $client->tracking_phase_id = 1;
+        $client->tracking_date = Carbon::now();
+        $client->save();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'Cliente reasignado exitosamente'
             ]
         ]);
     }
