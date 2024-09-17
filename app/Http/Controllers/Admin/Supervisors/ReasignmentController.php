@@ -53,7 +53,7 @@ class ReasignmentController extends Controller
             ->with('executive:id,type','executive.user:id,name,last_name')
             ->with('document_type:id,name')
             ->with(['operations' => function ($query) use ($client) {
-                        $query->whereIn('operation_status_id', [6,7])->where('operation_date',">=", $client->comission_start_date);
+                        $query->whereIn('operation_status_id', [6,7])->where('operation_date',">=", isset($client->comission_start_date) ? $client->comission_start_date : Carbon::now() );
                     }, 'operations:id,code,type,client_id,user_id,amount,exchange_rate,comission_spread,comission_amount,igv,operation_date']) 
             ->first();
 
@@ -96,7 +96,7 @@ class ReasignmentController extends Controller
         }
 
 
-        if($request->executive_history == 1){
+        if($request->executive_history == 1 && isset($client->comission_start_date)){
             $client->executive->history()->create([
                 "client_id" => $client->id,
                 "comission" => $client->comission,

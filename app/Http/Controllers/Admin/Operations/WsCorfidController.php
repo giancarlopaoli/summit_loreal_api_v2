@@ -21,6 +21,20 @@ class WsCorfidController extends Controller
         if($request->json != "true"){
             // Error si la operación ya fue enviada con mensaje satisfactorio
             if($operation->corfid_id == 1) return response()->json(['success' => false, 'data' => 'La operación ya fue enviada a corfid']);
+
+            // Si el error es que ya existe una operación con ese código, se registra 
+            if($operation->corfid_id == 2 && $operation->corfid_message = 'nref01 (Numero de Referencia) ya Existe como operacion'){
+
+                $operation->corfid_id = 1;
+                $operation->save();
+
+                return response()->json([
+                    'success' => true,
+                    'errors' => [
+                        'La operación ya se había enviado, se actualizó estado.'
+                    ]
+                ]);
+            }
         }
         
         if(($operation->type == 'Compra' || $operation->type == 'Venta') && $operation->matches->count() > 0){
