@@ -578,10 +578,16 @@ Route::middleware('encryptresponses')->group(function () {
                 Route::prefix('reasignment')->group(function () {
                     Route::GET('clients', [\App\Http\Controllers\Admin\Supervisors\ReasignmentController::class, 'clients']);
                     Route::GET('clients/{client}', [\App\Http\Controllers\Admin\Supervisors\ReasignmentController::class, 'client_detail']);
-                    Route::GET('executives', [\App\Http\Controllers\Admin\Supervisors\ReasignmentController::class, 'executives']);
                     Route::POST('clients/{client}', [\App\Http\Controllers\Admin\Supervisors\ReasignmentController::class, 'reasign']);
                 });
-            });                
+            });
+
+            ########## Operations  #############
+            Route::prefix('operations')->group(function () {
+                Route::GET('list', [\App\Http\Controllers\Admin\Supervisors\OperationsController::class, 'list']);
+                Route::GET('clients', [\App\Http\Controllers\Admin\Supervisors\OperationsController::class, 'clients']);
+                Route::PUT('edit/{operation}', [\App\Http\Controllers\Admin\Supervisors\OperationsController::class, 'edit']);
+            });
 
         });
 
