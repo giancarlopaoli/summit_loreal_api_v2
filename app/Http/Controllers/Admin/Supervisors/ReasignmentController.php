@@ -44,11 +44,13 @@ class ReasignmentController extends Controller
     public function client_detail(Request $request, Client $client) {
 
         $client2 = Client::where('id', $client->id)
-            ->select('id','document_type_id','document_number','executive_id','registered_at','comission_start_date','fix_comission')
+            ->select('id','document_type_id','document_number','executive_id','registered_at','comission_start_date','fix_comission','comission')
             ->selectRaw("if(customer_type = 'PN',concat(name,' ',last_name,' ',mothers_name),name) as client_name")
             ->selectRaw("(select concat(name,' ',last_name,' - ',round(ec.comission*100,0),'%') from executives_comissions ec inner join users us on ec.executive_id = us.id where ec.client_id = clients.id and ec.start_date<= now() and ec.end_date >= now() limit 1) as executive_free_name")
 
             ->selectRaw("(select concat(start_date,' - ',end_date) from executives_comissions ec where ec.client_id = clients.id and ec.start_date<= now() and ec.end_date >= now() limit 1) as executive_free_dates")
+
+            ->selectRaw("(select op.operation_date from operations op where op.client_id = clients.id and op.operation_status_id in (6,7) order by op.id limit 1) as operation_start_date")
 
             ->with('executive:id,type','executive.user:id,name,last_name')
             ->with('document_type:id,name')
