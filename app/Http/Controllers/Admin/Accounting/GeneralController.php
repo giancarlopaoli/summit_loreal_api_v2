@@ -125,7 +125,7 @@ class GeneralController extends Controller
     //Suppliers list
     public function list_clients(Request $request) {
 
-        $clients = Client::select('id','document_type_id','document_number')
+        $clients = Client::select('id','document_type_id','document_number','customer_type')
             ->selectRaw("if(customer_type = 'PN',concat(name,' ',last_name,' ',mothers_name),name) as client_name")
             ->where('client_status_id',3)
             ->with('document_type:id,name')
@@ -135,20 +135,6 @@ class GeneralController extends Controller
             'success' => true,
             'data' => [
                 'clients' => $clients
-            ]
-        ]);
-    }
-
-    //Executives full time list
-    public function list_suppliers(Request $request) {
-
-        $executive = Executive::select('*')
-            ->get();
-
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'executive' => $executive
             ]
         ]);
     }
