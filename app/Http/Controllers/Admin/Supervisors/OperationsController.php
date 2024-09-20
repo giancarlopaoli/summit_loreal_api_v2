@@ -26,7 +26,7 @@ class OperationsController extends Controller
         if(isset($request->end_date)) $operations = $operations->where('operation_date','<=', $request->end_date.' 23:59:59');
         
 
-        if($request->client_name != "") $operations = $operations->whereRaw("(CONCAT(name,' ',last_name,' ',mothers_name) like "."'%"."$request->client_name"."%'" . "or name like "."'%"."$request->client_name"."%')");
+        if($request->client_id != "") $operations = $operations->where('client_id',$request->client_id);
 
         if($request->code != "")  $operations = $operations->where('code', 'like', "%".$request->code."%");
 
