@@ -1144,164 +1144,151 @@ class DailyOperationsController extends Controller
             }
         }
 
-        if($operation->comission_amount > 0){
-
-            if(is_null($operation->client->invoice_to)){
-                $client_name = $operation->client->client_full_name;
-                $customer_type = ($operation->client->customer_type == 'PJ') ? 1 : 2;
-                $invoice_serie = (($operation->client->customer_type == 'PJ') ? 'F' : 'B') .'001';
-                $client_document_type = ($operation->client->document_type->name == 'RUC') ? 6 : ($operation->client->document_type->name == 'DNI' ? 1 : ($operation->client->document_type->name == 'Carné de extranjería' ? 4 : null));
-                $client_document_number = $operation->client->document_number;
-                $localidad = isset($operation->client->district) ? $operation->client->district->name . " - " . $operation->client->district->province->name ." - " . $operation->client->district->province->department->name : "";
-                $client_address = $operation->client->address . ", " . $localidad;
-                $client_type = $operation->client->customer_type;
-            }
-            else{
-                $client = Client::find($operation->client->invoice_to);
-
-                $client_name = $client->client_full_name;
-                $customer_type = ($client->customer_type == 'PJ') ? 1 : 2;
-                $invoice_serie = (($client->customer_type == 'PJ') ? 'F' : 'B') .'001';
-                $client_document_type = ($client->document_type->name == 'RUC') ? 6 : ($client->document_type->name == 'DNI' ? 1 : ($client->document_type->name == 'Carné de extranjería' ? 4 : null));
-                $client_document_number = $client->document_number;
-                $localidad = isset($client->district) ? $client->district->name . " - " . $client->district->province->name ." - " . $client->district->province->department->name : "";
-                $client_address = $client->address . ", " . $localidad;
-                $client_type = $client->customer_type;
-            }
-
-            $executive_email = (!is_null($operation->client->executive)) ? $operation->client->executive->user->email : null;
-
-            $currency = ($operation->type == 'Compra') ? 2 : (($operation->type == 'Venta') ? 1 : $operation->currency_id);
-            $total_amount = ($operation->type == 'Venta') ? round($operation->amount * $operation->exchange_rate,2) : (($operation->type == 'Compra') ? $operation->amount : round($operation->amount/$operation->exchange_rate*($operation->exchange_rate+$operation->spread/10000), 2));
-
-            $countervalue = round($operation->amount * $operation->exchange_rate,2);
-
-
-            try{
-
-                $data = array(
-                    "operacion"                         => "generar_comprobante",
-                    "tipo_de_comprobante"               => $customer_type,
-                    "serie"                             => $invoice_serie,
-                    "numero"                            => "",
-                    "sunat_transaction"                 => "1",
-                    "cliente_tipo_de_documento"         => $client_document_type,
-                    "cliente_numero_de_documento"       => $client_document_number,
-                    "cliente_denominacion"              => ucfirst($client_name),
-                    "cliente_direccion"                 => $client_address,
-                    "cliente_email"                     => "",
-                    "cliente_email_1"                   => "",
-                    "cliente_email_2"                   => "",
-                    "fecha_de_emision"                  => Carbon::now()->format('d-m-Y'),
-                    "fecha_de_vencimiento"              => Carbon::now()->format('d-m-Y'),
-                    "moneda"                            => $currency,
-                    "tipo_de_cambio"                    => $operation->exchange_rate,
-                    "porcentaje_de_igv"                 => $configurations->get_value('IGV'),
-                    "descuento_global"                  => "",
-                    "descuento_global"                  => "",
-                    "total_descuento"                   => "",
-                    "total_anticipo"                    => "",
-                    "total_gravada"                     => "",
-                    "total_inafecta"                    => $total_amount,
-                    "total_exonerada"                   => "",
-                    "total_igv"                         => 0,
-                    "total_gratuita"                    => "",
-                    "total_otros_cargos"                => "",
-                    "total"                             => $total_amount,
-                    "percepcion_tipo"                   => "",
-                    "percepcion_base_imponible"         => "",
-                    "total_percepcion"                  => "",
-                    "total_incluido_percepcion"         => "",
-                    "detraccion"                        => "",
-                    "detraccion_tipo"                   => "",
-                    "detraccion_total"                  => "",
-                    "detraccion_porcentaje"             => "",
-                    "medio_de_pago_detraccion"          => "",
-                    "observaciones"                     => "",
-                    "documento_que_se_modifica_tipo"    => "",
-                    "documento_que_se_modifica_serie"   => "",
-                    "documento_que_se_modifica_numero"  => "",
-                    "tipo_de_nota_de_credito"           => "",
-                    "tipo_de_nota_de_debito"            => "",
-                    "enviar_automaticamente_a_la_sunat" => "true",
-                    "enviar_automaticamente_al_cliente" => "true",
-                    "codigo_unico"                      => "X".$operation->code,
-                    "condiciones_de_pago"               => "CONTADO",
-                    "medio_de_pago"                     => "",
-                    "placa_vehiculo"                    => "",
-                    "orden_compra_servicio"             => "",
-                    "tabla_personalizada_codigo"        => "",
-                    "formato_de_pdf"                    => "A4",
-                    "items" => array(
-                                    
-                        array(
-                            "unidad_de_medida"          => "ZZ",
-                            "codigo"                    => "OPCV",
-                            "descripcion"               => "OP " . $operation->code . " - CLIENTE " . ($operation->type == "Compra" ? "COMPRA " : "VENDE ") . $operation->currency->sign . $operation->amount . " - CLIENTE " . ($operation->type == "Compra" ? "ENVIA S/" : "RECIBE S/") . $countervalue . " - TIPO DE CAMBIO: " . round($operation->exchange_rate, 6),
-                            "cantidad"                  => "1",
-                            "valor_unitario"            => $total_amount,
-                            "precio_unitario"           => $total_amount,
-                            "descuento"                 => "",
-                            "subtotal"                  => $total_amount,
-                            "tipo_de_igv"               => "9",
-                            "igv"                       => 0,
-                            "total"                     => $total_amount,
-                            "anticipo_regularizacion"   => "false",
-                            "anticipo_serie"            => "",
-                            "anticipo_documento_numero" => ""
-                        )   
-                    )
-                );
-
-                // Executing Nubefact API
-                $consulta = Http::withToken(env('NUBEFACT_TOKEN'))->post(env('NUBEFACT_URL'), $data);
-
-                $rpta_json = json_decode($consulta);
-
-                if(is_object($rpta_json)){
-                    if(isset($rpta_json->errors)){
-                        logger('ERROR: archivo adjunto: DailyOperationsController@invoice', ["error" => $rpta_json]);
-
-                        OperationHistory::create(["operation_id" => $operation->id,"user_id" => auth()->id(),"action" => "Monto depositado, error al facturar inafecto."]);
-
-                        return response()->json([
-                            'success' => false,
-                            'errors' => [
-                                $rpta_json->errors
-                            ]
-                        ]);
-                    }
-                    else{
-                        $operation->unaffected_invoice_serie = $rpta_json->serie;
-                        $operation->unaffected_invoice_number = $rpta_json->numero;
-                        $operation->unaffected_invoice_url = $rpta_json->enlace;
-                        $operation->save();
-
-                        OperationHistory::create(["operation_id" => $operation->id,"user_id" => auth()->id(),"action" => "Operación facturada inafecto"]);
-
-                        return response()->json([
-                            'success' => true,
-                            'data' => [
-                                'Factura creada exitosamente'
-                            ]
-                        ]);
-                    }
-                }
-
-            } catch (\Exception $e) {
-                // Registrando el el log los datos ingresados
-                logger('ERROR: archivo adjunto: DailyOperationsController@invoice', ["error" => $e]);
-            }
+        if(is_null($operation->client->invoice_to)){
+            $client_name = $operation->client->client_full_name;
+            $customer_type = ($operation->client->customer_type == 'PJ') ? 1 : 2;
+            $invoice_serie = (($operation->client->customer_type == 'PJ') ? 'F' : 'B') .'001';
+            $client_document_type = ($operation->client->document_type->name == 'RUC') ? 6 : ($operation->client->document_type->name == 'DNI' ? 1 : ($operation->client->document_type->name == 'Carné de extranjería' ? 4 : null));
+            $client_document_number = $operation->client->document_number;
+            $localidad = isset($operation->client->district) ? $operation->client->district->name . " - " . $operation->client->district->province->name ." - " . $operation->client->district->province->department->name : "";
+            $client_address = $operation->client->address . ", " . $localidad;
+            $client_type = $operation->client->customer_type;
         }
         else{
-            OperationHistory::create(["operation_id" => $operation->id,"user_id" => auth()->id(),"action" => "Operación finalizada sin factura inafecta"]);
+            $client = Client::find($operation->client->invoice_to);
 
-            return response()->json([
-                'success' => true,
-                'data' => [
-                    'Operación facturada inafecta exitosamente'
-                ]
-            ]);
+            $client_name = $client->client_full_name;
+            $customer_type = ($client->customer_type == 'PJ') ? 1 : 2;
+            $invoice_serie = (($client->customer_type == 'PJ') ? 'F' : 'B') .'001';
+            $client_document_type = ($client->document_type->name == 'RUC') ? 6 : ($client->document_type->name == 'DNI' ? 1 : ($client->document_type->name == 'Carné de extranjería' ? 4 : null));
+            $client_document_number = $client->document_number;
+            $localidad = isset($client->district) ? $client->district->name . " - " . $client->district->province->name ." - " . $client->district->province->department->name : "";
+            $client_address = $client->address . ", " . $localidad;
+            $client_type = $client->customer_type;
+        }
+
+        $executive_email = (!is_null($operation->client->executive)) ? $operation->client->executive->user->email : null;
+
+        $currency = ($operation->type == 'Compra') ? 2 : (($operation->type == 'Venta') ? 1 : $operation->currency_id);
+        $total_amount = ($operation->type == 'Venta') ? round($operation->amount * $operation->exchange_rate,2) : (($operation->type == 'Compra') ? $operation->amount : round($operation->amount/$operation->exchange_rate*($operation->exchange_rate+$operation->spread/10000), 2));
+
+        $countervalue = round($operation->amount * $operation->exchange_rate,2);
+
+
+        try{
+
+            $data = array(
+                "operacion"                         => "generar_comprobante",
+                "tipo_de_comprobante"               => $customer_type,
+                "serie"                             => $invoice_serie,
+                "numero"                            => "",
+                "sunat_transaction"                 => "1",
+                "cliente_tipo_de_documento"         => $client_document_type,
+                "cliente_numero_de_documento"       => $client_document_number,
+                "cliente_denominacion"              => ucfirst($client_name),
+                "cliente_direccion"                 => $client_address,
+                "cliente_email"                     => "",
+                "cliente_email_1"                   => "",
+                "cliente_email_2"                   => "",
+                "fecha_de_emision"                  => Carbon::now()->format('d-m-Y'),
+                "fecha_de_vencimiento"              => Carbon::now()->format('d-m-Y'),
+                "moneda"                            => $currency,
+                "tipo_de_cambio"                    => $operation->exchange_rate,
+                "porcentaje_de_igv"                 => $configurations->get_value('IGV'),
+                "descuento_global"                  => "",
+                "descuento_global"                  => "",
+                "total_descuento"                   => "",
+                "total_anticipo"                    => "",
+                "total_gravada"                     => "",
+                "total_inafecta"                    => $total_amount,
+                "total_exonerada"                   => "",
+                "total_igv"                         => 0,
+                "total_gratuita"                    => "",
+                "total_otros_cargos"                => "",
+                "total"                             => $total_amount,
+                "percepcion_tipo"                   => "",
+                "percepcion_base_imponible"         => "",
+                "total_percepcion"                  => "",
+                "total_incluido_percepcion"         => "",
+                "detraccion"                        => "",
+                "detraccion_tipo"                   => "",
+                "detraccion_total"                  => "",
+                "detraccion_porcentaje"             => "",
+                "medio_de_pago_detraccion"          => "",
+                "observaciones"                     => "",
+                "documento_que_se_modifica_tipo"    => "",
+                "documento_que_se_modifica_serie"   => "",
+                "documento_que_se_modifica_numero"  => "",
+                "tipo_de_nota_de_credito"           => "",
+                "tipo_de_nota_de_debito"            => "",
+                "enviar_automaticamente_a_la_sunat" => "true",
+                "enviar_automaticamente_al_cliente" => "true",
+                "codigo_unico"                      => "X".$operation->code,
+                "condiciones_de_pago"               => "CONTADO",
+                "medio_de_pago"                     => "",
+                "placa_vehiculo"                    => "",
+                "orden_compra_servicio"             => "",
+                "tabla_personalizada_codigo"        => "",
+                "formato_de_pdf"                    => "A4",
+                "items" => array(
+                                
+                    array(
+                        "unidad_de_medida"          => "ZZ",
+                        "codigo"                    => "OPCV",
+                        "descripcion"               => "OP " . $operation->code . " - CLIENTE " . ($operation->type == "Compra" ? "COMPRA " : "VENDE ") . $operation->currency->sign . $operation->amount . " - CLIENTE " . ($operation->type == "Compra" ? "ENVIA S/" : "RECIBE S/") . $countervalue . " - TIPO DE CAMBIO: " . round($operation->exchange_rate, 6),
+                        "cantidad"                  => "1",
+                        "valor_unitario"            => $total_amount,
+                        "precio_unitario"           => $total_amount,
+                        "descuento"                 => "",
+                        "subtotal"                  => $total_amount,
+                        "tipo_de_igv"               => "9",
+                        "igv"                       => 0,
+                        "total"                     => $total_amount,
+                        "anticipo_regularizacion"   => "false",
+                        "anticipo_serie"            => "",
+                        "anticipo_documento_numero" => ""
+                    )   
+                )
+            );
+
+            // Executing Nubefact API
+            $consulta = Http::withToken(env('NUBEFACT_TOKEN'))->post(env('NUBEFACT_URL'), $data);
+
+            $rpta_json = json_decode($consulta);
+
+            if(is_object($rpta_json)){
+                if(isset($rpta_json->errors)){
+                    logger('ERROR: archivo adjunto: DailyOperationsController@invoice', ["error" => $rpta_json]);
+
+                    OperationHistory::create(["operation_id" => $operation->id,"user_id" => auth()->id(),"action" => "Monto depositado, error al facturar inafecto."]);
+
+                    return response()->json([
+                        'success' => false,
+                        'errors' => [
+                            $rpta_json->errors
+                        ]
+                    ]);
+                }
+                else{
+                    $operation->unaffected_invoice_serie = $rpta_json->serie;
+                    $operation->unaffected_invoice_number = $rpta_json->numero;
+                    $operation->unaffected_invoice_url = $rpta_json->enlace;
+                    $operation->save();
+
+                    OperationHistory::create(["operation_id" => $operation->id,"user_id" => auth()->id(),"action" => "Operación facturada inafecto"]);
+
+                    return response()->json([
+                        'success' => true,
+                        'data' => [
+                            'Factura creada exitosamente'
+                        ]
+                    ]);
+                }
+            }
+
+        } catch (\Exception $e) {
+            // Registrando el el log los datos ingresados
+            logger('ERROR: archivo adjunto: DailyOperationsController@invoice', ["error" => $e]);
         }
 
         return response()->json([
