@@ -617,11 +617,13 @@ class PurchasesController extends Controller
     //Detractions pending
     public function pending_detractions(Request $request) {
 
-        $pending_detractions = PurchaseInvoice::select('id','service_id','total_amount','detraction_amount','detraction_payment_date','serie','number','issue_date','serie','number')
+        $pending_detractions = PurchaseInvoice::select('id','service_id','total_amount','detraction_amount','detraction_payment_date','serie','number','issue_date','serie','number','currency_id')
             ->selectRaw("concat(year(issue_date),if(month(issue_date)<10,concat(0,month(issue_date)),month(issue_date))) as period")
             ->where('status', 'Pendiente pago')
             ->where('detraction_amount', '>', 0)
+            ->whereRaw('detraction_payment_date is null')
             ->with('service:id,supplier_id','service.supplier:id,name,document_type_id,document_number,detraction_account')
+            ->with('currency:id,name,sign')
             ->get();
 
         return response()->json([
