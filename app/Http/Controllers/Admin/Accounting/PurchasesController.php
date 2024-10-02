@@ -57,13 +57,13 @@ class PurchasesController extends Controller
                 ]);
                 if($val->fails()) return response()->json($val->messages());
 
-                if(($amount + $igv)*$request->exchange_rate > 700){
+                if(($amount + $igv)*$request->exchange_rate > 700 && $request->type = 'Servicio'){
                     $detraction_amount = round(round(($amount + $igv)*0.12, 2) *$request->exchange_rate,0) ;
                 }
 
             }
             else{
-                if($amount + $igv > 700){
+                if($amount + $igv > 700 && $request->type = 'Servicio'){
                     $detraction_amount = round(($amount + $igv)*0.12, 0);
                 }
             }
@@ -651,7 +651,7 @@ class PurchasesController extends Controller
             ]);
         }
 
-        PurchaseInvoice::whereIn('id', $request->purchases)->update(["detraction_url" => "pagoMasivo"]);
+        PurchaseInvoice::whereIn('id', $request->purchases)->whereRaw('detraction_url is null')->update(["detraction_url" => "pagoMasivo"]);
 
         return response()->json([
             'success' => true,
