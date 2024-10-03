@@ -447,6 +447,19 @@ class DailyOperationsController extends Controller
                 }
             }
             elseif ($operation->matched_operation->count() > 0) { // Si es operación emparejadora
+                
+                $escrow_account = DB::table('escrow_account_operation')
+                    ->where('operation_id', $operation->id);
+
+                if(is_null($escrow_account->first())){
+                    return response()->json([
+                        'success' => false,
+                        'errors' => [
+                            'Error en número de operación',
+                        ]
+                    ]);
+                }
+
                 if($operation->matched_operation[0]->operation_status_id == OperationStatus::where('name', 'Pendiente envio fondos')->first()->id){
                     $operation->operation_status_id = OperationStatus::where('name', 'Pendiente fondos contraparte')->first()->id;
                     $operation->funds_confirmation_date = Carbon::now();
@@ -476,6 +489,13 @@ class DailyOperationsController extends Controller
                             'Error en el estado de la operación emparejadora'
                         ]
                     ]);
+                }
+
+                if($escrow_account->first()->transfer_number != null){
+
+                }
+                else{
+                    $escrow_account->update(['transfer_number' => 1]);
                 }
             }
         }
@@ -748,26 +768,11 @@ class DailyOperationsController extends Controller
         ]);
         if($val->fails()) return response()->json($val->messages());
 
-
         logger('Archivo adjunto: DailyOperationsController@upload_documents', ["operation_id" => $request->operation_id]);
 
         if($request->hasFile('file')){
             $file = $request->file('file');
             $path = env('AWS_ENV').'/operations/';
-
-            /*try {
-                $extension = strrpos($file->getClientOriginalName(), ".")? (Str::substr($file->getClientOriginalName(), strrpos($file->getClientOriginalName(), ".") + 1 , Str::length($file->getClientOriginalName()) -strrpos($file->getClientOriginalName(), "."))): "";
-                
-                $now = Carbon::now();
-                $filename = md5($now->toDateTimeString().$file->getClientOriginalName()).".".$extension;
-
-            } catch (\Exception $e) {
-                $filename = $file->getClientOriginalName();
-            }
-
-            if(!strrpos($filename, ".")){
-                $filename = $file->getClientOriginalName();
-            }*/
 
             $operation = Operation::find($request->operation_id);
             $original_name = $file->getClientOriginalName();
@@ -788,6 +793,16 @@ class DailyOperationsController extends Controller
                     'type' => $request->sign == 1 ? Enums\DocumentType::Firma1 : Enums\DocumentType::Firma2,
                     'document_name' => $filename
                 ]);
+
+                // Si cliente emparejador es Cliente y no PL, se guarda archivo en bank_account_operation
+                if($operation->client->type == 'Cliente' && $request->sign == 2){
+                    $bank_account = DB::table('bank_account_operation')
+                        ->where('operation_id', $request->operation_id);
+
+                    $bank_account->update([
+                        "voucher_id" => $insert->id
+                    ]);
+                }
 
             } catch (\Exception $e) {
                 // Registrando el el log los datos ingresados
