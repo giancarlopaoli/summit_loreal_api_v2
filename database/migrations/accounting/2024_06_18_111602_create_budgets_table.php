@@ -19,8 +19,8 @@ return new class extends Migration
             $table->string('code', 20);
             $table->string('description', 200);
             $table->integer('period');
-            $table->decimal('initial_budget', 7,2);
-            $table->decimal('final_budget', 7,2)->nullable();
+            $table->decimal('initial_budget', 10,2);
+            $table->decimal('final_budget', 10,2)->nullable();
             $table->enum('status', ['Activo', 'Inactivo']);
             $table->foreignId('updated_by')->nullable();
             $table->timestamps();

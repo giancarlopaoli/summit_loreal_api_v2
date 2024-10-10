@@ -76,7 +76,10 @@ class BudgetsController extends Controller
     public function list_budgets(Request $request) {
 
         $budgets = Area::select('id','name','code')
-            ->with("budgets:id,area_id,code,description,period,initial_budget,final_budget,status")
+            ->with(["budgets" => function ($query) {
+                         $query->where('status', 'Activo');
+                      },"budgets:id,area_id,code,description,period,initial_budget,final_budget,status"])
+            ->whereRelation('budgets', 'status', 'Activo')
             ->get();
 
         return response()->json([
