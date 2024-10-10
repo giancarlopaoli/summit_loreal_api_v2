@@ -87,6 +87,7 @@ class ServicesController extends Controller
         $year = Carbon::now()->year;
 
         $services = Service::select('id','budget_id','supplier_id','name','description','amount','currency_id','exchange_rate','frequency','status')
+            ->where('status','Activo')
             ->with('budget:id,area_id,code,description,period,initial_budget','budget.area:id,name,code')
             ->with('supplier:id,name')
             ->get();
