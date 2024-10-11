@@ -109,7 +109,9 @@ class ServicesController extends Controller
                 'service' => $service
                             ->load('budget:id,area_id,code,description,period,initial_budget','budget.area:id,name,code')
                             ->load('supplier:id,name,document_type_id,document_number,email,phone,address,logo_url,district_id,country_id','supplier.document_type:id,name','supplier.district:id,name,ubigeo,province_id','supplier.district.province:id,name,department_id','supplier.district.province.department:id,name','supplier.country:id,name')
-                            ->load('purchase_invoices')
+                            ->load(['purchase_invoices:id,service_id,total_amount,total_igv,total_ipm,type,currency_id,serie,number,issue_date,due_date,service_month,service_year,status','purchase_invoices.currency:id,name,sign','purchase_invoices.documents' => function ($query) {
+                        $query->where('type', 'Invoice');
+                    }])
                             ->load('currency:id,name,sign')
             ]
         ]);

@@ -47,7 +47,7 @@ class SalesController extends Controller
         foreach ($request->detail as $line) {
             $amount += $line['quantity'] * $line['unit_amount'];
             $igv += $line['quantity'] * $line['igv'];
-            $ipm += $line['quantity'] * $line['ipm'];
+            $ipm += $line['quantity'] * (isset($line['ipm']) ? $line['ipm'] : 0);
         }
 
         if($request->currency_id == 2){
