@@ -491,12 +491,12 @@ class DailyOperationsController extends Controller
                     ]);
                 }
 
-                if($escrow_account->first()->transfer_number != null){
+                /*if($escrow_account->first()->transfer_number != null){
 
                 }
                 else{
                     $escrow_account->update(['transfer_number' => 1]);
-                }
+                }*/
             }
         }
         else{
