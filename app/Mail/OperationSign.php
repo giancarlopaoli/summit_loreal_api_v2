@@ -141,12 +141,13 @@ class OperationSign extends Mailable
                     }
                 }
 
-                foreach ($this->operation->matches[0]->documents as $document) {
+                // se comentó porque está adjuntando el comprobante del la operación creadora
+                /*foreach ($this->operation->matches[0]->documents as $document) {
                     if($document->type == 'Comprobante'){
                         $document = OperationDocument::where('id',$document->id)->where('operation_id', $document->operation_id)->first();
                         $email->attachFromStorageDisk('s3',env('AWS_ENV').'/operations/' . $document->document_name);
                     }
-                }
+                }*/
             }
 
         return $email;
