@@ -13,9 +13,8 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::table('bank_account_operation', function (Blueprint $table) {
-            $table->integer('escrow_account_operation_id')->nullable()->after('signed_at');
-            $table->timestamp('deposit_at')->nullable()->after('escrow_account_operation_id');
+        Schema::table('escrow_account_operation', function (Blueprint $table) {
+            $table->timestamp('deposit_at')->nullable()->after('voucher_id');
         });
     }
 
@@ -26,8 +25,7 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::table('bank_account_operation', function (Blueprint $table) {
-            $table->dropColumn('escrow_account_operation_id');
+        Schema::table('escrow_account_operation', function (Blueprint $table) {
             $table->dropColumn('deposit_at');
         });
     }
