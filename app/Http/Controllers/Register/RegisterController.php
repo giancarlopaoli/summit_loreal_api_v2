@@ -615,7 +615,8 @@ class RegisterController extends Controller
 
             $executive_id = User::where('email', env('PERSONS_EXECUTIVE'))->first()->id;
             $comission = 0;
-            
+            $validated = 0;
+
             // Looking for a existing lead       
             $lead = Lead::where('contact_type', 'Natural')->where('document_number', $request->client['document_number'])->get();
 
@@ -631,6 +632,7 @@ class RegisterController extends Controller
                     $comission = $executive->comission;
                     $executive_id = $executive->id;
                 }
+                $validated = 1;
             }
 
             $client = Client::create([
@@ -663,7 +665,8 @@ class RegisterController extends Controller
                 'tracking_date' => $now,
                 'comission' => $comission,
                 'use_bank_accounts' => false,
-                'sector_id' => 13
+                'sector_id' => 13,
+                'validated' => $validated
             ]);
 
             
@@ -888,6 +891,7 @@ class RegisterController extends Controller
             // Creating Client
             $executive_id = User::where('email', env('COMPANIES_EXECUTIVE'))->first()->id;
             $comission = 0;
+            $validated = 0;
 
             // Looking for a existing lead       
             $lead = Lead::where('contact_type', 'Juridica')->where('document_number', $request->client['ruc'])->get();
@@ -907,6 +911,7 @@ class RegisterController extends Controller
                         $comission = $executive->comission;
                         $executive_id = $executive->id;
                     }
+                    $validated = 1;
                 }
             }
 
@@ -937,7 +942,8 @@ class RegisterController extends Controller
                 'tracking_date' => Carbon::now(),
                 'comission' => $comission,
                 'use_bank_accounts' => false,
-                'sector_id' => $sector
+                'sector_id' => $sector,
+                'validated' => $validated
             ]);
 
             $mensaje = 'El registro se realizó de manera exitosa.';
