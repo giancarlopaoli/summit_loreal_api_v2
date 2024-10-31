@@ -559,7 +559,7 @@ class WsCorfidController extends Controller
 
         $params = array(
             "tpers01" => ($client->type == 'Cliente') ? "2" : "3",
-            "tdocu01" => ($client->document_type_id == 1) ? '6' : null,
+            "tdocu01" => ($client->document_type_id == 1) ? '6' : ($client->document_type_id == 12 ? 10 : null),
             "ndocu01" => $client->document_number,
             "rsoci01" => $client->name,
             "idact01" => (!is_null($client->economic_activity_id)) ? $client->economic_activity->code : null,
