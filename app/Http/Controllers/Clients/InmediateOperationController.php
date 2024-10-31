@@ -1125,7 +1125,7 @@ class InmediateOperationController extends Controller
         ]);
 
         if($matched_operation){
-            try {
+            //try {
                 // If Escrow Account is used
                 if($operation->use_escrow_account == 1){
                     foreach ($operation->bank_accounts as $bank_account_data) {
@@ -1135,7 +1135,6 @@ class InmediateOperationController extends Controller
 
                                 if($bank_account_data->id == $vendor_escrow_account['id'] && $bank_account_data->pivot->amount*1.0 == $vendor_escrow_account['amount']){
                                     $escrow_account = EscrowAccount::find($vendor_escrow_account['vendor_escrow_account_id']);
-
                                 }
                             }
                         }
@@ -1152,12 +1151,16 @@ class InmediateOperationController extends Controller
                                 ->where('escrow_account_id', $escrow_account->id)
                                 ->get();
 
-                            
+                                // Buscando si ya existe una cuenta de fideicomiso en el mismo banco
+                                //si existe se le suma el nuevo monto para no volver a crear otra cuenta de fideicomiso del mismo banco
                                 if($matched_operation_escrow_accounts->count() > 0){
                                     
                                     DB::table('escrow_account_operation')->where('id', $matched_operation_escrow_accounts->first()->id)
                                         ->update([
                                             'amount' => $matched_operation_escrow_accounts->first()->amount + $bank_account_data->pivot->amount + $bank_account_data->pivot->comission_amount]);
+
+                                    $bank_account_data->escrow_account_operation_id = $matched_operation_escrow_accounts->first()->id;
+                                    $bank_account_data->escrow_account_operation_id->save();
                                 }
                                 else{
                                     $matched_operation->escrow_accounts()->attach($escrow_account->id, [
@@ -1165,7 +1168,19 @@ class InmediateOperationController extends Controller
                                         'comission_amount' => 0,
                                         'created_at' => Carbon::now()
                                     ]);
+
+                                    $matched_operation_insert = $matched_operation->fresh();
+                                    $matched_operation_insert_id = $matched_operation->escrow_accounts->keyBy('escrow_account')->get($escrow_account->id);
+
+                                    return response()->json([
+                                        'success' => 'test insert',
+                                        'errors' => [
+                                            $matched_operation_insert_id
+                                        ]
+                                    ], 404);
                                 }
+
+
                         }
                         else{
                             return response()->json([
@@ -1253,11 +1268,11 @@ class InmediateOperationController extends Controller
 
                     }
                 }
-            } catch (\Exception $e) {
+            /*} catch (\Exception $e) {
                 logger('ERROR: archivo adjunto: match_operation_vendor@InmediateOperationController', ["error" => $e]);
 
                 // Envio de correo de notificación de error
-            }
+            }*/
 
             $operations_matches = $operation->matches()->attach($matched_operation->id, ['created_at' => Carbon::now()]);
 
