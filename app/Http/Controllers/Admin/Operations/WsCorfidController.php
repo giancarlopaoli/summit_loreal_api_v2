@@ -7,9 +7,11 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use App\Models\Client;
 use App\Models\Operation;
+use App\Models\EscrowAccount;
 use App\Models\OperationDocument;
 use App\Models\Representative;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
 
@@ -147,7 +149,7 @@ class WsCorfidController extends Controller
 
             $banco_pago_al_cliente = null;
 
-            if($operation->matches[0]->escrow_accounts->count() == 1){
+            /*if($operation->matches[0]->escrow_accounts->count() == 1){
                 $banco_pago_al_cliente = $operation->matches[0]->escrow_accounts[0]->corfid_id;
             }
             else{
@@ -158,6 +160,13 @@ class WsCorfidController extends Controller
                         break;
                     }
                 }
+            }*/
+
+            $escrow_account_operation = DB::table('escrow_account_operation')
+                ->where('id', $value->pivot->escrow_account_operation_id);
+
+            if($escrow_account_operation->count() == 1){
+                $banco_pago_al_cliente = EscrowAccount::where('id', $escrow_account_operation->first()->escrow_account_id)->first()->corfid_id;
             }
 
             $retribution = array(
@@ -301,7 +310,7 @@ class WsCorfidController extends Controller
 
             $banco_pago_al_cliente = null;
 
-            if($operation->escrow_accounts->count() == 1){
+            /*if($operation->escrow_accounts->count() == 1){
                 $banco_pago_al_cliente = $operation->escrow_accounts[0]->corfid_id;
             }
             else{
@@ -312,6 +321,13 @@ class WsCorfidController extends Controller
                         break;
                     }
                 }
+            }*/
+
+            $escrow_account_operation = DB::table('escrow_account_operation')
+                ->where('id', $value->pivot->escrow_account_operation_id);
+
+            if($escrow_account_operation->count() == 1){
+                $banco_pago_al_cliente = EscrowAccount::where('id', $escrow_account_operation->first()->escrow_account_id)->first()->corfid_id;
             }
 
             $retribution = array(
@@ -442,7 +458,14 @@ class WsCorfidController extends Controller
 
             $banco_pago_al_cliente = null;
 
-            if($operation->matches[0]->escrow_accounts->count() == 1){
+            $escrow_account_operation = DB::table('escrow_account_operation')
+                ->where('id', $value->pivot->escrow_account_operation_id);
+
+            if($escrow_account_operation->count() == 1){
+                $banco_pago_al_cliente = EscrowAccount::where('id', $escrow_account_operation->first()->escrow_account_id)->first()->corfid_id;
+            }
+
+            /*if($operation->matches[0]->escrow_accounts->count() == 1){
                 $banco_pago_al_cliente = $operation->matches[0]->escrow_accounts[0]->corfid_id;
             }
             else{
@@ -453,7 +476,7 @@ class WsCorfidController extends Controller
                         break;
                     }
                 }
-            }
+            }*/
 
             $retribution = array(
                 "tmret01" => ($operation->type == 'Compra') ? 2 : ($operation->type == 'Venta' ? 1 : $operation->currency_id),
@@ -818,7 +841,7 @@ class WsCorfidController extends Controller
 
                 $banco_pago_al_cliente = null;
                 try{
-                    if($operation->matches[0]->escrow_accounts->count() == 1){
+                    /*if($operation->matches[0]->escrow_accounts->count() == 1){
                         $banco_pago_al_cliente = $operation->matches[0]->escrow_accounts[0]->corfid_id;
                     }
                     else{
@@ -829,6 +852,13 @@ class WsCorfidController extends Controller
                                 break;
                             }
                         }
+                    }*/
+
+                    $escrow_account_operation = DB::table('escrow_account_operation')
+                        ->where('id', $value->pivot->escrow_account_operation_id);
+
+                    if($escrow_account_operation->count() == 1){
+                        $banco_pago_al_cliente = EscrowAccount::where('id', $escrow_account_operation->first()->escrow_account_id)->first()->corfid_id;
                     }
 
                     $retribution = array(

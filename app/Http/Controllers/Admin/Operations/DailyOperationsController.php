@@ -115,18 +115,12 @@ class DailyOperationsController extends Controller
             ->whereIn('operation_status_id', OperationStatus::wherein('name', ['Disponible'])->get()->pluck('id'))
             ->whereRaw("date(operation_date) = '$date'")
             ->with('client:id,name,last_name,mothers_name,customer_type,type,document_type_id,document_number')
-            ->with('client.document_type:id,name')
+            ->with('client:id,name,last_name,mothers_name,customer_type,type,document_type_id,document_number','client.document_type:id,name','client.executive.user:id,name,last_name')
             ->with('currency:id,name:sign')
             ->with('status:id,name')
-            ->with('bank_accounts:id,bank_id,currency_id,account_number,cci_number')
-            ->with('bank_accounts.currency:id,name,sign')
-            ->with('bank_accounts.bank:id,name,shortname,image')
-            ->with('escrow_accounts:id,bank_id,currency_id,account_number,cci_number')
-            ->with('escrow_accounts.currency:id,name,sign')
-            ->with('escrow_accounts.bank:id,name,shortname,image')
-            ->with('vendor_bank_accounts:id,bank_id,currency_id,client_id,account_number,cci_number')
-            ->with('vendor_bank_accounts.currency:id,name,sign')
-            ->with('vendor_bank_accounts.bank:id,name,shortname,image')
+            ->with('bank_accounts:id,bank_id,currency_id,account_number,cci_number','bank_accounts.currency:id,name,sign','bank_accounts.bank:id,name,shortname,image')
+            ->with('escrow_accounts:id,bank_id,currency_id,account_number,cci_number','escrow_accounts.currency:id,name,sign','escrow_accounts.bank:id,name,shortname,image')
+            ->with('vendor_bank_accounts:id,bank_id,currency_id,client_id,account_number,cci_number','vendor_bank_accounts.bank:id,name,shortname,image')
             ->with('documents:id,operation_id,type')
             ->get();
 
@@ -150,21 +144,42 @@ class DailyOperationsController extends Controller
                 ->selectRaw("if(type = 'Interbancaria', round(amount/exchange_rate*(exchange_rate+spread/10000), 2) - amount , null ) as financial_expenses")
                 ->with('operations_analyst.user:id,name,last_name')
                 ->with('status:id,name')
-                ->with('client:id,name,last_name,mothers_name,customer_type,type,document_type_id,document_number')
-                ->with('client.document_type:id,name')
-                ->with('client.executive.user:id,name,last_name')
+                ->with('client:id,name,last_name,mothers_name,customer_type,type,document_type_id,document_number','client.document_type:id,name','client.executive.user:id,name,last_name')
                 ->with('currency:id,name:sign')
-                ->with('bank_accounts:id,bank_id,currency_id,account_number,cci_number')
-                ->with('bank_accounts.bank:id,name,shortname,image')
-                ->with('bank_accounts.currency:id,name,sign')
-                ->with('escrow_accounts:id,bank_id,currency_id,account_number,cci_number')
-                ->with('escrow_accounts.currency:id,name,sign')
-                ->with('escrow_accounts.bank:id,name,shortname,image')
-                ->with('vendor_bank_accounts:id,bank_id,currency_id,client_id,account_number,cci_number')
-                ->with('vendor_bank_accounts.currency:id,name,sign')
-                ->with('vendor_bank_accounts.bank:id,name,shortname,image')
+                ->with('bank_accounts:id,bank_id,currency_id,account_number,cci_number','bank_accounts.bank:id,name,shortname,image','bank_accounts.currency:id,name,sign')
+                ->with('escrow_accounts:id,bank_id,currency_id,account_number,cci_number','escrow_accounts.currency:id,name,sign','escrow_accounts.bank:id,name,shortname,image')
+                ->with('vendor_bank_accounts:id,bank_id,currency_id,client_id,account_number,cci_number','vendor_bank_accounts.currency:id,name,sign','vendor_bank_accounts.bank:id,name,shortname,image')
                 ->with('documents:id,operation_id,type')
                 ->first();
+
+            $item->created_operation->escrow_account_operation = DB::table('escrow_account_operation')->where('operation_id', $item->matched_id)->get();
+
+            $item->created_operation->time = Operation::select('operations.id','operations.code','operations.operation_date','operations.sign_date')
+            ->where('operations.id', $item->operation_id)
+            ->join('clients', 'clients.id', '=','operations.client_id')
+            ->join('operation_matches', 'operation_matches.operation_id', '=', 'operations.id')
+            ->join('operations as op2', 'op2.id', '=', 'operation_matches.matched_id')
+            ->selectRaw("TIMESTAMPDIFF(MINUTE,(select od.created_at from operation_documents od where od.operation_id = operations.id and od.type = 'Comprobante' order by id limit 1 ),operations.deposit_date) as total_time")
+            ->selectRaw("if(operations.operation_status_id = 2 && (select od.created_at from operation_documents od where od.operation_id = operations.id and od.type = 'Comprobante' order by id limit 1) is null,
+                TIMESTAMPDIFF(MINUTE,operations.operation_date,now()),
+                if(operations.operation_status_id = 2 && (select od.created_at from operation_documents od where od.operation_id = operations.id and od.type = 'Comprobante' order by id limit 1) is not null,
+                TIMESTAMPDIFF(MINUTE,(select od.created_at from operation_documents od where od.operation_id = operations.id and od.type = 'Comprobante' order by id limit 1 ),now()),
+                if(operations.operation_status_id=3 && (op2.sign_date is null),
+                TIMESTAMPDIFF(MINUTE,operations.funds_confirmation_date,now()),
+                if(operations.operation_status_id = 3 && (op2.sign_date is not null),
+                TIMESTAMPDIFF(MINUTE,op2.sign_date,now()),
+                if(operations.operation_status_id = 4 && op2.operation_status_id = 5,
+                TIMESTAMPDIFF(MINUTE,op2.deposit_date,now()),
+                if(operations.operation_status_id = 4 && op2.operation_status_id = 7 && (operations.sign_date is null),
+                TIMESTAMPDIFF(MINUTE,op2.funds_confirmation_date,now()),
+                if(operations.operation_status_id = 4 && op2.operation_status_id = 7 && (operations.sign_date is not null),
+                TIMESTAMPDIFF(MINUTE,operations.sign_date,now()),
+
+                if((operations.operation_status_id in (6,7,8)) && (op2.operation_status_id in (6,7,8)),
+                TIMESTAMPDIFF(MINUTE,(select od.created_at from operation_documents od where od.operation_id = operations.id and od.type = 'Comprobante' order by id limit 1 ),operations.deposit_date),
+
+
+                0)))))))) as currenttime")->first();
 
             $item->matched_operation = Operation::where('id',$item->matched_id)
                 ->select('operations.id','code','class','type','client_id','user_id','use_escrow_account','amount','currency_id','exchange_rate','comission_spread','comission_amount','igv','spread','operation_status_id','post','operation_date','funds_confirmation_date', 'sign_date', 'mail_instructions', 'invoice_url','unaffected_invoice_url','operations_analyst_id','corfid_id','corfid_message')
@@ -174,19 +189,11 @@ class DailyOperationsController extends Controller
                 ->selectRaw("if(type = 'Interbancaria', round(amount/exchange_rate*(exchange_rate+spread/10000), 2) - amount , null ) as financial_expenses")
                 ->with('operations_analyst.user:id,name,last_name')
                 ->with('status:id,name')
-                ->with('client:id,name,last_name,mothers_name,customer_type,type,document_type_id,document_number')
-                ->with('client.document_type:id,name')
-                ->with('client.executive.user:id,name,last_name')
+                ->with('client:id,name,last_name,mothers_name,customer_type,type,document_type_id,document_number','client.document_type:id,name','client.executive.user:id,name,last_name')
                 ->with('currency:id,name:sign')
-                ->with('bank_accounts:id,bank_id,currency_id,account_number,cci_number')
-                ->with('bank_accounts.currency:id,name,sign')
-                ->with('bank_accounts.bank:id,name,shortname,image')
-                ->with('escrow_accounts:id,bank_id,currency_id,account_number,cci_number')
-                ->with('escrow_accounts.currency:id,name,sign')
-                ->with('escrow_accounts.bank:id,name,shortname,image')
-                ->with('vendor_bank_accounts:id,bank_id,currency_id,client_id,account_number,cci_number')
-                ->with('vendor_bank_accounts.currency:id,name,sign')
-                ->with('vendor_bank_accounts.bank:id,name,shortname,image')
+                ->with('bank_accounts:id,bank_id,currency_id,account_number,cci_number','bank_accounts.currency:id,name,sign','bank_accounts.bank:id,name,shortname,image')
+                ->with('escrow_accounts:id,bank_id,currency_id,account_number,cci_number','escrow_accounts.currency:id,name,sign','escrow_accounts.bank:id,name,shortname,image')
+                ->with('vendor_bank_accounts:id,bank_id,currency_id,client_id,account_number,cci_number','vendor_bank_accounts.bank:id,name,shortname,image')
                 ->with('documents:id,operation_id,type')
                 ->first();
         });
