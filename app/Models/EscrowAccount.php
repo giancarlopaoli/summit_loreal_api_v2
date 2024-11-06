@@ -26,6 +26,6 @@ class EscrowAccount extends Model
     }
 
     public function operations() {
-        return $this->belongsToMany(Operation::class)->withPivot("amount", "comission_amount");
+        return $this->belongsToMany(Operation::class)->withPivot("amount", "comission_amount","transfer_number","voucher_id","deposit_at");
     }
 }

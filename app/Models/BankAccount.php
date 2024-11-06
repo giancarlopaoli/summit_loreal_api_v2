@@ -31,7 +31,7 @@ class BankAccount extends Model
     }
 
     public function operations() {
-        return $this->belongsToMany(Operation::class)->withPivot("amount", "comission_amount","transfer_number","voucher_id","signed_at");
+        return $this->belongsToMany(Operation::class)->withPivot("amount", "comission_amount","transfer_number","voucher_id","signed_at","escrow_account_operation_id","deposit_at");
     }
 
     public function vendor_operations() {

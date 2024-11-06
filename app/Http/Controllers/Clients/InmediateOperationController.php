@@ -1146,6 +1146,11 @@ class InmediateOperationController extends Controller
 
                         if(!is_null($escrow_account)){
 
+                            // Obteniendo el bank accont operation de la op creadora para poder actualizar la cuenta de fideicomiso de donde saldrán los fondos
+                            $bank_account_operation = DB::table('bank_account_operation')
+                                ->where('operation_id', $operation->id)
+                                ->where('bank_account_id', $bank_account_data->id);
+
                             $matched_operation_escrow_accounts = DB::table('escrow_account_operation')
                                 ->where('operation_id', $matched_operation->id)
                                 ->where('escrow_account_id', $escrow_account->id)
@@ -1158,9 +1163,6 @@ class InmediateOperationController extends Controller
                                     DB::table('escrow_account_operation')->where('id', $matched_operation_escrow_accounts->first()->id)
                                         ->update([
                                             'amount' => $matched_operation_escrow_accounts->first()->amount + $bank_account_data->pivot->amount + $bank_account_data->pivot->comission_amount]);
-
-                                    $bank_account_data->escrow_account_operation_id = $matched_operation_escrow_accounts->first()->id;
-                                    $bank_account_data->escrow_account_operation_id->save();
                                 }
                                 else{
                                     $matched_operation->escrow_accounts()->attach($escrow_account->id, [
@@ -1168,19 +1170,17 @@ class InmediateOperationController extends Controller
                                         'comission_amount' => 0,
                                         'created_at' => Carbon::now()
                                     ]);
-
-                                    $matched_operation_insert = $matched_operation->fresh();
-                                    $matched_operation_insert_id = $matched_operation->escrow_accounts->keyBy('escrow_account')->get($escrow_account->id);
-
-                                    return response()->json([
-                                        'success' => 'test insert',
-                                        'errors' => [
-                                            $matched_operation_insert_id
-                                        ]
-                                    ], 404);
                                 }
 
+                                // Actualizando escrow_account_operation_id en tabla bank_account_operation para saber de donde salndrán los fondos
+                                $matched_operation_insert = DB::table('escrow_account_operation')
+                                    ->where('operation_id', $matched_operation->id)
+                                    ->where('escrow_account_id', $escrow_account->id)
+                                    ->first();
 
+                                $bank_account_operation->update([
+                                    'escrow_account_operation_id' => $matched_operation_insert->id
+                                ]);
                         }
                         else{
                             return response()->json([
@@ -1199,10 +1199,15 @@ class InmediateOperationController extends Controller
                             ->where('currency_id', $escrow_account_data->currency_id)
                             ->first();
 
+                        $escrow_account_operation = DB::table('escrow_account_operation')
+                                ->where('operation_id', $operation->id)
+                                ->where('escrow_account_id', $escrow_account_data->id);
+
                         if(!is_null($bank_account)){
                             $matched_operation->bank_accounts()->attach($bank_account->id, [
                                 'amount' => $escrow_account_data->pivot->amount - $escrow_account_data->pivot->comission_amount,
                                 'comission_amount' => 0,
+                                'escrow_account_operation_id' => ($escrow_account_operation->get()->count() > 0 ) ? $escrow_account_operation->first()->id : null,
                                 'created_at' => Carbon::now()
                             ]);
                         }

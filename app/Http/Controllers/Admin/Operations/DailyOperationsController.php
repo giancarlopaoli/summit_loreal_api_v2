@@ -229,14 +229,14 @@ class DailyOperationsController extends Controller
             ->where("operation_id", $operation->id)
             ->get();
 
-        if($operation_match->count() > 0) {
+        /*if($operation_match->count() > 0) {
             return response()->json([
                 'success' => false,
                 'errors' => [
                     'La operación ya se encuentra emparejada'
                 ]
             ]);
-        }
+        }*/
 
         ######### Creating vendor operation #############
 
@@ -320,6 +320,21 @@ class DailyOperationsController extends Controller
                         ], 404);
                     }
                 }
+
+                // Obteniendo el bank accont operation de la op creadora para poder actualizar la cuenta de fideicomiso de donde saldrán los fondos
+                $bank_account_operation = DB::table('bank_account_operation')
+                    ->where('operation_id', $operation->id)
+                    ->where('bank_account_id', $bank_account_data->id);
+
+                // Actualizando escrow_account_operation_id en tabla bank_account_operation para saber de donde salndrán los fondos
+                $matched_operation_insert = DB::table('escrow_account_operation')
+                    ->where('operation_id', $matched_operation->id)
+                    ->where('escrow_account_id', $escrow_account->id)
+                    ->first();
+
+                $bank_account_operation->update([
+                    'escrow_account_operation_id' => $matched_operation_insert->id
+                ]);
             }
 
             foreach ($operation->escrow_accounts as $escrow_account_data) {
@@ -329,10 +344,15 @@ class DailyOperationsController extends Controller
                     ->where('currency_id', $escrow_account_data->currency_id)
                     ->first();
 
+                $escrow_account_operation = DB::table('escrow_account_operation')
+                                ->where('operation_id', $operation->id)
+                                ->where('escrow_account_id', $escrow_account_data->id);
+
                 if(!is_null($bank_account)){
                     $matched_operation->bank_accounts()->attach($bank_account->id, [
                         'amount' => $escrow_account_data->pivot->amount - $escrow_account_data->pivot->comission_amount,
                         'comission_amount' => 0,
+                        'escrow_account_operation_id' => ($escrow_account_operation->get()->count() > 0 ) ? $escrow_account_operation->first()->id : null,
                         'created_at' => Carbon::now()
                     ]);
                 }
@@ -894,14 +914,18 @@ class DailyOperationsController extends Controller
         if($operation->matches->count() > 0 && $operation->use_escrow_account == 1) { // Si es operación creadora
             $bank_account = DB::table('bank_account_operation')
             ->where('operation_id', $operation->id)
-            ->where('signed_at', null)
-            ->get();
+            ->where('deposit_at', null);
 
-            if($bank_account->count() > 0){
+            if($bank_account->get()->count() == 1){
+                $bank_account->update([
+                    "deposit_at" => Carbon::now()
+                ]);
+            }
+            elseif($bank_account->get()->count() > 1){
                 return response()->json([
                     'success' => false,
                     'errors' => [
-                        'Aún no se envían todas las firmas para todas las cuentas del cliente'
+                        'Aún no se confirma el depósito de todas las cuentas del cliente'
                     ]
                 ]);
             }
@@ -1465,19 +1489,17 @@ class DailyOperationsController extends Controller
                 ->where('bank_account_id', $request->bank_account_id)
                 ->where('operation_id', $operation->id);
 
-            // calculando el monto que se ha confirmado en las cuentas de fideicomiso
-            $matches_operation_id = $operation->matches[0]->id;
-            
+            // calculando el monto que se ha confirmado en las cuentas de fideicomiso        
             $confirmed_amount = DB::table('escrow_account_operation')
                 ->selectRaw('sum(amount - comission_amount) as confirmed_amount')
-                ->where('operation_id', $matches_operation_id)
-                ->where('transfer_number', 1)
+                ->where('id', $bank_account->first()->escrow_account_operation_id)
+                ->where('deposit_at', '!=', null)
                 ->first()->confirmed_amount;
 
             $sent_amount = DB::table('bank_account_operation')
                 ->selectRaw('coalesce(sum(amount - comission_amount),0) as sent_amount')
                 ->where('operation_id', $operation->id)
-                ->where('bank_account_id', '!=', $request->bank_account_id)
+                ->where('escrow_account_operation_id', $bank_account->first()->escrow_account_operation_id)
                 ->where('signed_at', '!=', null)
                 ->first()->sent_amount;
 
@@ -1565,7 +1587,7 @@ class DailyOperationsController extends Controller
             ]);
         }
 
-        if($escrow_account->first()->transfer_number != null){
+        if($escrow_account->first()->deposit_at != null){
             return response()->json([
                 'success' => false,
                 'errors' => [
@@ -1574,7 +1596,7 @@ class DailyOperationsController extends Controller
             ]);
         }
         else{
-            $escrow_account->update(['transfer_number' => 1]);
+            $escrow_account->update(['deposit_at' => Carbon::now()]);
         }
 
         OperationHistory::create(["operation_id" => $operation->id,"user_id" => auth()->id(),"action" => "Fondos PL confirmados"]);
@@ -1583,6 +1605,75 @@ class DailyOperationsController extends Controller
             'success' => true,
             'data' => [
                 'operation' => $escrow_account->get()
+            ]
+        ]);
+    }
+    
+    public function confirm_deposit(Request $request, Operation $operation) {
+        $val = Validator::make($request->all(), [
+            'bank_account_operation_id' => 'required|exists:bank_account_operation,id',
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+
+        if( $operation->operation_status_id != OperationStatus::where('name', 'Contravalor recaudado')->first()->id){
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'La operación debe encontrarse en estado Contravalor recaudado.'
+                ]
+            ]);
+        }
+
+        $bank_account_operation = DB::table('bank_account_operation')
+            ->where('bank_account_operation.id', $request->bank_account_operation_id)
+            ->where('bank_account_operation.operation_id', $operation->id);
+
+
+        /*return response()->json([
+            'success' => 'test',
+            'data' => [
+                $bank_account_operation->join('bank_accounts as ba', 'ba.id','=','bank_account_operation.bank_account_id')->join('banks as bk', 'bk.id','=','ba.bank_id')->join('currencies as cu','cu.id','=','ba.currency_id')->first()
+            ]
+        ]);*/
+
+
+        if(is_null($bank_account_operation->first())){
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'Error en número de operación',
+                ]
+            ]);
+        }
+
+        if($bank_account_operation->first()->deposit_at != null){
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'El depósito ya había sido confirmado',
+                ]
+            ]);
+        }
+        else{
+            $bank_account_operation->update(['deposit_at' => Carbon::now()]);
+        }
+
+        OperationHistory::create(["operation_id" => $operation->id, "user_id" => auth()->id(),"action" => "Confirmación de depósito a cliente"]);
+
+        // Notificación Telegram
+        try {
+            $request->operation_id = $operation->id;
+            $consult = new TelegramNotificationsControllers();
+            $notification = $consult->confirm_deposit_notification($request)->getData();
+        } catch (\Exception $e) {
+            logger('ERROR: envío Notificación Telegram: DailyOperationsController@confirm_deposit', ["error" => $e]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'operation' => $bank_account_operation->get()
             ]
         ]);
     }
@@ -1608,7 +1699,7 @@ class DailyOperationsController extends Controller
 
                 $escrow_account = DB::table('escrow_account_operation')
                     ->where('operation_id', $operation->id)
-                    ->where('transfer_number', null)
+                    ->where('deposit_at', null)
                     ->get();
 
                 // Se valida que se haya confirmado el depósito de todas
@@ -1625,7 +1716,7 @@ class DailyOperationsController extends Controller
             else{
                 $escrow_accounts = DB::table('escrow_account_operation')
                 ->where('operation_id', $operation->id)
-                ->update(['transfer_number' => 1]);
+                ->update(['deposit_at' => Carbon::now()]);
             }
 
             $operation->operation_status_id = OperationStatus::where('name', 'Finalizado sin factura')->first()->id;
