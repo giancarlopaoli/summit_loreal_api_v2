@@ -159,7 +159,7 @@ class DailyOperationsController extends Controller
             ->join('clients', 'clients.id', '=','operations.client_id')
             ->join('operation_matches', 'operation_matches.operation_id', '=', 'operations.id')
             ->join('operations as op2', 'op2.id', '=', 'operation_matches.matched_id')
-            ->selectRaw("TIMESTAMPDIFF(MINUTE,(select od.created_at from operation_documents od where od.operation_id = operations.id and od.type = 'Comprobante' order by id limit 1 ),operations.deposit_date) as total_time")
+            ->selectRaw("coalesce(TIMESTAMPDIFF(MINUTE,(select od.created_at from operation_documents od where od.operation_id = operations.id and od.type = 'Comprobante' order by id limit 1 ),operations.deposit_date),TIMESTAMPDIFF(MINUTE,(select od.created_at from operation_documents od where od.operation_id = operations.id and od.type = 'Comprobante' order by id limit 1 ),now())) as total_time")
             ->selectRaw("if(operations.operation_status_id = 2 && (select od.created_at from operation_documents od where od.operation_id = operations.id and od.type = 'Comprobante' order by id limit 1) is null,
                 TIMESTAMPDIFF(MINUTE,operations.operation_date,now()),
                 if(operations.operation_status_id = 2 && (select od.created_at from operation_documents od where od.operation_id = operations.id and od.type = 'Comprobante' order by id limit 1) is not null,
