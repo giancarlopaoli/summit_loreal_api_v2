@@ -1077,6 +1077,7 @@ class DailyOperationsController extends Controller
                         $operation->invoice_serie = $rpta_json->serie;
                         $operation->invoice_number = $rpta_json->numero;
                         $operation->invoice_url = $rpta_json->enlace;
+                        $operation->invoice_date = Carbon::now();
                         $operation->operation_status_id = OperationStatus::where('name', 'Facturado')->first()->id;
                         if(is_null($operation->deposit_date)){
                             $operation->deposit_date = Carbon::now();
