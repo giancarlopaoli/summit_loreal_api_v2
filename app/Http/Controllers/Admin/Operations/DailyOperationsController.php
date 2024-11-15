@@ -1605,6 +1605,20 @@ class DailyOperationsController extends Controller
         }
         else{
             $escrow_account->update(['deposit_at' => Carbon::now()]);
+
+            if(is_null($operation->funds_confirmation_date)){
+                $operation->funds_confirmation_date = Carbon::now();
+                $operation->save();
+            }
+
+            $escrow_accounts_pending = DB::table('escrow_account_operation')
+                ->where('operation_id', $operation->id)
+                ->where('deposit_at', null)
+                ->get();
+
+            if($escrow_accounts_pending->count() == 0){
+                $close = DailyOperationsController::close_operation($request, $operation);
+            }
         }
 
         OperationHistory::create(["operation_id" => $operation->id,"user_id" => auth()->id(),"action" => "Fondos PL confirmados"]);
@@ -1637,15 +1651,6 @@ class DailyOperationsController extends Controller
             ->where('bank_account_operation.id', $request->bank_account_operation_id)
             ->where('bank_account_operation.operation_id', $operation->id);
 
-
-        /*return response()->json([
-            'success' => 'test',
-            'data' => [
-                $bank_account_operation->join('bank_accounts as ba', 'ba.id','=','bank_account_operation.bank_account_id')->join('banks as bk', 'bk.id','=','ba.bank_id')->join('currencies as cu','cu.id','=','ba.currency_id')->first()
-            ]
-        ]);*/
-
-
         if(is_null($bank_account_operation->first())){
             return response()->json([
                 'success' => false,
@@ -1660,6 +1665,14 @@ class DailyOperationsController extends Controller
                 'success' => false,
                 'errors' => [
                     'El depósito ya había sido confirmado',
+                ]
+            ]);
+        }
+        elseif($bank_account_operation->first()->signed_at == null){
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'Aún no se envía la firma correspondiente',
                 ]
             ]);
         }
@@ -1700,30 +1713,23 @@ class DailyOperationsController extends Controller
 
             $escrow_accounts = DB::table('escrow_account_operation')
                 ->where('operation_id', $operation->id)
+                ->where('deposit_at', null)
                 ->get();
 
-            // Si hay más de una cuenta de fideicomiso a depositar
+            // Si hay más de una cuenta de fideicomiso pendiente de confirmación de deposito
             if($escrow_accounts->count() > 1 ){
 
-                $escrow_account = DB::table('escrow_account_operation')
-                    ->where('operation_id', $operation->id)
-                    ->where('deposit_at', null)
-                    ->get();
-
-                // Se valida que se haya confirmado el depósito de todas
-                if($escrow_account->count() > 0 ){
-
-                    return response()->json([
+                return response()->json([
                         'success' => false,
                         'errors' => [
                             'No se han confirmado el depósito de todas las cuentas'
                         ]
                     ]);
-                }
             }
             else{
                 $escrow_accounts = DB::table('escrow_account_operation')
                 ->where('operation_id', $operation->id)
+                ->where('deposit_at', null)
                 ->update(['deposit_at' => Carbon::now()]);
             }
 
