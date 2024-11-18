@@ -117,9 +117,9 @@ class DailyOperationsController extends Controller
             ->with('client:id,name,last_name,mothers_name,customer_type,type,document_type_id,document_number,executive_id','client.document_type:id,name','client.executive.user:id,name,last_name')
             ->with('currency:id,name:sign')
             ->with('status:id,name')
-            ->with('bank_accounts:id,bank_id,currency_id,account_number,cci_number','bank_accounts.currency:id,name,sign','bank_accounts.bank:id,name,shortname,image')
+            ->with('bank_accounts:id,bank_id,currency_id,account_number,cci_number,account_type_id','bank_accounts.currency:id,name,sign','bank_accounts.bank:id,name,shortname,image')
             ->with('escrow_accounts:id,bank_id,currency_id,account_number,cci_number','escrow_accounts.currency:id,name,sign','escrow_accounts.bank:id,name,shortname,image')
-            ->with('vendor_bank_accounts:id,bank_id,currency_id,client_id,account_number,cci_number','vendor_bank_accounts.bank:id,name,shortname,image')
+            ->with('vendor_bank_accounts:id,bank_id,currency_id,client_id,account_number,cci_number,account_type_id','vendor_bank_accounts.bank:id,name,shortname,image')
             ->with('documents:id,operation_id,type')
             ->get();
 
@@ -145,9 +145,9 @@ class DailyOperationsController extends Controller
                 ->with('status:id,name')
                 ->with('client:id,name,last_name,mothers_name,customer_type,type,document_type_id,document_number,executive_id','client.document_type:id,name','client.executive.user:id,name,last_name')
                 ->with('currency:id,name:sign')
-                ->with('bank_accounts:id,bank_id,currency_id,account_number,cci_number','bank_accounts.bank:id,name,shortname,image','bank_accounts.currency:id,name,sign')
+                ->with('bank_accounts:id,bank_id,currency_id,account_number,cci_number,account_type_id','bank_accounts.bank:id,name,shortname,image','bank_accounts.currency:id,name,sign')
                 ->with('escrow_accounts:id,bank_id,currency_id,account_number,cci_number','escrow_accounts.currency:id,name,sign','escrow_accounts.bank:id,name,shortname,image')
-                ->with('vendor_bank_accounts:id,bank_id,currency_id,client_id,account_number,cci_number','vendor_bank_accounts.currency:id,name,sign','vendor_bank_accounts.bank:id,name,shortname,image')
+                ->with('vendor_bank_accounts:id,bank_id,currency_id,client_id,account_number,cci_number,account_type_id','vendor_bank_accounts.currency:id,name,sign','vendor_bank_accounts.bank:id,name,shortname,image')
                 ->with('documents:id,operation_id,type')
                 ->first();
 
@@ -190,9 +190,9 @@ class DailyOperationsController extends Controller
                 ->with('status:id,name')
                 ->with('client:id,name,last_name,mothers_name,customer_type,type,document_type_id,document_number,executive_id','client.document_type:id,name','client.executive.user:id,name,last_name')
                 ->with('currency:id,name:sign')
-                ->with('bank_accounts:id,bank_id,currency_id,account_number,cci_number','bank_accounts.currency:id,name,sign','bank_accounts.bank:id,name,shortname,image')
+                ->with('bank_accounts:id,bank_id,currency_id,account_number,cci_number,account_type_id','bank_accounts.currency:id,name,sign','bank_accounts.bank:id,name,shortname,image')
                 ->with('escrow_accounts:id,bank_id,currency_id,account_number,cci_number','escrow_accounts.currency:id,name,sign','escrow_accounts.bank:id,name,shortname,image')
-                ->with('vendor_bank_accounts:id,bank_id,currency_id,client_id,account_number,cci_number','vendor_bank_accounts.bank:id,name,shortname,image')
+                ->with('vendor_bank_accounts:id,bank_id,currency_id,client_id,account_number,cci_number,account_type_id','vendor_bank_accounts.bank:id,name,shortname,image')
                 ->with('documents:id,operation_id,type')
                 ->first();
         });
