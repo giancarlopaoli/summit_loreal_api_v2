@@ -115,18 +115,12 @@ class DailyOperationsController extends Controller
             ->whereIn('operation_status_id', OperationStatus::wherein('name', ['Disponible'])->get()->pluck('id'))
             ->whereRaw("date(operation_date) = '$date'")
             ->with('client:id,name,last_name,mothers_name,customer_type,type,document_type_id,document_number')
-            ->with('client.document_type:id,name')
+            ->with('client:id,name,last_name,mothers_name,customer_type,type,document_type_id,document_number','client.document_type:id,name','client.executive.user:id,name,last_name')
             ->with('currency:id,name:sign')
             ->with('status:id,name')
-            ->with('bank_accounts:id,bank_id,currency_id,account_number,cci_number')
-            ->with('bank_accounts.currency:id,name,sign')
-            ->with('bank_accounts.bank:id,name,shortname,image')
-            ->with('escrow_accounts:id,bank_id,currency_id,account_number,cci_number')
-            ->with('escrow_accounts.currency:id,name,sign')
-            ->with('escrow_accounts.bank:id,name,shortname,image')
-            ->with('vendor_bank_accounts:id,bank_id,currency_id,client_id,account_number,cci_number')
-            ->with('vendor_bank_accounts.currency:id,name,sign')
-            ->with('vendor_bank_accounts.bank:id,name,shortname,image')
+            ->with('bank_accounts:id,bank_id,currency_id,account_number,cci_number','bank_accounts.currency:id,name,sign','bank_accounts.bank:id,name,shortname,image')
+            ->with('escrow_accounts:id,bank_id,currency_id,account_number,cci_number','escrow_accounts.currency:id,name,sign','escrow_accounts.bank:id,name,shortname,image')
+            ->with('vendor_bank_accounts:id,bank_id,currency_id,client_id,account_number,cci_number','vendor_bank_accounts.bank:id,name,shortname,image')
             ->with('documents:id,operation_id,type')
             ->get();
 
@@ -150,21 +144,42 @@ class DailyOperationsController extends Controller
                 ->selectRaw("if(type = 'Interbancaria', round(amount/exchange_rate*(exchange_rate+spread/10000), 2) - amount , null ) as financial_expenses")
                 ->with('operations_analyst.user:id,name,last_name')
                 ->with('status:id,name')
-                ->with('client:id,name,last_name,mothers_name,customer_type,type,document_type_id,document_number')
-                ->with('client.document_type:id,name')
-                ->with('client.executive.user:id,name,last_name')
+                ->with('client:id,name,last_name,mothers_name,customer_type,type,document_type_id,document_number','client.document_type:id,name','client.executive.user:id,name,last_name')
                 ->with('currency:id,name:sign')
-                ->with('bank_accounts:id,bank_id,currency_id,account_number,cci_number')
-                ->with('bank_accounts.bank:id,name,shortname,image')
-                ->with('bank_accounts.currency:id,name,sign')
-                ->with('escrow_accounts:id,bank_id,currency_id,account_number,cci_number')
-                ->with('escrow_accounts.currency:id,name,sign')
-                ->with('escrow_accounts.bank:id,name,shortname,image')
-                ->with('vendor_bank_accounts:id,bank_id,currency_id,client_id,account_number,cci_number')
-                ->with('vendor_bank_accounts.currency:id,name,sign')
-                ->with('vendor_bank_accounts.bank:id,name,shortname,image')
+                ->with('bank_accounts:id,bank_id,currency_id,account_number,cci_number','bank_accounts.bank:id,name,shortname,image','bank_accounts.currency:id,name,sign')
+                ->with('escrow_accounts:id,bank_id,currency_id,account_number,cci_number','escrow_accounts.currency:id,name,sign','escrow_accounts.bank:id,name,shortname,image')
+                ->with('vendor_bank_accounts:id,bank_id,currency_id,client_id,account_number,cci_number','vendor_bank_accounts.currency:id,name,sign','vendor_bank_accounts.bank:id,name,shortname,image')
                 ->with('documents:id,operation_id,type')
                 ->first();
+
+            $item->created_operation->escrow_account_operation = DB::table('escrow_account_operation')->where('operation_id', $item->matched_id)->get();
+
+            $item->created_operation->time = Operation::select('operations.id','operations.code','operations.operation_date','operations.sign_date')
+            ->where('operations.id', $item->operation_id)
+            ->join('clients', 'clients.id', '=','operations.client_id')
+            ->join('operation_matches', 'operation_matches.operation_id', '=', 'operations.id')
+            ->join('operations as op2', 'op2.id', '=', 'operation_matches.matched_id')
+            ->selectRaw("coalesce(TIMESTAMPDIFF(MINUTE,(select od.created_at from operation_documents od where od.operation_id = operations.id and od.type = 'Comprobante' order by id limit 1 ),operations.deposit_date),TIMESTAMPDIFF(MINUTE,(select od.created_at from operation_documents od where od.operation_id = operations.id and od.type = 'Comprobante' order by id limit 1 ),now())) as total_time")
+            ->selectRaw("if(operations.operation_status_id = 2 && (select od.created_at from operation_documents od where od.operation_id = operations.id and od.type = 'Comprobante' order by id limit 1) is null,
+                TIMESTAMPDIFF(MINUTE,operations.operation_date,now()),
+                if(operations.operation_status_id = 2 && (select od.created_at from operation_documents od where od.operation_id = operations.id and od.type = 'Comprobante' order by id limit 1) is not null,
+                TIMESTAMPDIFF(MINUTE,(select od.created_at from operation_documents od where od.operation_id = operations.id and od.type = 'Comprobante' order by id limit 1 ),now()),
+                if(operations.operation_status_id=3 && (op2.sign_date is null),
+                TIMESTAMPDIFF(MINUTE,operations.funds_confirmation_date,now()),
+                if(operations.operation_status_id = 3 && (op2.sign_date is not null),
+                TIMESTAMPDIFF(MINUTE,op2.sign_date,now()),
+                if(operations.operation_status_id = 4 && op2.operation_status_id = 5,
+                TIMESTAMPDIFF(MINUTE,op2.deposit_date,now()),
+                if(operations.operation_status_id = 4 && op2.operation_status_id = 7 && (operations.sign_date is null),
+                TIMESTAMPDIFF(MINUTE,op2.funds_confirmation_date,now()),
+                if(operations.operation_status_id = 4 && op2.operation_status_id = 7 && (operations.sign_date is not null),
+                TIMESTAMPDIFF(MINUTE,operations.sign_date,now()),
+
+                if((operations.operation_status_id in (6,7,8)) && (op2.operation_status_id in (6,7,8)),
+                TIMESTAMPDIFF(MINUTE,(select od.created_at from operation_documents od where od.operation_id = operations.id and od.type = 'Comprobante' order by id limit 1 ),operations.deposit_date),
+
+
+                0)))))))) as currenttime")->first();
 
             $item->matched_operation = Operation::where('id',$item->matched_id)
                 ->select('operations.id','code','class','type','client_id','user_id','use_escrow_account','amount','currency_id','exchange_rate','comission_spread','comission_amount','igv','spread','operation_status_id','post','operation_date','funds_confirmation_date', 'sign_date', 'mail_instructions', 'invoice_url','unaffected_invoice_url','operations_analyst_id','corfid_id','corfid_message')
@@ -174,19 +189,11 @@ class DailyOperationsController extends Controller
                 ->selectRaw("if(type = 'Interbancaria', round(amount/exchange_rate*(exchange_rate+spread/10000), 2) - amount , null ) as financial_expenses")
                 ->with('operations_analyst.user:id,name,last_name')
                 ->with('status:id,name')
-                ->with('client:id,name,last_name,mothers_name,customer_type,type,document_type_id,document_number')
-                ->with('client.document_type:id,name')
-                ->with('client.executive.user:id,name,last_name')
+                ->with('client:id,name,last_name,mothers_name,customer_type,type,document_type_id,document_number','client.document_type:id,name','client.executive.user:id,name,last_name')
                 ->with('currency:id,name:sign')
-                ->with('bank_accounts:id,bank_id,currency_id,account_number,cci_number')
-                ->with('bank_accounts.currency:id,name,sign')
-                ->with('bank_accounts.bank:id,name,shortname,image')
-                ->with('escrow_accounts:id,bank_id,currency_id,account_number,cci_number')
-                ->with('escrow_accounts.currency:id,name,sign')
-                ->with('escrow_accounts.bank:id,name,shortname,image')
-                ->with('vendor_bank_accounts:id,bank_id,currency_id,client_id,account_number,cci_number')
-                ->with('vendor_bank_accounts.currency:id,name,sign')
-                ->with('vendor_bank_accounts.bank:id,name,shortname,image')
+                ->with('bank_accounts:id,bank_id,currency_id,account_number,cci_number','bank_accounts.currency:id,name,sign','bank_accounts.bank:id,name,shortname,image')
+                ->with('escrow_accounts:id,bank_id,currency_id,account_number,cci_number','escrow_accounts.currency:id,name,sign','escrow_accounts.bank:id,name,shortname,image')
+                ->with('vendor_bank_accounts:id,bank_id,currency_id,client_id,account_number,cci_number','vendor_bank_accounts.bank:id,name,shortname,image')
                 ->with('documents:id,operation_id,type')
                 ->first();
         });
@@ -229,14 +236,14 @@ class DailyOperationsController extends Controller
             ->where("operation_id", $operation->id)
             ->get();
 
-        if($operation_match->count() > 0) {
+        /*if($operation_match->count() > 0) {
             return response()->json([
                 'success' => false,
                 'errors' => [
                     'La operación ya se encuentra emparejada'
                 ]
             ]);
-        }
+        }*/
 
         ######### Creating vendor operation #############
 
@@ -320,6 +327,21 @@ class DailyOperationsController extends Controller
                         ], 404);
                     }
                 }
+
+                // Obteniendo el bank accont operation de la op creadora para poder actualizar la cuenta de fideicomiso de donde saldrán los fondos
+                $bank_account_operation = DB::table('bank_account_operation')
+                    ->where('operation_id', $operation->id)
+                    ->where('bank_account_id', $bank_account_data->id);
+
+                // Actualizando escrow_account_operation_id en tabla bank_account_operation para saber de donde salndrán los fondos
+                $matched_operation_insert = DB::table('escrow_account_operation')
+                    ->where('operation_id', $matched_operation->id)
+                    ->where('escrow_account_id', $escrow_account->id)
+                    ->first();
+
+                $bank_account_operation->update([
+                    'escrow_account_operation_id' => $matched_operation_insert->id
+                ]);
             }
 
             foreach ($operation->escrow_accounts as $escrow_account_data) {
@@ -329,10 +351,15 @@ class DailyOperationsController extends Controller
                     ->where('currency_id', $escrow_account_data->currency_id)
                     ->first();
 
+                $escrow_account_operation = DB::table('escrow_account_operation')
+                                ->where('operation_id', $operation->id)
+                                ->where('escrow_account_id', $escrow_account_data->id);
+
                 if(!is_null($bank_account)){
                     $matched_operation->bank_accounts()->attach($bank_account->id, [
                         'amount' => $escrow_account_data->pivot->amount - $escrow_account_data->pivot->comission_amount,
                         'comission_amount' => 0,
+                        'escrow_account_operation_id' => ($escrow_account_operation->get()->count() > 0 ) ? $escrow_account_operation->first()->id : null,
                         'created_at' => Carbon::now()
                     ]);
                 }
@@ -894,14 +921,18 @@ class DailyOperationsController extends Controller
         if($operation->matches->count() > 0 && $operation->use_escrow_account == 1) { // Si es operación creadora
             $bank_account = DB::table('bank_account_operation')
             ->where('operation_id', $operation->id)
-            ->where('signed_at', null)
-            ->get();
+            ->where('deposit_at', null);
 
-            if($bank_account->count() > 0){
+            if($bank_account->get()->count() == 1){
+                $bank_account->update([
+                    "deposit_at" => Carbon::now()
+                ]);
+            }
+            elseif($bank_account->get()->count() > 1){
                 return response()->json([
                     'success' => false,
                     'errors' => [
-                        'Aún no se envían todas las firmas para todas las cuentas del cliente'
+                        'Aún no se confirma el depósito de todas las cuentas del cliente'
                     ]
                 ]);
             }
@@ -1046,6 +1077,7 @@ class DailyOperationsController extends Controller
                         $operation->invoice_serie = $rpta_json->serie;
                         $operation->invoice_number = $rpta_json->numero;
                         $operation->invoice_url = $rpta_json->enlace;
+                        $operation->invoice_date = Carbon::now();
                         $operation->operation_status_id = OperationStatus::where('name', 'Facturado')->first()->id;
                         if(is_null($operation->deposit_date)){
                             $operation->deposit_date = Carbon::now();
@@ -1465,19 +1497,17 @@ class DailyOperationsController extends Controller
                 ->where('bank_account_id', $request->bank_account_id)
                 ->where('operation_id', $operation->id);
 
-            // calculando el monto que se ha confirmado en las cuentas de fideicomiso
-            $matches_operation_id = $operation->matches[0]->id;
-            
+            // calculando el monto que se ha confirmado en las cuentas de fideicomiso        
             $confirmed_amount = DB::table('escrow_account_operation')
                 ->selectRaw('sum(amount - comission_amount) as confirmed_amount')
-                ->where('operation_id', $matches_operation_id)
-                ->where('transfer_number', 1)
+                ->where('id', $bank_account->first()->escrow_account_operation_id)
+                ->where('deposit_at', '!=', null)
                 ->first()->confirmed_amount;
 
             $sent_amount = DB::table('bank_account_operation')
                 ->selectRaw('coalesce(sum(amount - comission_amount),0) as sent_amount')
                 ->where('operation_id', $operation->id)
-                ->where('bank_account_id', '!=', $request->bank_account_id)
+                ->where('escrow_account_operation_id', $bank_account->first()->escrow_account_operation_id)
                 ->where('signed_at', '!=', null)
                 ->first()->sent_amount;
 
@@ -1565,7 +1595,7 @@ class DailyOperationsController extends Controller
             ]);
         }
 
-        if($escrow_account->first()->transfer_number != null){
+        if($escrow_account->first()->deposit_at != null){
             return response()->json([
                 'success' => false,
                 'errors' => [
@@ -1574,7 +1604,21 @@ class DailyOperationsController extends Controller
             ]);
         }
         else{
-            $escrow_account->update(['transfer_number' => 1]);
+            $escrow_account->update(['deposit_at' => Carbon::now()]);
+
+            if(is_null($operation->funds_confirmation_date)){
+                $operation->funds_confirmation_date = Carbon::now();
+                $operation->save();
+            }
+
+            $escrow_accounts_pending = DB::table('escrow_account_operation')
+                ->where('operation_id', $operation->id)
+                ->where('deposit_at', null)
+                ->get();
+
+            if($escrow_accounts_pending->count() == 0){
+                $close = DailyOperationsController::close_operation($request, $operation);
+            }
         }
 
         OperationHistory::create(["operation_id" => $operation->id,"user_id" => auth()->id(),"action" => "Fondos PL confirmados"]);
@@ -1583,6 +1627,74 @@ class DailyOperationsController extends Controller
             'success' => true,
             'data' => [
                 'operation' => $escrow_account->get()
+            ]
+        ]);
+    }
+    
+    public function confirm_deposit(Request $request, Operation $operation) {
+        $val = Validator::make($request->all(), [
+            'bank_account_operation_id' => 'required|exists:bank_account_operation,id',
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+
+        if( $operation->operation_status_id != OperationStatus::where('name', 'Contravalor recaudado')->first()->id){
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'La operación debe encontrarse en estado Contravalor recaudado.'
+                ]
+            ]);
+        }
+
+        $bank_account_operation = DB::table('bank_account_operation')
+            ->where('bank_account_operation.id', $request->bank_account_operation_id)
+            ->where('bank_account_operation.operation_id', $operation->id);
+
+        if(is_null($bank_account_operation->first())){
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'Error en número de operación',
+                ]
+            ]);
+        }
+
+        if($bank_account_operation->first()->deposit_at != null){
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'El depósito ya había sido confirmado',
+                ]
+            ]);
+        }
+        elseif($bank_account_operation->first()->signed_at == null){
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'Aún no se envía la firma correspondiente',
+                ]
+            ]);
+        }
+        else{
+            $bank_account_operation->update(['deposit_at' => Carbon::now()]);
+        }
+
+        OperationHistory::create(["operation_id" => $operation->id, "user_id" => auth()->id(),"action" => "Confirmación de depósito a cliente"]);
+
+        // Notificación Telegram
+        try {
+            $request->operation_id = $operation->id;
+            $consult = new TelegramNotificationsControllers();
+            $notification = $consult->confirm_deposit_notification($request)->getData();
+        } catch (\Exception $e) {
+            logger('ERROR: envío Notificación Telegram: DailyOperationsController@confirm_deposit', ["error" => $e]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'operation' => $bank_account_operation->get()
             ]
         ]);
     }
@@ -1601,31 +1713,24 @@ class DailyOperationsController extends Controller
 
             $escrow_accounts = DB::table('escrow_account_operation')
                 ->where('operation_id', $operation->id)
+                ->where('deposit_at', null)
                 ->get();
 
-            // Si hay más de una cuenta de fideicomiso a depositar
+            // Si hay más de una cuenta de fideicomiso pendiente de confirmación de deposito
             if($escrow_accounts->count() > 1 ){
 
-                $escrow_account = DB::table('escrow_account_operation')
-                    ->where('operation_id', $operation->id)
-                    ->where('transfer_number', null)
-                    ->get();
-
-                // Se valida que se haya confirmado el depósito de todas
-                if($escrow_account->count() > 0 ){
-
-                    return response()->json([
+                return response()->json([
                         'success' => false,
                         'errors' => [
                             'No se han confirmado el depósito de todas las cuentas'
                         ]
                     ]);
-                }
             }
             else{
                 $escrow_accounts = DB::table('escrow_account_operation')
                 ->where('operation_id', $operation->id)
-                ->update(['transfer_number' => 1]);
+                ->where('deposit_at', null)
+                ->update(['deposit_at' => Carbon::now()]);
             }
 
             $operation->operation_status_id = OperationStatus::where('name', 'Finalizado sin factura')->first()->id;
