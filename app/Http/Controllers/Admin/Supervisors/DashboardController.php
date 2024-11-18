@@ -58,6 +58,7 @@ class DashboardController extends Controller
             ->selectRaw("(select sum(ov.amount) from operations ov where ov.client_id = 4540 and year(ov.operation_date) = year(operations.operation_date) and month(ov.operation_date) = month(operations.operation_date) and ov.operation_status_id = 7 ) as volume_cajatru")
             ->selectRaw("(select sum(ov.amount) from operations ov where ov.client_id = 4889 and year(ov.operation_date) = year(operations.operation_date) and month(ov.operation_date) = month(operations.operation_date) and ov.operation_status_id = 7 ) as volume_bcp")
             ->selectRaw("(select sum(ov.amount) from operations ov where ov.client_id = 4960 and year(ov.operation_date) = year(operations.operation_date) and month(ov.operation_date) = month(operations.operation_date) and ov.operation_status_id = 7 ) as volume_cajaarequipa")
+            ->selectRaw("(select sum(ov.amount) from operations ov where ov.client_id = 5091 and year(ov.operation_date) = year(operations.operation_date) and month(ov.operation_date) = month(operations.operation_date) and ov.operation_status_id = 7 ) as volume_kallpa")
 
             ->whereIn("operations.type", ['Compra','Venta'])
             ->whereIn("operation_status_id", [6,7,8])
@@ -152,7 +153,8 @@ class DashboardController extends Controller
                     'volume_ripley' => $monthly_indicators->pluck('volume_ripley'),
                     'volume_cajatru' => $monthly_indicators->pluck('volume_cajatru'),
                     'volume_bcp' => $monthly_indicators->pluck('volume_bcp'),
-                    'volume_cajaarequipa' => $monthly_indicators->pluck('volume_cajaarequipa')
+                    'volume_cajaarequipa' => $monthly_indicators->pluck('volume_cajaarequipa'),
+                    'volume_kallpa' => $monthly_indicators->pluck('volume_kallpa')
                 ],
                 'daily_indicators' => [
                     'period' => $daily_indicators->pluck('dia'),
