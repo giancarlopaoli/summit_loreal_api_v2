@@ -254,7 +254,7 @@ Analista: $analyst";
         curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: multipart/form-data']);
         curl_setopt($ch, CURLOPT_URL, 'https://api.telegram.org/bot1636692227:AAGHJX8dyPEKWGkvuti4Xfk84A0FlY1fIpk/sendMessage');
         $postFields = array(
-            'chat_id' => env('TELEGRAM_OPS_CHANNEL'),
+            'chat_id' => env('TELEGRAM_VENTAS_CHANNEL'),
             'text' => $message,
             'parse_mode' => 'markdown',
             'disable_web_page_preview' => false,
