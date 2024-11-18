@@ -262,7 +262,7 @@ class DashboardController extends Controller
             ->get();
 
         $positive_variation = DB::table('operations_view')
-            ->selectRaw("client_name")
+            ->selectRaw("client_name,executive_name")
 
             ->selectRaw(" coalesce(sum(if( (year(operation_date)*12 + month(operation_date)) = (year(now())*12 + month(now()) - 1),amount,0))) as  current_amount")
 
@@ -278,7 +278,7 @@ class DashboardController extends Controller
             ->get();
 
         $negative_variation = DB::table('operations_view')
-            ->selectRaw("client_name")
+            ->selectRaw("client_name,executive_name")
 
             ->selectRaw(" coalesce(sum(if( (year(operation_date)*12 + month(operation_date)) = (year(now())*12 + month(now()) - 1),amount,0))) as  current_amount")
 
