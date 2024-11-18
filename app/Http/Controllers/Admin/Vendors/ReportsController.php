@@ -48,7 +48,9 @@ class ReportsController extends Controller
         $spreads = Client::select('id','name')
             ->whereIn('id', [366,3166,4280,5091])
             ->where('client_status_id', 3)
-            ->with('vendor_ranges:id,vendor_id,min_range,max_range','vendor_ranges.active_spreads')
+            ->with(['vendor_ranges' => function ($query) {
+                         $query->where('active', true);
+                      }, 'vendor_ranges:id,vendor_id,min_range,max_range,active','vendor_ranges.active_spreads'])
             ->get();
 
         return response()->json([
