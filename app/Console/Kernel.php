@@ -17,62 +17,64 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        $configurations = new Configuration();
+        if(env('APP_JOBS') == true){
+            $configurations = new Configuration();
 
-        // Deactivating vendor spreads at market close
-        $schedule->job(new Jobs\SpreadCloseMarket)
-            ->weekdays()->at($configurations->get_value('MARKETCLOSE'));
+            // Deactivating vendor spreads at market close
+            $schedule->job(new Jobs\SpreadCloseMarket)
+                ->weekdays()->at($configurations->get_value('MARKETCLOSE'));
 
-        // Deactivating vendor spreads at the end of the day
-        $schedule->job(new Jobs\SpreadCloseMarket)
-            ->weekdays()->at("18:30");
+            // Deactivating vendor spreads at the end of the day
+            $schedule->job(new Jobs\SpreadCloseMarket)
+                ->weekdays()->at("18:30");
 
-        // Activating Operation Analysts
-        $schedule->job(new Jobs\ActivatingOperationAnalysts)
-            ->everyMinute();
+            // Activating Operation Analysts
+            $schedule->job(new Jobs\ActivatingOperationAnalysts)
+                ->everyMinute();
 
-        // Deactivating Operation Analysts
-        $schedule->job(new Jobs\DesactivatingOperationAnalysts)
-            ->everyMinute();
+            // Deactivating Operation Analysts
+            $schedule->job(new Jobs\DesactivatingOperationAnalysts)
+                ->everyMinute();
 
-        // Pending Operations Send WS Corfid
-        $schedule->job(new Jobs\WsCorfidOperations)
-            ->everyFifteenMinutes();
+            // Pending Operations Send WS Corfid
+            $schedule->job(new Jobs\WsCorfidOperations)
+                ->everyFifteenMinutes();
 
-        // Pending Detractions
-        $schedule->job(new Jobs\PendingDetractions)
-            ->hourly()
-            ->weekdays()
-            ->between('8:50', '18:00');
-
-        // Deactivating Special Exchange Rates
-        $schedule->job(new Jobs\DeactivatingSpecialExchangeRates)
-            ->everyMinute();
-
-        if(env('APP_ENV') == 'production'){
-            // Exchange Rates Datatec Alarm
-            $schedule->job(new Jobs\ExchangeRateAlert)
-                ->everyTenMinutes()
+            // Pending Detractions
+            $schedule->job(new Jobs\PendingDetractions)
+                ->hourly()
                 ->weekdays()
-                ->between('8:50', '13:40');
-        }
+                ->between('8:50', '18:00');
 
-        // Expiring Negotiated Operations
-        $schedule->job(new Jobs\ExpireNegotiatedOperation)
-            ->everyMinute();
+            // Deactivating Special Exchange Rates
+            $schedule->job(new Jobs\DeactivatingSpecialExchangeRates)
+                ->everyMinute();
 
-        if(env('APP_ENV') == 'production'){
-            // Executing daily DB Backups
-            $schedule->command('backup:run --only-db')
-                ->weekdays()->at("23:30");
+            if(env('APP_ENV') == 'production'){
+                // Exchange Rates Datatec Alarm
+                $schedule->job(new Jobs\ExchangeRateAlert)
+                    ->everyTenMinutes()
+                    ->weekdays()
+                    ->between('8:50', '13:40');
+            }
 
-            // Executing Backups cleanup
-            $schedule->command('backup:clean')
-                ->weekdays()->at("23:30");
+            // Expiring Negotiated Operations
+            $schedule->job(new Jobs\ExpireNegotiatedOperation)
+                ->everyMinute();
 
-            // Monitoring Backups
-            $schedule->command('backup:monitor')
-                ->weekdays()->at("23:59");
+            if(env('APP_ENV') == 'production'){
+                // Executing daily DB Backups
+                $schedule->command('backup:run --only-db')
+                    ->weekdays()->at("23:30");
+
+                // Executing Backups cleanup
+                $schedule->command('backup:clean')
+                    ->weekdays()->at("23:30");
+
+                // Monitoring Backups
+                $schedule->command('backup:monitor')
+                    ->weekdays()->at("23:59");
+            }
         }
     }
 
