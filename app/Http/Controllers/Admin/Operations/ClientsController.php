@@ -522,7 +522,7 @@ class ClientsController extends Controller
             'phone' => 'required|string',
             'address' => 'required|string',
             'district_id' => 'required|exists:districts,id',
-            'economic_activity_id' => 'required|exists:economic_activities,id',
+            'economic_activity_id' => 'nullable|exists:economic_activities,id',
             'comments' => 'nullable|string',
         ]);
         if($val->fails()) return response()->json($val->messages());
