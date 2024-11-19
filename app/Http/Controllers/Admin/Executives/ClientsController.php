@@ -275,14 +275,12 @@ class ClientsController extends Controller
             );
         }
         else{
-            $consult2 = new InmediateOperationController();
             $result2 = $consult->match_operation_vendor($result->data->id, $request->vendor_id, $request->bank_accounts)->getData();
 
             return response()->json([
                 'success' => true,
                 'data' => [
-                    "operation" => $result->data,
-                    "operation_vendor" => $result2
+                    "operation" => $result->data
                 ]
             ]);
         }

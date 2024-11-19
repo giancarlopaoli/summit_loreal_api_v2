@@ -15,19 +15,27 @@ class TelegramNotificationsControllers extends Controller
     public function new_operation_confirmation(Request $request, $operation_id) {
         $operation = Operation::find($operation_id);
 
+        $client_created="";
+
+        if(is_null($request->vendor_id)){
+            $client_created = "| <b><i><u>URGENTE PENDIENTE EMPAREJAR</u></i></b>";
+        }
+
         $client = $operation->client->client_full_name;
         $currency = $operation->currency->sign;
         $executive = (!is_null($operation->client->executive)) ? $operation->client->executive->user->full_name : 'Sin ejecutivo';
         $analyst = (!is_null($operation->operations_analyst)) ? $operation->operations_analyst->user->full_name : 'No Asignado';
-        $url = env('APP_URL');
+        $url = env('APP_URL')."/api/res/instruction/$operation_id";
+        //$url = "https://apiprod.billex.pe/api/res/instruction/65676";
 
-        $message = "*Nueva Operación Creada*
-Cliente: *$client*
+        $message = "<b>Nueva Operación Creada</b> $client_created
+Cliente: <b>$client</b>
 Operación: $operation->code
 Monto: $operation->type $currency$operation->amount
 Ejecutivo: $executive
 Analista: $analyst
-Instructivo: [Descargar]($url/api/res/instruction/$operation_id)";
+<a href='$url'>Instructivo</a>";
+//Instructivo: [Descargar]($url/api/res/instruction/$operation_id)";
         
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_POST, true);
@@ -37,7 +45,7 @@ Instructivo: [Descargar]($url/api/res/instruction/$operation_id)";
         $postFields = array(
             'chat_id' => env('TELEGRAM_OPS_CHANNEL'),
             'text' => $message,
-            'parse_mode' => 'markdown',
+            'parse_mode' => 'html',
             'disable_web_page_preview' => false,
         );
         $rpta = curl_setopt($ch, CURLOPT_POSTFIELDS, $postFields);
@@ -56,7 +64,7 @@ Instructivo: [Descargar]($url/api/res/instruction/$operation_id)";
         $postFields = array(
             'chat_id' => env('TELEGRAM_VENTAS_CHANNEL'),
             'text' => $message,
-            'parse_mode' => 'markdown',
+            'parse_mode' => 'html',
             'disable_web_page_preview' => false,
         );
         $rpta = curl_setopt($ch, CURLOPT_POSTFIELDS, $postFields);
