@@ -235,14 +235,14 @@ class DailyOperationsController extends Controller
             ->where("operation_id", $operation->id)
             ->get();
 
-        /*if($operation_match->count() > 0) {
+        if($operation_match->count() > 0) {
             return response()->json([
                 'success' => false,
                 'errors' => [
                     'La operación ya se encuentra emparejada'
                 ]
             ]);
-        }*/
+        }
 
         ######### Creating vendor operation #############
 

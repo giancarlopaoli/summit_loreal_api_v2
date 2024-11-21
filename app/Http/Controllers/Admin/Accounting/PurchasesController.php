@@ -11,6 +11,7 @@ use App\Models\AccountingDocument;
 use App\Models\BusinessBankAccount;
 use App\Models\PurchaseInvoice;
 use App\Models\PurchasePayment;
+use App\Models\Service;
 use App\Models\Supplier;
 use Carbon\Carbon;
 
@@ -35,7 +36,7 @@ class PurchasesController extends Controller
                 'due_date' => 'required|date',
                 'service_month' => 'nullable|numeric',
                 'service_year' => 'nullable|numeric',
-                'file' => 'required|file',
+                //'file' => 'required|file',
                 'detail' => 'required|array'
             ]);
             if($val->fails()) return response()->json($val->messages());
@@ -51,20 +52,24 @@ class PurchasesController extends Controller
                 $ipm += $line['quantity'] * $line['ipm'];
             }
 
-            if($request->currency_id == 2){
-                $val = Validator::make($request->all(), [
-                    'exchange_rate' => 'required|numeric'
-                ]);
-                if($val->fails()) return response()->json($val->messages());
+            $service = Service::find($request->service_id)->load('supplier')->supplier->apply_detraction;
 
-                if(($amount + $igv)*$request->exchange_rate > 700 && $request->type = 'Servicio'){
-                    $detraction_amount = round(round(($amount + $igv)*0.12, 2) *$request->exchange_rate,0) ;
+            if($service == 'Si'){
+                if($request->currency_id == 2){
+                    $val = Validator::make($request->all(), [
+                        'exchange_rate' => 'required|numeric'
+                    ]);
+                    if($val->fails()) return response()->json($val->messages());
+
+                    if(($amount + $igv)*$request->exchange_rate > 700 && $request->type = 'Servicio'){
+                        $detraction_amount = round(round(($amount + $igv)*0.12, 2) *$request->exchange_rate,0) ;
+                    }
+
                 }
-
-            }
-            else{
-                if($amount + $igv > 700 && $request->type = 'Servicio'){
-                    $detraction_amount = round(($amount + $igv)*0.12, 0);
+                else{
+                    if($amount + $igv > 700 && $request->type = 'Servicio'){
+                        $detraction_amount = round(($amount + $igv)*0.12, 0);
+                    }
                 }
             }
 
@@ -202,11 +207,15 @@ class PurchasesController extends Controller
     //Purchase detail
     public function purchase_detail(Request $request, PurchaseInvoice $purchase_invoice) {
 
-        $detraction_amount = (!is_null($purchase_invoice->detraction_payment_date)) ? $purchase_invoice->detraction_amount : 0;
-
-        $paid = PurchasePayment::selectRaw("sum(if(status ='Pagado',amount,0)) + (select if(detraction_payment_date is null,0,detraction_amount) from purchase_invoices where id = " . $purchase_invoice->id . ") as pagado")
+        $paid = PurchasePayment::selectRaw("sum(if(status ='Pagado',amount,0)) as pagado")
             ->where('purchase_invoice_id', $purchase_invoice->id)
             ->first()->pagado*1.0;
+
+        $detraction_paid = PurchaseInvoice::selectRaw("if(detraction_payment_date is null,0,if(currency_id = 1,detraction_amount,round((total_amount+total_igv)*0.12,2))) as pagado")
+            ->where('id', $purchase_invoice->id)
+            ->first()->pagado*1.0;
+
+        $paid += $detraction_paid;
 
         $pending = ($purchase_invoice->total_amount + $purchase_invoice->total_igv + $purchase_invoice->total_ipm) - $paid;
 
