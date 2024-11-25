@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
 use App\Models\BusinessBankAccount;
 use App\Models\Client;
+use App\Models\DetractionType;
 use App\Models\Executive;
 use App\Models\SupplierBankAccount;
 use App\Models\RefundBankAccount;
@@ -135,6 +136,20 @@ class GeneralController extends Controller
             'success' => true,
             'data' => [
                 'clients' => $clients
+            ]
+        ]);
+    }
+
+    //Suppliers list
+    public function detraction_types(Request $request) {
+
+        $detraction_types = DetractionType::select('code','name')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'detraction_types' => $detraction_types
             ]
         ]);
     }

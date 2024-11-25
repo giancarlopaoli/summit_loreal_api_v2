@@ -616,6 +616,7 @@ Route::middleware('encryptresponses')->group(function () {
                 Route::GET('business-accounts', [\App\Http\Controllers\Admin\Accounting\GeneralController::class, 'business_accounts']);
                 Route::GET('supplier-accounts/{supplier}', [\App\Http\Controllers\Admin\Accounting\GeneralController::class, 'supplier_accounts']);
                 Route::GET('clients', [\App\Http\Controllers\Admin\Accounting\GeneralController::class, 'list_clients']);
+                Route::GET('detraction-types', [\App\Http\Controllers\Admin\Accounting\GeneralController::class, 'detraction_types']);
             });
 
             ########## dashboard  #############

@@ -12,6 +12,7 @@ use App\Models\Supplier;
 use App\Models\SupplierBankAccount;
 use App\Models\SupplierContactType;
 use App\Models\BusinessBankAccount;
+use App\Models\DetractionType;
 
 class TestDataController extends Controller
 {
@@ -19,7 +20,7 @@ class TestDataController extends Controller
     public function test_data(Request $request) {
 
         DB::connection('mysql2')->statement('SET FOREIGN_KEY_CHECKS=0;');
-        Area::truncate();
+        /*Area::truncate();
 
         Area::create(['name' => 'Operaciones', 'code' => 'A001']);
         Area::create(['name' => 'Comercial', 'code' => 'A002']);
@@ -166,6 +167,156 @@ class TestDataController extends Controller
             'account_type_id' => "1",
             'status' => 'Activo'
         ]);
+*/
+        DetractionType::truncate();
+
+        DetractionType::create([
+            "code" => "001",
+            "name" => "Azúcar"
+        ]);
+        DetractionType::create([
+            "code" => "003",
+            "name" => "Alcohol etílico"
+        ]);
+        DetractionType::create([
+            "code" => "004",
+            "name" => "Recursos hidrobiológicos"
+        ]);
+        DetractionType::create([
+            "code" => "005",
+            "name" => "Maíz amarillo duro"
+        ]);
+        DetractionType::create([
+            "code" => "006",
+            "name" => "Algodón"
+        ]);
+        DetractionType::create([
+            "code" => "007",
+            "name" => "Caña de azúcar"
+        ]);
+        DetractionType::create([
+            "code" => "008",
+            "name" => "Madera"
+        ]);
+        DetractionType::create([
+            "code" => "009",
+            "name" => "Arena y piedra."
+        ]);
+        DetractionType::create([
+            "code" => "010",
+            "name" => "Residuos, subproductos, desechos, recortes y desperdicios"
+        ]);
+        DetractionType::create([
+            "code" => "011",
+            "name" => "Bienes del inciso A) del Apéndice I de la Ley del IGV"
+        ]);
+        DetractionType::create([
+            "code" => "012",
+            "name" => "Intermediación laboral y tercerización"
+        ]);
+        DetractionType::create([
+            "code" => "013",
+            "name" => "Animales vivos"
+        ]);
+        DetractionType::create([
+            "code" => "014",
+            "name" => "Carnes y despojos comestibles"
+        ]);
+        DetractionType::create([
+            "code" => "015",
+            "name" => "Abonos, cueros y pieles de origen animal"
+        ]);
+        DetractionType::create([
+            "code" => "016",
+            "name" => "Aceite de pescado."
+        ]);
+        DetractionType::create([
+            "code" => "017",
+            "name" => "Harina, polvo y “pellets” de pescado, crustáceos, moluscos y demás invertebrados acuáticos"
+        ]);
+        DetractionType::create([
+            "code" => "018",
+            "name" => "Embarcaciones pesqueras"
+        ]);
+        DetractionType::create([
+            "code" => "019",
+            "name" => "Arrendamiento de bienes mueble"
+        ]);
+        DetractionType::create([
+            "code" => "020",
+            "name" => "Mantenimiento y reparación de bienes muebles"
+        ]);
+        DetractionType::create([
+            "code" => "021",
+            "name" => "Movimiento de carga"
+        ]);
+        DetractionType::create([
+            "code" => "022",
+            "name" => "Otros servicios empresariales"
+        ]);
+        DetractionType::create([
+            "code" => "023",
+            "name" => "Leche"
+        ]);
+        DetractionType::create([
+            "code" => "024",
+            "name" => "Comisión mercantil"
+        ]);
+        DetractionType::create([
+            "code" => "025",
+            "name" => "Fabricación de bienes por encargo"
+        ]);
+        DetractionType::create([
+            "code" => "026",
+            "name" => "Servicio de transporte de personas"
+        ]);
+        DetractionType::create([
+            "code" => "029",
+            "name" => "Algodòn en rama sin desmontar"
+        ]);
+        DetractionType::create([
+            "code" => "030",
+            "name" => "Contratos de construcción"
+        ]);
+        DetractionType::create([
+            "code" => "031",
+            "name" => "Oro gravado con el IGV"
+        ]);
+        DetractionType::create([
+            "code" => "032",
+            "name" => "Páprika y otros frutos de los géneros capsicum o pimienta"
+        ]);
+        DetractionType::create([
+            "code" => "033",
+            "name" => "Espárragos"
+        ]);
+        DetractionType::create([
+            "code" => "034",
+            "name" => "Minerales metálicos no auríferos"
+        ]);
+        DetractionType::create([
+            "code" => "035",
+            "name" => "Bienes exonerados del IGV"
+        ]);
+        DetractionType::create([
+            "code" => "036",
+            "name" => "Oro y demás minerales metálicos exonerados del IGV"
+        ]);
+        DetractionType::create([
+            "code" => "037",
+            "name" => "Demás servicios gravados con el IGV"
+        ]);
+        DetractionType::create([
+            "code" => "039",
+            "name" => "Minerales no metálicos"
+        ]);
+        DetractionType::create([
+            "code" => "040",
+            "name" => "Bien inmueble gravado con IGV"
+        ]);
+
+
+
 
         DB::connection('mysql2')->statement('SET FOREIGN_KEY_CHECKS=1;');
 

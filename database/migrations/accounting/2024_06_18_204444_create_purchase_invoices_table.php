@@ -23,7 +23,9 @@ return new class extends Migration
             $table->enum('invoice_type', ['Normal', 'Adelanto']);
             $table->foreignIdFor(\App\Models\Currency::class);
             $table->decimal('exchange_rate', 5, 4)->nullable();
-            $table->decimal('detraction_amount', 7,2)->nullable();
+            $table->foreignIdFor(\App\Models\DetractionType::class);
+            $table->decimal('detraction_percentage', 7,2)->nullable();
+            $table->decimal('detraction_amount', 5,2)->nullable();
             $table->date('detraction_payment_date', 7,2)->nullable();
             $table->string('detraction_url', 150)->nullable();
             $table->string('serie', 10)->nullable();

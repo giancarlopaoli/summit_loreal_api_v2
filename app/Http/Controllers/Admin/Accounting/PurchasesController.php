@@ -37,7 +37,10 @@ class PurchasesController extends Controller
                 'service_month' => 'nullable|numeric',
                 'service_year' => 'nullable|numeric',
                 //'file' => 'required|file',
-                'detail' => 'required|array'
+                'detail' => 'required|array',
+                'detraction_type' => 'nullable|exists:mysql2.detraction_types,code',
+                'detraction_percentage' => 'nullable|numeric',
+                'detraction_amount' => 'nullable|numeric',
             ]);
             if($val->fails()) return response()->json($val->messages());
 
@@ -54,8 +57,9 @@ class PurchasesController extends Controller
 
             $service = Service::find($request->service_id)->load('supplier')->supplier->apply_detraction;
 
+            // Cálculo de detracción -> ya no va, se envían los datos desde front
             if($service == 'Si'){
-                if($request->currency_id == 2){
+                /*if($request->currency_id == 2){
                     $val = Validator::make($request->all(), [
                         'exchange_rate' => 'required|numeric'
                     ]);
@@ -70,6 +74,16 @@ class PurchasesController extends Controller
                     if($amount + $igv > 700 && $request->type = 'Servicio'){
                         $detraction_amount = round(($amount + $igv)*0.12, 0);
                     }
+                }*/
+
+                if(isset($request->detraction_type) || isset($request->detraction_percentage) || isset($request->detraction_amount)){
+
+                    $val = Validator::make($request->all(), [
+                        'detraction_type' => 'required|exists:mysql2.detraction_types,code',
+                        'detraction_percentage' => 'required|numeric',
+                        'detraction_amount' => 'required|numeric',
+                    ]);
+                    if($val->fails()) return response()->json($val->messages());
                 }
             }
 
@@ -87,6 +101,9 @@ class PurchasesController extends Controller
                 'due_date' => $request->due_date,
                 'service_month' => isset($request->service_month) ? $request->service_month : null,
                 'service_year' => isset($request->service_year) ? $request->service_year : null,
+                'detraction_type' => isset($request->detraction_type) ? $request->detraction_type : null,
+                'detraction_percentage' => isset($request->detraction_percentage) ? $request->detraction_percentage : null,
+                'detraction_amount' => isset($request->detraction_amount) ? $request->detraction_amount : null,
                 'status' => 'Pendiente pago'
             ]);
 
@@ -288,7 +305,10 @@ class PurchasesController extends Controller
             'due_date' => 'required|date',
             'service_month' => 'nullable|numeric',
             'service_year' => 'nullable|numeric',
-            'detail' => 'required|array'
+            'detail' => 'required|array',
+            'detraction_type' => 'nullable|exists:mysql2.detraction_types,code',
+            'detraction_percentage' => 'nullable|numeric',
+            'detraction_amount' => 'nullable|numeric',
         ]);
         if($val->fails()) return response()->json($val->messages());
 
@@ -310,21 +330,14 @@ class PurchasesController extends Controller
             $ipm += $line['quantity'] * $line['ipm'];
         }
 
-        if($request->currency_id == 2){
+        if(isset($request->detraction_type) || isset($request->detraction_percentage) || isset($request->detraction_amount)){
+
             $val = Validator::make($request->all(), [
-                'exchange_rate' => 'required|numeric'
+                'detraction_type' => 'required|exists:mysql2.detraction_types,code',
+                'detraction_percentage' => 'required|numeric',
+                'detraction_amount' => 'required|numeric',
             ]);
             if($val->fails()) return response()->json($val->messages());
-
-            if(($amount + $igv)*$request->exchange_rate > 700){
-                $detraction_amount = round(round(($amount + $igv)*0.12, 2) *$request->exchange_rate,0) ;
-            }
-
-        }
-        else{
-            if($amount + $igv > 700){
-                $detraction_amount = round(($amount + $igv)*0.12, 0);
-            }
         }
 
         $purchase_invoice->update([
@@ -336,7 +349,9 @@ class PurchasesController extends Controller
             'exchange_rate' => !is_null($request->exchange_rate) ? $request->exchange_rate : null,
             'serie' => $request->serie,
             'number' => $request->number,
-            'detraction_amount' => $detraction_amount,
+            'detraction_type' => isset($request->detraction_type) ? $request->detraction_type : null,
+            'detraction_percentage' => isset($request->detraction_percentage) ? $request->detraction_percentage : null,
+            'detraction_amount' => isset($request->detraction_amount) ? $request->detraction_amount : null,
             'issue_date' => $request->issue_date,
             'due_date' => $request->due_date,
             'service_month' => isset($request->service_month) ? $request->service_month : null,
@@ -626,13 +641,14 @@ class PurchasesController extends Controller
     //Detractions pending
     public function pending_detractions(Request $request) {
 
-        $pending_detractions = PurchaseInvoice::select('id','service_id','total_amount','detraction_amount','detraction_payment_date','serie','number','issue_date','serie','number','currency_id')
+        $pending_detractions = PurchaseInvoice::select('id','service_id','total_amount','detraction_percentage','detraction_amount','detraction_type','detraction_payment_date','serie','number','issue_date','serie','number','currency_id')
             ->selectRaw("concat(year(issue_date),if(month(issue_date)<10,concat(0,month(issue_date)),month(issue_date))) as period")
             ->where('status', 'Pendiente pago')
             ->where('detraction_amount', '>', 0)
             ->whereRaw('detraction_payment_date is null')
             ->with('service:id,supplier_id','service.supplier:id,name,document_type_id,document_number,detraction_account')
             ->with('currency:id,name,sign')
+            ->with('detraction_type:code,name')
             ->get();
 
         return response()->json([
@@ -675,11 +691,12 @@ class PurchasesController extends Controller
     //Detractions pending
     public function detractions_in_progress(Request $request) {
 
-        $massive_detractions = PurchaseInvoice::select('id','service_id','total_amount','detraction_amount','detraction_payment_date','serie','number','issue_date','serie','number')
+        $massive_detractions = PurchaseInvoice::select('id','service_id','total_amount','detraction_percentage','detraction_amount','detraction_type','detraction_payment_date','serie','number','issue_date','serie','number')
             ->selectRaw("concat(year(issue_date),if(month(issue_date)<10,concat(0,month(issue_date)),month(issue_date))) as period")
             ->where('status', 'Pendiente pago')
             ->where('detraction_url', 'pagoMasivo')
             ->with('service:id,supplier_id','service.supplier:id,name,document_type_id,document_number,detraction_account')
+            ->with('detraction_type:code,name')
             ->get();
 
         return response()->json([

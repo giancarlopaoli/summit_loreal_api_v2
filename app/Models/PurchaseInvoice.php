@@ -32,4 +32,8 @@ class PurchaseInvoice extends Model
     public function documents() {
         return $this->hasMany(AccountingDocument::class);
     }
+
+    public function detraction_type() {
+        return $this->belongsTo(DetractionType::class,'detraction_type','code');
+    }
 }
