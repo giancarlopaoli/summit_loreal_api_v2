@@ -196,7 +196,22 @@ class DailyOperationsController extends Controller
                 ->with('documents:id,operation_id,type')
                 ->first();
         });
-
+    
+        $pending_deposits = DB::table('operation_matches')
+            ->select('op1.id as operation_id', 'op2.id as matched_id','op1.code','op1.type','op1.amount','op2.sign_date','op2.deposit_date')
+            ->selectRaw("if(cl1.customer_type = 'PJ',cl1.name,concat(cl1.name,' ',cl1.last_name,' ',cl1.mothers_name)) as client_name, cl2.name as pl_name")
+            ->selectRaw("eao.amount as expected_amount, ea.account_number, ba.shortname,cu.sign as currency_sign, cu.name as currency_name, concat(us.name, ' ', us.last_name) as analyst")
+            ->join('operations as op1', 'op1.id', "=", "operation_matches.operation_id")
+            ->join('operations as op2', 'op2.id', "=", "operation_matches.matched_id")
+            ->join('clients as cl1', 'cl1.id', "=", "op1.client_id")
+            ->join('clients as cl2', 'cl2.id', "=", "op2.client_id")
+            ->join('escrow_account_operation as eao', 'eao.operation_id', "=", "op2.id")
+            ->join('escrow_accounts as ea', 'eao.escrow_account_id', "=", "ea.id")
+            ->join('banks as ba', 'ba.id', "=", "ea.bank_id")
+            ->join('currencies as cu', 'cu.id', "=", "ea.currency_id")
+            ->join('users as us', 'us.id', "=", "op1.operations_analyst_id")
+            ->whereRaw("op1.operation_status_id = 4 and op2.operation_status_id = 5 and eao.deposit_at is null")
+            ->get();
 
         return response()->json([
             'success' => true,
@@ -205,10 +220,7 @@ class DailyOperationsController extends Controller
                 'graphs' => $graphs,
                 'pending_operations' => $pending_operations,
                 'matched_operations' => $matched_operations,
-
-                /*operation::where('id',1)
-                    ->with('operations_analyst')
-                    ->with('client')->first()*/
+                'pending_deposits' => $pending_deposits
             ]
         ]);
 

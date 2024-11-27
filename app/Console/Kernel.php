@@ -17,6 +17,7 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
+        
         if(env('APP_JOBS') == true){
             $configurations = new Configuration();
 
@@ -60,6 +61,10 @@ class Kernel extends ConsoleKernel
 
             // Expiring Negotiated Operations
             $schedule->job(new Jobs\ExpireNegotiatedOperation)
+                ->everyTenMinutes();
+
+            // Checking if bank account operations are ok
+            $schedule->job(new Jobs\BankAccountOpError)
                 ->everyMinute();
 
             if(env('APP_ENV') == 'production'){
