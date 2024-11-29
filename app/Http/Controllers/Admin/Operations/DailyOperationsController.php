@@ -212,7 +212,7 @@ class DailyOperationsController extends Controller
             ->join('currencies as cu', 'cu.id', "=", "ea.currency_id")
             ->join('users as us', 'us.id', "=", "op1.operations_analyst_id")
             ->join('bank_account_operation as bao', 'bao.escrow_account_operation_id', "=", "eao.id")
-            ->whereRaw("op1.operation_status_id = 4 and op2.operation_status_id = 5 and bao.deposit_at is null")
+            ->whereRaw("op1.operation_status_id = 4 and bao.deposit_at is null")
             ->get();
 
         return response()->json([
