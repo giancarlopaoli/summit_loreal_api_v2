@@ -316,6 +316,8 @@ class SalesController extends Controller
     public function pending_selfdetractions(Request $request) {
 
         $pending_selfdetractions = Operation::select('id','code','type','client_id','igv','comission_amount','invoice_serie','invoice_number','invoice_url','operation_date','invoice_date','detraction_amount','detraction_paid')
+            ->selectRaw("'037' as detraction_type_code")
+            ->selectRaw("concat(year(invoice_date),if(month(invoice_date)<10,concat(0,month(invoice_date)),month(invoice_date))) as period")
             ->where('detraction_paid',0)
             ->where('operation_status_id', 6)
             ->where('detraction_amount','>',0)
@@ -363,6 +365,8 @@ class SalesController extends Controller
     public function selfdetractions_in_progress(Request $request) {
 
         $massive_selfdetractions = Operation::select('id','code','type','client_id','igv','comission_amount','invoice_serie','invoice_number','invoice_url','operation_date','invoice_date','detraction_amount','detraction_paid')
+            ->selectRaw("'037' as detraction_type_code")
+            ->selectRaw("concat(year(invoice_date),if(month(invoice_date)<10,concat(0,month(invoice_date)),month(invoice_date))) as period")
             ->where('detraction_paid',2)
             ->where('operation_status_id', 6)
             ->where('detraction_amount','>',0)
