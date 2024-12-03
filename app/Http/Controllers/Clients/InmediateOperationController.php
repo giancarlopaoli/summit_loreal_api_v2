@@ -107,13 +107,16 @@ class InmediateOperationController extends Controller
 
         $coupon = null;
         if($request->coupon_code != null) {
-            $coupon = Coupon::validate($request->coupon_code);
+            //$coupon = Coupon::validate($request->coupon_code);
+            $request->coupon_full = true;
+            $coupon = InmediateOperationController::validate_coupon($request)->getData()->data;
 
             if($coupon == null) {
                 return response()->json([
                     'success' => false,
                     'errors' => [
-                        'El cupon enviado no es valido'
+                        'El cupon enviado no es valido',
+                        $coupon
                     ]
                 ], 400);
             }
@@ -236,7 +239,6 @@ class InmediateOperationController extends Controller
                 }
             }
 
-
             $final_exchange_rate = $type == 'compra' ? round($exchange_rate + $comission_spread/10000,4) : round($exchange_rate - $comission_spread/10000,4);
 
             $old_final_exchange_rate = is_null($coupon) ? null : (($type == 'compra') ? round($exchange_rate + $old_comission_spread/10000,4) : round($exchange_rate - $old_comission_spread/10000,4));
@@ -256,14 +258,14 @@ class InmediateOperationController extends Controller
             // Validating if client is validated
             $max_amount = $client->customer_type == 'PN' ? Configuration::where('shortname', 'MAXOPPN')->first()->value : Configuration::where('shortname', 'MAXOPPJ')->first()->value;
 
-            if($amount > $max_amount && $client->validated == false){
+            /*if($amount > $max_amount && $client->validated == false){
                 return response()->json([
                     'success' => false,
                     'errors' => [
                         'Ha excedido el monto máximo de operación. Para poder continuar comuníquese con su ejecutivo.' . $amount,
                     ]
                 ]);
-            }
+            }*/
 
             $conversion_amount = round($amount * $exchange_rate,2);
 
@@ -336,14 +338,14 @@ class InmediateOperationController extends Controller
         // Validating if client is validated
         $max_amount = $client->customer_type == 'PN' ? Configuration::where('shortname', 'MAXOPPN')->first()->value : Configuration::where('shortname', 'MAXOPPJ')->first()->value;
 
-        if($request->amount > $max_amount && $client->validated == false){
+        /*if($request->amount > $max_amount && $client->validated == false){
             return response()->json([
                 'success' => false,
                 'errors' => [
                     'Ha excedido el monto máximo de operación. Para poder continuar comuníquese con su ejecutivo.',
                 ]
             ]);
-        }
+        }*/
 
         ############### Calculating Exchange Rate ##################
         $exchange_rate = InmediateOperationController::calculate_exchange_rate($amount,$request->client_id,$type)->getData()->exchange_rate;
@@ -357,6 +359,8 @@ class InmediateOperationController extends Controller
         ################### Calculating Spread Comission
         $comission_spread = InmediateOperationController::calculate_comission_spread($amount,$request->client_id,$type,$coupon)->getData()->comission_spread;
         $old_comission_spread = InmediateOperationController::calculate_comission_spread($amount,$request->client_id,$type,$coupon)->getData()->old_comission_spread;
+
+        $coupon = InmediateOperationController::calculate_comission_spread($amount,$request->client_id,$type,$coupon)->getData()->coupon;
         
         $total_comission = round($amount * $comission_spread/10000, 2);
         ############# End calculating comission
@@ -543,7 +547,8 @@ class InmediateOperationController extends Controller
 
         return response()->json([
             'comission_spread' => $comission_spread,
-            'old_comission_spread' => isset($old_comission_spread) ? $old_comission_spread : null
+            'old_comission_spread' => isset($old_comission_spread) ? $old_comission_spread : null,
+            'coupon' => $coupon
         ]);
     }
 
@@ -592,7 +597,8 @@ class InmediateOperationController extends Controller
 
     public function validate_coupon(Request $request) {
         $validator = Validator::make($request->all(), [
-            'coupon_code' => 'required|string'
+            'coupon_code' => 'required|string',
+            'client_id' => 'required|exists:clients,id'
         ]);
 
         if($validator->fails()) {
@@ -603,10 +609,88 @@ class InmediateOperationController extends Controller
         }
 
         $coupon = Coupon::validate($request->coupon_code);
+        $client = Client::find($request->client_id);
+
+
+        // validando fecha de inicio y fin
+        $fecha = Coupon::where('id', $coupon->id)
+            ->where('start_date', '<=', now())
+            ->where('end_date', '>=', now())
+            ->get();
+
+        if($fecha->count() == 0){
+            return response()->json([
+                'success' => true,
+                'data' => false,
+                'errors' => [
+                    'Cupón expirado'
+                ]
+            ]);
+        }
+
+        // Validando Limite total
+        $total_uses = Operation::selectRaw('count(*) as cuenta')
+            ->where('operation_status_id', 6)
+            ->where('coupon_code', $request->coupon_code)
+            ->first()->cuenta;
+
+        if($total_uses >= $coupon->limit_total){
+            return response()->json([
+                'success' => true,
+                'data' => false,
+                'errors' => [
+                    'El cupón ya alcanzó el máximo de usos permitidos'
+                ]
+            ]);
+        }
+
+        // validando limite individual
+        $client_uses = Operation::selectRaw('count(*) as cuenta')
+            ->where('operation_status_id', 6)
+            ->where('coupon_code', $request->coupon_code)
+            ->where('client_id', $request->client_id)
+            ->first()->cuenta;
+
+        if($client_uses >= $coupon->limit_individual){
+            return response()->json([
+                'success' => true,
+                'data' => false,
+                'errors' => [
+                    'El cupón ya ha sido utilizado'
+                ]
+            ]);
+        }
+
+        // validando asignación (PN/PJ)
+        $client_type = $client->customer_type;
+
+        if($coupon->assigned_to != 'Todos' and $coupon->assigned_to != $client_type){
+            return response()->json([
+                'success' => true,
+                'data' => false,
+                'errors' => [
+                    'El cupón es inválido'
+                ]
+            ]);
+        }
+
+        // validando clase cupon (Normal / Primera Operación)
+
+
+        /*return response()->json([
+            'success' => true,
+            'data' => [
+                'cupon' => $coupon,
+                'fecha' => $fecha,
+                'total_uses' => $total_uses,
+                'client_uses' =>$client_uses,
+                'client_type' => $client_type,
+            ]
+        ]);*/
 
         return response()->json([
             'success' => true,
-            'data' => $coupon == null ? false : $coupon->only(['id','code','type'])
+            'data' => ($coupon == null) ? false : ($request->coupon_full == true ? $coupon : $coupon->only(['id','code','type']))
         ]);
     }
 
