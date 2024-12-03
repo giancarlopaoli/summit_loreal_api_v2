@@ -675,18 +675,38 @@ class InmediateOperationController extends Controller
         }
 
         // validando clase cupon (Normal / Primera Operación)
+        if($coupon->class == 'Primera Operacion'){
+            $client_id = $request->client_id;
 
+            $client_registered = Client::where('id', $request->client_id)
+                ->whereRaw("registered_at >= (CURRENT_DATE - INTERVAL 30 DAY) ")
+                ->get();
 
-        /*return response()->json([
-            'success' => true,
-            'data' => [
-                'cupon' => $coupon,
-                'fecha' => $fecha,
-                'total_uses' => $total_uses,
-                'client_uses' =>$client_uses,
-                'client_type' => $client_type,
-            ]
-        ]);*/
+            if($client_registered->count() == 0){
+                return response()->json([
+                    'success' => true,
+                    'data' => false,
+                    'errors' => [
+                        'El cupón solo puede ser utilizado hasta 30 días luego de haberse registrado'
+                    ]
+                ]);
+            }
+
+             $nro_ops = Operation::selectRaw('count(*) as cuenta')
+            ->where('operation_status_id', 6)
+            ->where('client_id', $request->client_id)
+            ->first()->cuenta;
+
+            if($nro_ops > 0){
+                return response()->json([
+                    'success' => true,
+                    'data' => false,
+                    'errors' => [
+                        'El cupón solo puede ser utilizado en la primera operación.'
+                    ]
+                ]);
+            }
+        }
 
         return response()->json([
             'success' => true,
