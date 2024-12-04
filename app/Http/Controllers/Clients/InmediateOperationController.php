@@ -609,6 +609,14 @@ class InmediateOperationController extends Controller
         }
 
         $coupon = Coupon::validate($request->coupon_code);
+
+        if(is_null($coupon)){
+            return response()->json([
+                'success' => true,
+                'data' => ($coupon == null) ? false : ($request->coupon_full == true ? $coupon : $coupon->only(['id','code','type']))
+            ]);
+        }
+        
         $client = Client::find($request->client_id);
 
 
