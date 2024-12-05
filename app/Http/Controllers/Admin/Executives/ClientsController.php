@@ -155,7 +155,7 @@ class ClientsController extends Controller
 
     public function edit_client(Request $request, Client $client) {
         
-        $client->update($request->only(["sector_id","comments2"]));
+        $client->update($request->only(["sector_id","comments2","validated"]));
 
         return response()->json([
             'success' => true,
