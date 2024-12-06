@@ -175,6 +175,7 @@ Route::middleware('encryptresponses')->group(function () {
         ########## General admin  #############
         Route::GET('has-permission', [\App\Http\Controllers\Admin\AdminController::class, 'has_permission']);
         Route::GET('has-role', [\App\Http\Controllers\Admin\AdminController::class, 'has_role']);
+        Route::PUT('change-password', [\App\Http\Controllers\Clients\ProfileController::class, 'change_password']);
 
         Route::GET('person-document-types', [\App\Http\Controllers\Admin\MasterTablesController::class, 'person_document_types']);
         Route::GET('associate-document-types', [\App\Http\Controllers\Admin\MasterTablesController::class, 'associate_document_types']);

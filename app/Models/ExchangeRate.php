@@ -43,11 +43,13 @@ class ExchangeRate extends Model
             ->first();
 
         $general_spread = $market_closed ? $ranges->spread_close : $ranges->spread_open;
-        $general_spread_comission = $market_closed ? $ranges->comission_close : $ranges->comission_open;
+        $general_spread_comission_sell = $market_closed ? $ranges->comission_close_sell : $ranges->comission_open_sell;
+        $general_spread_comission_buy = $market_closed ? $ranges->comission_close_buy : $ranges->comission_open_buy;
+
         $buy_spreads[] = $general_spread;
         $sell_spreads[] = $general_spread;
-        $buy_spread_comission = $general_spread_comission;
-        $sell_spread_comission = $general_spread_comission;
+        $buy_spread_comission = $general_spread_comission_sell;
+        $sell_spread_comission = $general_spread_comission_buy;
 
         $vendor_ranges = VendorRange::where('min_range', '<=', $amount)
             ->where('max_range', '>', $amount)

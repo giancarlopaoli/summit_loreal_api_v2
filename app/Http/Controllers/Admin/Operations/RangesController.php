@@ -15,7 +15,7 @@ class RangesController extends Controller
     //Ranges list
     public function list(Request $request) {
 
-        $ranges = Range::select('id','min_range','max_range','comission_open','comission_close','spread_open','spread_close','active')->get();
+        $ranges = Range::select('id','min_range','max_range','comission_open_sell','comission_open_buy','comission_close_sell','comission_close_buy','spread_open','spread_close','active')->get();
 
         return response()->json([
             'success' => true,
@@ -30,14 +30,16 @@ class RangesController extends Controller
         $val = Validator::make($request->all(), [
             'min_range' => 'required|numeric',
             'max_range' => 'required|numeric',
-            'comission_open' => 'required|numeric',
-            'comission_close' => 'required|numeric',
+            'comission_open_buy' => 'required|numeric',
+            'comission_open_sell' => 'required|numeric',
+            'comission_close_buy' => 'required|numeric',
+            'comission_close_sell' => 'required|numeric',
             'spread_open' => 'required|numeric',
             'spread_close' => 'required|numeric',
         ]);
         if($val->fails()) return response()->json($val->messages());
 
-        $range->update(array_merge($request->only(['min_range','max_range','comission_open','comission_close','spread_open','spread_close']), ["modified_by" => auth()->id()]));
+        $range->update(array_merge($request->only(['min_range','max_range','comission_open_sell','comission_open_buy','comission_close_sell','comission_close_buy','spread_open','spread_close']), ["modified_by" => auth()->id()]));
 
         return response()->json([
             'success' => true,

@@ -519,7 +519,13 @@ class InmediateOperationController extends Controller
                 ->where('active', true)
                 ->first();
 
-            $comission_spread = $market_closed ? $general_comission->comission_close : $general_comission->comission_open;
+            if($type == 'compra'){
+                $comission_spread = $market_closed ? $general_comission->comission_close_sell : $general_comission->comission_open_sell;
+            }
+            elseif($type == 'venta'){
+                $comission_spread = $market_closed ? $general_comission->comission_close_buy : $general_comission->comission_open_buy;
+            }
+
 
             if($coupon != null) {
                 $old_comission_spread = $comission_spread;
@@ -556,17 +562,17 @@ class InmediateOperationController extends Controller
             $exchange_rate = $exchange_rate->compra;
 
             if($market_closed){
-                $range = Range::select("id","min_range","max_range","comission_close as comission_spread","spread_close as spread")->selectRaw("($amount/($exchange_rate+(comission_close+spread_close)/10000)) as amount")->whereRaw("($amount/($exchange_rate+(comission_close+spread_close)/10000) >= min_range and $amount/($exchange_rate+(comission_close+spread_close)/10000) <= max_range)")->orderByDesc('id')->first();
+                $range = Range::select("id","min_range","max_range","comission_close_buy as comission_spread","spread_close as spread")->selectRaw("($amount/($exchange_rate+(comission_close_buy+spread_close)/10000)) as amount")->whereRaw("($amount/($exchange_rate+(comission_close_buy+spread_close)/10000) >= min_range and $amount/($exchange_rate+(comission_close_buy+spread_close)/10000) <= max_range)")->orderByDesc('id')->first();
 
                 if(is_null($range)){
-                    $range = Range::selectRaw("id,min_range,max_range,comission_close as comission_spread,spread_close as spread, abs($amount - max_range*($exchange_rate+(comission_close+spread_close)/10000)) as maximo, max_range as amount")->orderby("maximo")->first(); 
+                    $range = Range::selectRaw("id,min_range,max_range,comission_close_buy as comission_spread,spread_close as spread, abs($amount - max_range*($exchange_rate+(comission_close_buy+spread_close)/10000)) as maximo, max_range as amount")->orderby("maximo")->first(); 
                 }
             }
             else{
-                $range = Range::select("id","min_range","max_range","comission_open as comission_spread","spread_open as spread")->selectRaw("($amount/($exchange_rate+(comission_open+spread_open)/10000)) as amount")->whereRaw("($amount/($exchange_rate+(comission_open+spread_open)/10000) >= min_range and $amount/($exchange_rate+(comission_open+spread_open)/10000) <= max_range)")->orderByDesc('id')->first();
+                $range = Range::select("id","min_range","max_range","comission_open_buy as comission_spread","spread_open as spread")->selectRaw("($amount/($exchange_rate+(comission_open_buy+spread_open)/10000)) as amount")->whereRaw("($amount/($exchange_rate+(comission_open_buy+spread_open)/10000) >= min_range and $amount/($exchange_rate+(comission_open_buy+spread_open)/10000) <= max_range)")->orderByDesc('id')->first();
 
                 if(is_null($range)){
-                    $range = Range::selectRaw("id,min_range,max_range,comission_open as comission_spread,spread_open as spread, abs($amount - max_range*($exchange_rate+(comission_open+spread_open)/10000)) as maximo, max_range as amount")->orderby("maximo")->first(); 
+                    $range = Range::selectRaw("id,min_range,max_range,comission_open_buy as comission_spread,spread_open as spread, abs($amount - max_range*($exchange_rate+(comission_open_buy+spread_open)/10000)) as maximo, max_range as amount")->orderby("maximo")->first(); 
                 }
             }
         }
@@ -574,17 +580,17 @@ class InmediateOperationController extends Controller
             $exchange_rate = $exchange_rate->venta;
 
             if($market_closed){
-                $range = Range::select("id","min_range","max_range","comission_close as comission_spread","spread_close as spread")->selectRaw("($amount/($exchange_rate-(comission_close+spread_close)/10000)) as amount")->whereRaw("($amount/($exchange_rate-(comission_close+spread_close)/10000) >= min_range and $amount/($exchange_rate-(comission_close+spread_close)/10000) <= max_range)")->orderByDesc('id')->first();
+                $range = Range::select("id","min_range","max_range","comission_close_sell as comission_spread","spread_close as spread")->selectRaw("($amount/($exchange_rate-(comission_close_sell+spread_close)/10000)) as amount")->whereRaw("($amount/($exchange_rate-(comission_close_sell+spread_close)/10000) >= min_range and $amount/($exchange_rate-(comission_close_sell+spread_close)/10000) <= max_range)")->orderByDesc('id')->first();
 
                 if(is_null($range)){
-                    $range = Range::selectRaw("id,min_range,max_range,comission_close as comission_spread,spread_close as spread, abs($amount - max_range*($exchange_rate-(comission_close+spread_close)/10000)) as maximo, max_range as amount")->orderby("maximo")->first(); 
+                    $range = Range::selectRaw("id,min_range,max_range,comission_close_sell as comission_spread,spread_close as spread, abs($amount - max_range*($exchange_rate-(comission_close_sell+spread_close)/10000)) as maximo, max_range as amount")->orderby("maximo")->first(); 
                 }
             }
             else{
-                $range = Range::select("id","min_range","max_range","comission_open as comission_spread","spread_open as spread")->selectRaw("($amount/($exchange_rate-(comission_open+spread_open)/10000)) as amount")->whereRaw("($amount/($exchange_rate-(comission_open+spread_open)/10000) >= min_range and $amount/($exchange_rate-(comission_open+spread_open)/10000) <= max_range)")->orderByDesc('id')->first();
+                $range = Range::select("id","min_range","max_range","comission_open_sell as comission_spread","spread_open as spread")->selectRaw("($amount/($exchange_rate-(comission_open_sell+spread_open)/10000)) as amount")->whereRaw("($amount/($exchange_rate-(comission_open_sell+spread_open)/10000) >= min_range and $amount/($exchange_rate-(comission_open_sell+spread_open)/10000) <= max_range)")->orderByDesc('id')->first();
 
                 if(is_null($range)){
-                    $range = Range::selectRaw("id,min_range,max_range,comission_open as comission_spread,spread_open as spread, abs($amount - max_range*($exchange_rate-(comission_open+spread_open)/10000)) as maximo, max_range as amount")->orderby("maximo")->first(); 
+                    $range = Range::selectRaw("id,min_range,max_range,comission_open_sell as comission_spread,spread_open as spread, abs($amount - max_range*($exchange_rate-(comission_open_sell+spread_open)/10000)) as maximo, max_range as amount")->orderby("maximo")->first(); 
                 }
             }
         }

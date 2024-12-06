@@ -632,7 +632,7 @@ class RegisterController extends Controller
                     $comission = $executive->comission;
                     $executive_id = $executive->id;
                 }
-                $validated = 1;
+                $validated = 0;
             }
 
             $client = Client::create([
@@ -911,7 +911,7 @@ class RegisterController extends Controller
                         $comission = $executive->comission;
                         $executive_id = $executive->id;
                     }
-                    $validated = 1;
+                    $validated = 0;
                 }
             }
 
