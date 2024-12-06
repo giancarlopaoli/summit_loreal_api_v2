@@ -115,8 +115,7 @@ class InmediateOperationController extends Controller
                 return response()->json([
                     'success' => false,
                     'errors' => [
-                        'El cupon enviado no es valido',
-                        $coupon
+                        'El cupon enviado no es valido'
                     ]
                 ], 400);
             }

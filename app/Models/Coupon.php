@@ -25,7 +25,8 @@ class Coupon extends Model
     }
 
     public static function validate(String $coupon_code) {
-        return self::where('code', $coupon_code)->where('active', true)->latest()->first();
+        return self::where('code', $coupon_code)->where('active', true)->where('start_date', '<=', now())
+            ->where('end_date', '>=', now())->latest()->first();
     }
 
 }
