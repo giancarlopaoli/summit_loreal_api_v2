@@ -836,19 +836,26 @@ class InmediateOperationController extends Controller
         // Validating if client is validated
         $max_amount = $client->customer_type == 'PN' ? Configuration::where('shortname', 'MAXOPPN')->first()->value : Configuration::where('shortname', 'MAXOPPJ')->first()->value;
 
-        if($request->amount > $max_amount && $client->validated == false){
+        /*if($request->amount > $max_amount && $client->validated == false){
             return response()->json([
                 'success' => false,
                 'errors' => [
                     'Ha excedido el monto máximo de operación. Para poder continuar comuníquese con su ejecutivo.',
                 ]
             ]);
+        }*/
+
+
+        // Si op es mayor que monto máximo por tipo cliente y no ha sido validado, no será visualizado por los PLs
+        $post = true;
+        if($request->amount > $max_amount && $client->validated == false){
+            $post = false;
         }
 
         // Validating general max amount
         $max_amount = InmediateOperationController::max_amount()->getData()[0];
 
-        $post = true;
+        
         if($request->amount > $max_amount){
             $post = false;
         }
@@ -1082,7 +1089,7 @@ class InmediateOperationController extends Controller
             }
         }
 
-        if( $recibe != $total_amount_bank){
+        /*if( $recibe != $total_amount_bank){
             return response()->json([
                 'success' => false,
                 'errors' => [
@@ -1098,7 +1105,7 @@ class InmediateOperationController extends Controller
                     'La suma de montos enviados en las cuentas de '.$destiny_accounts_text.' es incorrecto = ' . $total_amount_escrow . '. Debería ser ' . $envia 
                 ]
             ]);
-        }
+        }*/
 
 
         $op_code = Carbon::now()->format('ymdHisv') . rand(0,9);
