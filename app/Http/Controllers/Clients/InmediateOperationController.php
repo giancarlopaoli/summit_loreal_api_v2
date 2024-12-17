@@ -1089,7 +1089,7 @@ class InmediateOperationController extends Controller
             }
         }
 
-        /*if( $recibe != $total_amount_bank){
+        if( $recibe != $total_amount_bank){
             return response()->json([
                 'success' => false,
                 'errors' => [
@@ -1105,7 +1105,7 @@ class InmediateOperationController extends Controller
                     'La suma de montos enviados en las cuentas de '.$destiny_accounts_text.' es incorrecto = ' . $total_amount_escrow . '. Debería ser ' . $envia 
                 ]
             ]);
-        }*/
+        }
 
 
         $op_code = Carbon::now()->format('ymdHisv') . rand(0,9);
