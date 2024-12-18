@@ -48,7 +48,7 @@ class DatatecController extends Controller
         
         //logger('LOG: Tipo de Cambio: DatatecController@datatec_exchange_rate', ["data" => $request->all()]);
 
-        /*$validator = Validator::make($request->all(), [
+        /*$val = Validator::make($request->all(), [
             'Compra' => 'required|numeric',
             'Venta' => 'required|numeric'
         ]);*/
@@ -61,6 +61,45 @@ class DatatecController extends Controller
         return response()->json(
             $registro
         );        
+    }
+
+    public function datatecv2_exchange_rate(Request $request) {
+        
+        //logger('LOG: Tipo de Cambio: DatatecController@datatec_exchange_rate', ["data" => $request->all()]);
+
+        $val = Validator::make($request->all(), [
+            'type' => 'required|in:BID,OFFER',
+            //'time' => 'required|date',
+            'price' => 'nullable|numeric',
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+        if(isset($request->price)){
+            
+            $last_tc = ExchangeRate::latest()->first();
+
+            if($request->type == 'OFFER'){
+                $request['compra'] = $request->price;
+                $request['venta'] = $last_tc->venta;
+            }
+            elseif($request->type == 'BID'){
+                $request['compra'] =  $last_tc->compra;
+                $request['venta'] = $request->price;
+            }
+
+            $registro = DatatecController::new_exchange_rate($request);
+
+            return response()->json(
+                $registro
+            ); 
+        }
+
+        return response()->json([
+            'success' => false,
+            'data' => [
+                'Error al actualizar el TC'
+            ]
+        ]);   
     }
 
 
