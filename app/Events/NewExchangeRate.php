@@ -48,6 +48,6 @@ class NewExchangeRate implements ShouldBroadcast
 
     public function broadcastAs()
     {
-      return 'get-exchangerate';
+      return 'get-exchangerate-'.env('APP_ENV');
     }
 }

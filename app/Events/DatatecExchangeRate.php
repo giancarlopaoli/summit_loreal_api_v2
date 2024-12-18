@@ -41,6 +41,6 @@ class DatatecExchangeRate implements ShouldBroadcast
 
     public function broadcastAs()
     {
-      return 'get-base-exchangerate';
+      return 'get-base-exchangerate-'.env('APP_ENV');
     }
 }
