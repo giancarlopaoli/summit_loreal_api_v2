@@ -74,24 +74,34 @@ class DatatecController extends Controller
         ]);
         if($val->fails()) return response()->json($val->messages());
 
+
         if(isset($request->price)){
             
             $last_tc = ExchangeRate::latest()->first();
+            $updated = false;
 
             if($request->type == 'OFFER'){
-                $request['compra'] = $request->price;
-                $request['venta'] = $last_tc->venta;
+                if($last_tc->compra != $request->price){
+                    $request['compra'] = $request->price;
+                    $request['venta'] = $last_tc->venta;
+                    $updated = true;
+                }
             }
             elseif($request->type == 'BID'){
-                $request['compra'] =  $last_tc->compra;
-                $request['venta'] = $request->price;
+                if($last_tc->venta != $request->price){
+                    $request['compra'] =  $last_tc->compra;
+                    $request['venta'] = $request->price;
+                    $updated = true;
+                }
             }
 
-            $registro = DatatecController::new_exchange_rate($request);
+            if($updated == true){
+                $registro = DatatecController::new_exchange_rate($request);
 
-            return response()->json(
-                $registro
-            ); 
+                return response()->json(
+                    $registro
+                ); 
+            }
         }
 
         return response()->json([
