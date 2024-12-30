@@ -807,9 +807,20 @@ class InmediateOperationController extends Controller
             ]);
         }
         $client = Client::find($request->client_id);
+        $configurations = new Configuration();
 
         // Validating available hours
         $hours = InmediateOperationController::operation_hours($request->client_id)->getData();
+
+        
+        /*return response()->json([
+                'success' => false,
+                'hours' => $hours,
+                'errors' => [
+                    ($configurations->get_value('AUTOMATCH') == 1)
+                ]
+            ]);*/
+
 
         if(!$hours->available){
             return response()->json([
@@ -1178,6 +1189,52 @@ class InmediateOperationController extends Controller
             $vendor_id = SpecialExchangeRate::find($request->special_exchange_rate_id)->vendor_id;
 
             $vendor_operation = InmediateOperationController::match_operation_vendor($operation->id,$vendor_id)->getData();
+        }
+        elseif ($configurations->get_value('AUTOMATCH') == 1 && is_null($request->vendor_id)) {
+            // Obteniendo el PL con mejor precio
+
+            $vendor_ranges = VendorRange::where('min_range', '<=', $request->amount)
+                    ->where('max_range', '>=', $request->amount)
+                    ->where('active', true)
+                    ->get();
+
+            if($request->type == 'compra') {
+                $vendor_spreads = VendorSpread::select('vendor_range_id','selling_spread as spread')
+                    ->whereIn('vendor_range_id', $vendor_ranges->pluck("id"))
+                    ->where('active', true)
+                    ->orderByRaw('spread,vendor_range_id')
+                    ->get();
+            }
+            else {
+                $vendor_spreads = VendorSpread::select('vendor_range_id','buying_spread as spread')
+                    ->whereIn('vendor_range_id', $vendor_ranges->pluck("id"))
+                    ->where('active', true)
+                    ->orderByRaw('spread,vendor_range_id')
+                    ->get();
+            }
+
+            /*return response()->json([
+                'success' => false,
+                'hours' => $hours,
+                'errors' => [
+                    ($configurations->get_value('AUTOMATCH') == 1),
+                    $vendor_ranges,
+                    $vendor_ranges->pluck("id"),
+                    $vendor_spreads,
+                    $request->vendor_id
+                ]
+            ]);*/
+
+
+            if($vendor_spreads->count() > 0){
+                $vendor_id = VendorRange::find($vendor_spreads->first()->vendor_range_id)->vendor_id;
+
+                $vendor_operation = InmediateOperationController::match_operation_vendor($operation->id,$vendor_id)->getData();
+            }
+            else{
+                // Enviar Correo()
+                $rpta_mail = Mail::send(new NewInmediateOperation($operation->id));
+            }
         }
         else{
             // Enviar Correo()
