@@ -18,7 +18,12 @@ class TelegramNotificationsControllers extends Controller
         $client_created="";
 
         if(is_null($request->vendor_id)){
-            $client_created = "| <b><i><u>URGENTE PENDIENTE EMPAREJAR</u></i></b>";
+            if($operation->operation_status_id == 1){
+                $client_created = "| <b><i><u>URGENTE PENDIENTE EMPAREJAR</u></i></b>";
+            }
+            elseif ($operation->operation_status_id == 2) {
+                $client_created = "| <b><i><u>URGENTE CONFIRMAR CON PL</u></i></b>";
+            }
         }
 
         $client = $operation->client->client_full_name;
