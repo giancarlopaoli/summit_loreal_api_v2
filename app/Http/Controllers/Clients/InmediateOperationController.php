@@ -813,11 +813,11 @@ class InmediateOperationController extends Controller
         $hours = InmediateOperationController::operation_hours($request->client_id)->getData();
 
         
-        /*return response()->json([
+/*        return response()->json([
                 'success' => false,
                 'hours' => $hours,
                 'errors' => [
-                    ($configurations->get_value('AUTOMATCH') == 1)
+                    $request->all()
                 ]
             ]);*/
 
@@ -952,8 +952,9 @@ class InmediateOperationController extends Controller
                 }
             }
 
-            $bank_account->amount = $bank_account_data['amount'];
-            $total_amount_bank += $bank_account_data['amount'];
+            $bank_account->amount = round($bank_account_data['amount'],2);
+            $total_amount_bank = round($total_amount_bank,2) +  round($bank_account_data['amount'],2);
+
             $bank_accounts[] = $bank_account;
         }
 
@@ -996,13 +997,13 @@ class InmediateOperationController extends Controller
                         ]);
                     }
 
-                    if($escrow_account_data['amount'] >= $total_comission){
+                    if(round($escrow_account_data['amount'],2) >= $total_comission){
                         $escrow_account->comission_amount = $total_comission;
                         $total_comission = 0;
                     }
                     else{
-                        $escrow_account->comission_amount = $escrow_account_data['amount'];
-                        $total_comission = $total_comission -  $escrow_account_data['amount'];
+                        $escrow_account->comission_amount = round($escrow_account_data['amount'],2);
+                        $total_comission = $total_comission -  round($escrow_account_data['amount'],2);
                     }
 
                 } else {
@@ -1018,8 +1019,8 @@ class InmediateOperationController extends Controller
                     $escrow_account->comission_amount = 0;
                 }
 
-                $escrow_account->amount = $escrow_account_data['amount'];
-                $total_amount_escrow += $escrow_account_data['amount'];
+                $escrow_account->amount = round($escrow_account_data['amount'],2);
+                $total_amount_escrow = round($total_amount_escrow,2) + round($escrow_account_data['amount'],2);
                 $escrow_accounts[] = $escrow_account;
                 $destiny_accounts_text = "fideicomiso";
             }
@@ -1104,7 +1105,7 @@ class InmediateOperationController extends Controller
             return response()->json([
                 'success' => false,
                 'errors' => [
-                    'La suma de montos enviados en las cuentas bancarias del cliente es incorrecto = ' . $total_amount_bank . '. Debería ser ' . $recibe 
+                    'La suma de montos enviados en las cuentas bancarias del cliente es incorrecto = ' . $total_amount_bank . '. Debería ser ' . $recibe
                 ]
             ]);
         }
@@ -1113,7 +1114,7 @@ class InmediateOperationController extends Controller
             return response()->json([
                 'success' => false,
                 'errors' => [
-                    'La suma de montos enviados en las cuentas de '.$destiny_accounts_text.' es incorrecto = ' . $total_amount_escrow . '. Debería ser ' . $envia 
+                    'La suma de montos enviados en las cuentas de '.$destiny_accounts_text.' es incorrecto = ' . $total_amount_escrow . '. Debería ser ' . $envia
                 ]
             ]);
         }
@@ -1158,8 +1159,8 @@ class InmediateOperationController extends Controller
         if($use_escrow_account == 1){
             foreach ($escrow_accounts as $escrow_account_data) {
                 $operation->escrow_accounts()->attach($escrow_account_data['id'], [
-                    'amount' => $escrow_account_data['amount'],
-                    'comission_amount' => $escrow_account_data['comission_amount'],
+                    'amount' => round($escrow_account_data['amount'],2),
+                    'comission_amount' => round($escrow_account_data['comission_amount'],2),
                     'created_at' => Carbon::now()
                 ]);
             }
@@ -1230,6 +1231,8 @@ class InmediateOperationController extends Controller
                 $vendor_id = VendorRange::find($vendor_spreads->first()->vendor_range_id)->vendor_id;
 
                 $vendor_operation = InmediateOperationController::match_operation_vendor($operation->id,$vendor_id)->getData();
+
+
             }
             else{
                 // Enviar Correo()
