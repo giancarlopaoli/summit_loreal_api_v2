@@ -2157,7 +2157,7 @@ class DailyOperationsController extends Controller
             }
 
             $bank_account->amount = $bank_account_data['amount'];
-            $total_amount_bank += $bank_account_data['amount'];
+            $total_amount_bank = round($total_amount_bank,2) + round($bank_account_data['amount'],2);
             $bank_accounts[] = $bank_account;
         }
 
