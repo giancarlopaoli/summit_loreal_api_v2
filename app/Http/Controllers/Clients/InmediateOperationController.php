@@ -1287,12 +1287,14 @@ class InmediateOperationController extends Controller
         $detraction_percentage = Configuration::where('shortname', 'DETRACTION')->first()->value;
         $detraction_amount = 0;
 
+        $user_id = (!is_null($operation->client->executive_id)) ? $operation->client->executive_id : 1738;
+
         $matched_operation = Operation::create([
             'code' => $op_code,
             'class' => Enums\OperationClass::Inmediata,
             'type' => ($operation->type == "Compra") ? 'Venta' : ($operation->type == "Venta" ? 'Compra' : 'Interbancaria'),
             'client_id' => $vendor_id,
-            'user_id' => auth()->id(),
+            'user_id' => $user_id,
             'use_escrow_account' => $operation->use_escrow_account,
             'amount' => $operation->amount,
             'currency_id' => $operation->currency_id,
