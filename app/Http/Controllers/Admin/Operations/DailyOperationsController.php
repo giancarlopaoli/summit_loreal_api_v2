@@ -2050,7 +2050,7 @@ class DailyOperationsController extends Controller
             }
 
             $escrow_account->amount = $escrow_account_data['amount'];
-            $total_amount_escrow += $escrow_account_data['amount'];
+            $total_amount_escrow = round($total_amount_escrow, 2) +  round($escrow_account_data['amount'],2);
             $escrow_accounts[] = $escrow_account;
         }
 
@@ -2170,14 +2170,14 @@ class DailyOperationsController extends Controller
             $recibe = round($operation->amount * $operation->exchange_rate - $operation->comission_amount - $operation->igv,2);
         }
 
-        if( $recibe != $total_amount_bank){
+        /*if( $recibe != $total_amount_bank){
             return response()->json([
                 'success' => false,
                 'errors' => [
                     'La suma de montos enviados en las cuentas bancarias del cliente es incorrecto = ' . $total_amount_bank . '. Debería ser ' . $recibe 
                 ]
             ]);
-        }
+        }*/
 
         // Detaching old client accounts from operation
         $operation->bank_accounts()->detach();
