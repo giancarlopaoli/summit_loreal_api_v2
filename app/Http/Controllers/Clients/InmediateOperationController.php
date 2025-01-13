@@ -953,7 +953,7 @@ class InmediateOperationController extends Controller
             }
 
             $bank_account->amount = round($bank_account_data['amount'],2);
-            $total_amount_bank = round($total_amount_bank,2) +  round($bank_account_data['amount'],2);
+            $total_amount_bank = round(round($total_amount_bank,2) +  round($bank_account_data['amount'],2),2);
 
             $bank_accounts[] = $bank_account;
         }
@@ -1020,7 +1020,7 @@ class InmediateOperationController extends Controller
                 }
 
                 $escrow_account->amount = round($escrow_account_data['amount'],2);
-                $total_amount_escrow = round($total_amount_escrow,2) + round($escrow_account_data['amount'],2);
+                $total_amount_escrow = round(round($total_amount_escrow,2) + round($escrow_account_data['amount'],2),2);
                 $escrow_accounts[] = $escrow_account;
                 $destiny_accounts_text = "fideicomiso";
             }
@@ -1105,7 +1105,10 @@ class InmediateOperationController extends Controller
             return response()->json([
                 'success' => false,
                 'errors' => [
-                    'La suma de montos enviados en las cuentas bancarias del cliente es incorrecto = ' . $total_amount_bank . '. Debería ser ' . $recibe
+                    'La suma de montos enviados en las cuentas bancarias del cliente es incorrecto = ' . $total_amount_bank . '. Debería ser ' . $recibe,
+                    $recibe,
+                    $total_amount_bank
+
                 ]
             ]);
         }

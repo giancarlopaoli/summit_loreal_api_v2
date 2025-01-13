@@ -2050,7 +2050,7 @@ class DailyOperationsController extends Controller
             }
 
             $escrow_account->amount = $escrow_account_data['amount'];
-            $total_amount_escrow = round($total_amount_escrow, 2) +  round($escrow_account_data['amount'],2);
+            $total_amount_escrow = round(round($total_amount_escrow, 2) +  round($escrow_account_data['amount'],2),2);
             $escrow_accounts[] = $escrow_account;
         }
 
@@ -2157,7 +2157,7 @@ class DailyOperationsController extends Controller
             }
 
             $bank_account->amount = $bank_account_data['amount'];
-            $total_amount_bank = round($total_amount_bank,2) + round($bank_account_data['amount'],2);
+            $total_amount_bank = round(round($total_amount_bank,2) + round($bank_account_data['amount'],2),2);
             $bank_accounts[] = $bank_account;
         }
 
