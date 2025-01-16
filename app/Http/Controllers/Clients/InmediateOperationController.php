@@ -866,11 +866,6 @@ class InmediateOperationController extends Controller
         // Validating general max amount
         $max_amount = InmediateOperationController::max_amount()->getData()[0];
 
-        
-        if($request->amount > $max_amount){
-            $post = false;
-        }
-
         // Discount coupons
         $coupon = null;
         if($request->has('coupon_id') && !is_null($request->coupon_id) && $request->coupon_id != "") {
@@ -1192,7 +1187,7 @@ class InmediateOperationController extends Controller
         if(!is_null($request->special_exchange_rate_id)){
             $vendor_id = SpecialExchangeRate::find($request->special_exchange_rate_id)->vendor_id;
 
-            $vendor_operation = InmediateOperationController::match_operation_vendor($operation->id,$vendor_id)->getData();
+            $vendor_operation = InmediateOperationController::match_operation_vendor($operation->id,$vendor_id,1)->getData();
         }
         elseif ($configurations->get_value('AUTOMATCH') == 1 && is_null($request->vendor_id)) {
             // Obteniendo el PL con mejor precio
@@ -1233,9 +1228,7 @@ class InmediateOperationController extends Controller
             if($vendor_spreads->count() > 0){
                 $vendor_id = VendorRange::find($vendor_spreads->first()->vendor_range_id)->vendor_id;
 
-                $vendor_operation = InmediateOperationController::match_operation_vendor($operation->id,$vendor_id)->getData();
-
-
+                $vendor_operation = InmediateOperationController::match_operation_vendor($operation->id,$vendor_id,2)->getData();
             }
             else{
                 // Enviar Correo()
@@ -1264,7 +1257,7 @@ class InmediateOperationController extends Controller
         ]);
     }
 
-    public function match_operation_vendor($operation_id, $vendor_id, $vendor_escrow_accounts=null) {
+    public function match_operation_vendor($operation_id, $vendor_id, $vendor_escrow_accounts=null, $match_type=null) {
         $operation = Operation::find($operation_id)->load('bank_accounts','escrow_accounts','vendor_bank_accounts');
 
         ####### Validating operation is not previusly matched ##########
@@ -1314,7 +1307,7 @@ class InmediateOperationController extends Controller
         ]);
 
         if($matched_operation){
-            //try {
+            try {
                 // If Escrow Account is used
                 if($operation->use_escrow_account == 1){
                     foreach ($operation->bank_accounts as $bank_account_data) {
@@ -1462,14 +1455,18 @@ class InmediateOperationController extends Controller
 
                     }
                 }
-            /*} catch (\Exception $e) {
+            } catch (\Exception $e) {
                 logger('ERROR: archivo adjunto: match_operation_vendor@InmediateOperationController', ["error" => $e]);
 
                 // Envio de correo de notificación de error
-            }*/
+            }
 
             $operations_matches = $operation->matches()->attach($matched_operation->id, ['created_at' => Carbon::now()]);
 
+            //Si fue emparejada automaticamente
+            if(!is_null($match_type)){
+                $operation->post = $match_type;
+            }
             $operation->operation_status_id = $status_id;
             $operation->save();
         }

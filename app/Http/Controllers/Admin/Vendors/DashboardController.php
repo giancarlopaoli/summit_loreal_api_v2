@@ -246,7 +246,7 @@ class DashboardController extends Controller
             ->selectRaw("if(type ='Compra', 'Venta','Compra') as type")
             ->selectRaw("if(type = 'Interbancaria', round(amount + round(amount * spread/10000, 2 ), 2), round(amount * exchange_rate, 2)) as conversion_amount")
             ->where('operation_status_id',  OperationStatus::where('name', 'Disponible')->first()->id)
-            ->where('post', true)
+            ->where('post', 1)
             ->where('class', Enums\OperationClass::Inmediata)
             ->whereRaw("date(operation_date) = '$date'")
             ->with('currency:id,name,sign')
