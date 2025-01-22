@@ -1187,7 +1187,7 @@ class InmediateOperationController extends Controller
         if(!is_null($request->special_exchange_rate_id)){
             $vendor_id = SpecialExchangeRate::find($request->special_exchange_rate_id)->vendor_id;
 
-            $vendor_operation = InmediateOperationController::match_operation_vendor($operation->id,$vendor_id,1)->getData();
+            $vendor_operation = InmediateOperationController::match_operation_vendor($operation->id,$vendor_id,null,1)->getData();
         }
         elseif ($configurations->get_value('AUTOMATCH') == 1 && is_null($request->vendor_id)) {
             // Obteniendo el PL con mejor precio
@@ -1228,7 +1228,7 @@ class InmediateOperationController extends Controller
             if($vendor_spreads->count() > 0){
                 $vendor_id = VendorRange::find($vendor_spreads->first()->vendor_range_id)->vendor_id;
 
-                $vendor_operation = InmediateOperationController::match_operation_vendor($operation->id,$vendor_id,2)->getData();
+                $vendor_operation = InmediateOperationController::match_operation_vendor($operation->id,$vendor_id,null,2)->getData();
             }
             else{
                 // Enviar Correo()
@@ -1307,7 +1307,7 @@ class InmediateOperationController extends Controller
         ]);
 
         if($matched_operation){
-            try {
+            //try {
                 // If Escrow Account is used
                 if($operation->use_escrow_account == 1){
                     foreach ($operation->bank_accounts as $bank_account_data) {
@@ -1323,6 +1323,7 @@ class InmediateOperationController extends Controller
                         else{
                             $escrow_account = EscrowAccount::where('bank_id',$bank_account_data->bank_id)
                                 ->where('currency_id', $bank_account_data->currency_id)
+                                ->where('active', true)
                                 ->first();
                         }
 
@@ -1365,6 +1366,10 @@ class InmediateOperationController extends Controller
                                 ]);
                         }
                         else{
+
+                            $matched_operation->operation_status_id = 9;
+                            $matched_operation->save();
+
                             return response()->json([
                                 'success' => false,
                                 'errors' => [
@@ -1394,6 +1399,9 @@ class InmediateOperationController extends Controller
                             ]);
                         }
                         else{
+                            $matched_operation->operation_status_id = 9;
+                            $matched_operation->save();
+
                             return response()->json([
                                 'success' => false,
                                 'errors' => [
@@ -1455,11 +1463,11 @@ class InmediateOperationController extends Controller
 
                     }
                 }
-            } catch (\Exception $e) {
+            /*} catch (\Exception $e) {
                 logger('ERROR: archivo adjunto: match_operation_vendor@InmediateOperationController', ["error" => $e]);
 
                 // Envio de correo de notificación de error
-            }
+            }*/
 
             $operations_matches = $operation->matches()->attach($matched_operation->id, ['created_at' => Carbon::now()]);
 
