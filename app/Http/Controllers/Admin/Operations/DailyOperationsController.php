@@ -2328,5 +2328,27 @@ class DailyOperationsController extends Controller
             ]
         ]);
     }
+
+    public function confirm_operation_pl(Request $request, Operation $operation) {
+
+        if($operation->post != 2){
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'La operación no está en pendiente de confirmación PL'
+                ]
+            ]);
+        }
+
+        $operation->post = 3;
+        $operation->save();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'Operación confirmada con PL'
+            ]
+        ]);
+    }
     
 }

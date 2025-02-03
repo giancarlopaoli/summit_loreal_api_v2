@@ -226,6 +226,7 @@ Route::middleware('encryptresponses')->group(function () {
             Route::PUT('confirm-funds-pl/{operation}', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'confirm_funds_pl']);
             Route::PUT('close/{operation}', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'close_operation']);
             Route::PUT('confirm-deposit/{operation}', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'confirm_deposit']);
+            Route::PUT('confirm-operation-pl/{operation}', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'confirm_operation_pl']);
 
             Route::middleware('permission:editar_operacion')->group(function () {
                 Route::PUT('update/{operation}', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'update']);
