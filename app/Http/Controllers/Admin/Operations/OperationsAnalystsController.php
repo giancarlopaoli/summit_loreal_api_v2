@@ -120,6 +120,7 @@ class OperationsAnalystsController extends Controller
             ->with('operations_analyst:id')
             ->with('operations_analyst.user:id,name,last_name')
             ->with('creator:id,name,last_name')
+            ->whereRaw('created_at >= DATE_SUB(now(), INTERVAL 30 DAY)')
             ->get();
 
         return response()->json([

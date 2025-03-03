@@ -1412,7 +1412,7 @@ class DailyOperationsController extends Controller
             ->select('operation_id', 'matched_id')
             ->join('operations as op1', 'op1.id', "=", "operation_matches.operation_id")
             ->join('operations as op2', 'op2.id', "=", "operation_matches.matched_id")
-            ->whereRaw("date(operation_matches.created_at) = '$date'")
+            //->whereRaw("date(operation_matches.created_at) = '$date'")
             ->whereRaw("(op1.operation_status_id in ($status) or op2.operation_status_id in ($status))")
             ->get();
 
@@ -2347,6 +2347,27 @@ class DailyOperationsController extends Controller
             'success' => true,
             'data' => [
                 'Operación confirmada con PL'
+            ]
+        ]);
+    }
+
+    public function origin_bank_accounts(Request $request, Operation $operation) {
+
+        $currency = ($operation->type == 'Compra') ? 1 : 2;
+
+        $bank_account = BankAccount::select('id','client_id','alias','bank_id','account_number','cci_number','currency_id')
+            ->where('client_id', $operation->client_id)
+            ->where('bank_account_status_id',1)
+            ->where('currency_id', $currency)
+            ->with('currency:id,name,sign')
+            ->with('bank:id,name,shortname,image')
+            ->with('client:id,name,last_name,mothers_name,customer_type')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'client_bank_accounts' => $bank_account
             ]
         ]);
     }
