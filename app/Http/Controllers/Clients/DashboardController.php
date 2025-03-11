@@ -40,14 +40,15 @@ class DashboardController extends Controller
 
         $pips_save = Configuration::where("shortname", "PIPSAVE")->first()->value;
 
-        $total_amount = $client->operations()->whereIn("operation_status_id", OperationStatus::wherein('name', ['Facturado', 'Finalizado sin factura', 'Pendiente facturar'])->get()->pluck('id'))->selectRaw("SUM(amount) as total, sum(round(amount*$pips_save/10000,2)) as save")->first();
+        $total_amount = $client->operations()->whereIn("operation_status_id", OperationStatus::wherein('name', ['Facturado', 'Finalizado sin factura', 'Pendiente facturar'])->get()->pluck('id'))->selectRaw("SUM(amount) as total, sum(round(amount*$pips_save/10000,2)) as save, count(*) as num_operations")->first();
 
         return response()->json([
             'success' => true,
             'data' => [
                 'operations' => $latest_operations,
                 'total_operated_amount' => (float) $total_amount->total,
-                'total_saved' => (float) $total_amount->save
+                'total_saved' => (float) $total_amount->save,
+                'total_operations' => (float) $total_amount->num_operations
             ]
         ]);
     }

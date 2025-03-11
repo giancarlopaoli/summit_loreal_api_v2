@@ -6,6 +6,7 @@ use App\Enums\CouponType;
 use App\Enums\OperationClass;
 use App\Enums\BankAccountStatus;
 use App\Http\Controllers\Controller;
+use App\Models\Association;
 use App\Models\AssociationComission;
 use App\Models\BankAccount;
 use App\Models\ClientComission;
@@ -879,6 +880,19 @@ class InmediateOperationController extends Controller
                         'El cupón ingresado es inválido'
                     ]
                 ]);
+            }
+
+            //Convenio Autoplan
+            if($coupon->code == 'AUTOPLAN'){
+                try {
+                    $association_id = Association::where('name','AUTOPLAN')->first()->id;
+
+                    $client->association_id = $association_id;
+                    $client->save();
+                    
+                } catch (\Exception $e) {
+                    logger('ERROR: No se pudo registrar cliente a Asociacion AUTOPLAN: InmediateOperationController@create_operation', ["error" => $e]);
+                }
             }
         }
 
