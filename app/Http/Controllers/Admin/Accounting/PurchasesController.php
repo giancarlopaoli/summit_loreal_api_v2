@@ -38,7 +38,7 @@ class PurchasesController extends Controller
                 'service_year' => 'nullable|numeric',
                 //'file' => 'required|file',
                 'detail' => 'required|array',
-                'detraction_type' => 'nullable|exists:mysql2.detraction_types,code',
+                'detraction_type_id' => 'nullable|exists:mysql2.detraction_types,code',
                 'detraction_percentage' => 'nullable|numeric',
                 'detraction_amount' => 'nullable|numeric',
             ]);
