@@ -143,7 +143,7 @@ class GeneralController extends Controller
     //Suppliers list
     public function detraction_types(Request $request) {
 
-        $detraction_types = DetractionType::select('code','name')
+        $detraction_types = DetractionType::select('id','code','name')
             ->get();
 
         return response()->json([

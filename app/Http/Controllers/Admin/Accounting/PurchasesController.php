@@ -101,7 +101,7 @@ class PurchasesController extends Controller
                 'due_date' => $request->due_date,
                 'service_month' => isset($request->service_month) ? $request->service_month : null,
                 'service_year' => isset($request->service_year) ? $request->service_year : null,
-                'detraction_type' => isset($request->detraction_type) ? $request->detraction_type : null,
+                'detraction_type_id' => isset($request->detraction_type_id) ? $request->detraction_type_id : null,
                 'detraction_percentage' => isset($request->detraction_percentage) ? $request->detraction_percentage : null,
                 'detraction_amount' => isset($request->detraction_amount) ? $request->detraction_amount : null,
                 'status' => 'Pendiente pago'
