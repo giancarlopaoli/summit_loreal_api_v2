@@ -30,19 +30,31 @@ class PurchasesController extends Controller
                 'type' => 'required|in:Producto,Servicio',
                 'currency_id' => 'required|exists:currencies,id',
                 'exchange_rate' => 'nullable|numeric',
-                'serie' => 'required|string',
-                'number' => 'required|string',
+                'serie' => 'nullable|string',
+                'number' => 'nullable|string',
                 'issue_date' => 'required|date',
                 'due_date' => 'required|date',
                 'service_month' => 'nullable|numeric',
                 'service_year' => 'nullable|numeric',
                 //'file' => 'required|file',
                 'detail' => 'required|array',
-                'detraction_type_id' => 'nullable|exists:mysql2.detraction_types,code',
+                'detraction_type' => 'nullable|exists:mysql2.detraction_types,id',
                 'detraction_percentage' => 'nullable|numeric',
                 'detraction_amount' => 'nullable|numeric',
             ]);
             if($val->fails()) return response()->json($val->messages());
+
+            // Validando que no exista una factura con el mismo número
+            $exists_invoice = PurchaseInvoice::where('service_id', $request->service_id)->where('serie', $request->serie)->where('number', $request->number)->get();
+
+            if($exists_invoice->count() > 0 ){
+                return response()->json([
+                    'success' => false,
+                    'errors' => [
+                        'El número de factura ingresado ya existe'
+                    ]
+                ]);
+            }
 
             $amount = 0;
             $igv = 0;
@@ -79,7 +91,7 @@ class PurchasesController extends Controller
                 if(isset($request->detraction_type) || isset($request->detraction_percentage) || isset($request->detraction_amount)){
 
                     $val = Validator::make($request->all(), [
-                        'detraction_type' => 'required|exists:mysql2.detraction_types,code',
+                        'detraction_type' => 'required|exists:mysql2.detraction_types,id',
                         'detraction_percentage' => 'required|numeric',
                         'detraction_amount' => 'required|numeric',
                     ]);
@@ -101,7 +113,7 @@ class PurchasesController extends Controller
                 'due_date' => $request->due_date,
                 'service_month' => isset($request->service_month) ? $request->service_month : null,
                 'service_year' => isset($request->service_year) ? $request->service_year : null,
-                'detraction_type_id' => isset($request->detraction_type_id) ? $request->detraction_type_id : null,
+                'detraction_type_id' => isset($request->detraction_type) ? $request->detraction_type : null,
                 'detraction_percentage' => isset($request->detraction_percentage) ? $request->detraction_percentage : null,
                 'detraction_amount' => isset($request->detraction_amount) ? $request->detraction_amount : null,
                 'status' => 'Pendiente pago'
@@ -179,10 +191,93 @@ class PurchasesController extends Controller
 
         return response()->json([
             'success' => true,
+            'purchase' => $new_purchase->only(['id']),
             'data' => [
                 'Compra creada exitosamente'
             ]
         ]);
+    }
+
+    //Validate Invoice Exists
+    public function invoice_exists(Request $request, PurchaseInvoice $purchase_invoice) {
+        $val = Validator::make($request->all(), [
+            'service_id' => 'required|exists:mysql2.services,id',
+            'serie' => 'nullable|string',
+            'number' => 'required|string',
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+        $exists_invoice = PurchaseInvoice::where('service_id', $request->service_id)->where('serie', $request->serie)->where('number', $request->number)->get();
+
+        if($exists_invoice->count() > 0 ){
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'El número de factura ingresado ya existe'
+                ]
+            ]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'El número de factura no existe en el sistema'
+            ]
+        ]);
+    }
+
+    //Purchases list
+    public function upload_invoice_document(Request $request, PurchaseInvoice $purchase_invoice) {
+        $val = Validator::make($request->all(), [
+            'file' => 'required|file',
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+        if($request->hasFile('file')){
+            $file = $request->file('file');
+            $path = env('AWS_ENV').'/accounting/purchases/';
+            
+            $original_name = $file->getClientOriginalName();
+            $longitud = Str::length($file->getClientOriginalName());
+
+            $filename = "invoice_" . $purchase_invoice->id . "_" . substr($original_name, $longitud - 6, $longitud);
+
+            try {
+                $s3 = Storage::disk('s3')->putFileAs($path, $file, $filename);
+
+                AccountingDocument::create([
+                    'name' => $path . $filename,
+                    'purchase_invoice_id' => $purchase_invoice->id,
+                    'type' => 'Invoice'
+                ]);
+
+                return response()->json([
+                    'success' => true,
+                    'data' => [
+                        'Factura subida exitosamente'
+                    ]
+                ]);
+
+            } catch (\Exception $e) {
+                // Registrando el el log los datos ingresados
+                logger('ERROR: subiendo factura proveedor: upload_invoice_document@PurchasesController', ["error" => $e]);
+
+                return response()->json([
+                    'success' => false,
+                    'errors' => [
+                        'Error en el archivo adjunto'
+                    ]
+                ]);
+            }
+        }
+        else{
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'Error al subir archivo de factura'
+                ]
+            ]);
+        }
     }
 
     //Purchases list

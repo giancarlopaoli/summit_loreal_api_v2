@@ -12,6 +12,7 @@ use App\Models\Supplier;
 use App\Models\SupplierBankAccount;
 use App\Models\SupplierContactType;
 use App\Models\BusinessBankAccount;
+use App\Models\RefundBankAccount;
 use App\Models\DetractionType;
 
 class TestDataController extends Controller
@@ -731,7 +732,7 @@ class TestDataController extends Controller
             'document_type_id' => 2,
             'document_number' => "20505203152",
             'email' => "",
-            'phone' => "b",
+            'phone' => "",
             'address' => "Av. Nicolás Arriola 480 Urb. Santa Catalina",
             'district_id' => 1262,
             'country_id' => 375,
@@ -739,6 +740,34 @@ class TestDataController extends Controller
             'detraction_account' => "",
             'status' => 'Activo'
         ]); 
+
+        Supplier::create([
+            'name' => "SUPERINTENDENCIA NACIONAL DE REGISTROS PÚBLICOS - SUNARP",
+            'document_type_id' => 2,
+            'document_number' => "20267073580",
+            'email' => "",
+            'phone' => "",
+            'address' => "AV. PRIMAVERA NRO. 1878",
+            'district_id' => 1287,
+            'country_id' => 375,
+            'apply_detraction' => "No",
+            'detraction_account' => "",
+            'status' => 'Activo'
+        ]); 
+
+         Supplier::create([
+            'name' => "CAP IP CONSULTING S.A.C.",
+            'document_type_id' => 2,
+            'document_number' => "20604352119",
+            'email' => "",
+            'phone' => "",
+            'address' => "CAL. LUIS LARCO 373 DPTO. C4",
+            'district_id' => 681,
+            'country_id' => 375,
+            'apply_detraction' => "Si",
+            'detraction_account' => "00060133131",
+            'status' => 'Activo'
+        ]);
 
         
         SupplierContactType::truncate();
@@ -1036,6 +1065,30 @@ class TestDataController extends Controller
             'status' => 'Activo'
         ]); 
 
+        Service::create([
+            'budget_id' => 4,
+            'supplier_id' => 32,
+            'name' => "Solicitudes Registrales",
+            'description' => "Solicitudes de Vigencias de poderes, partidas registrales, copia literal",
+            'amount' => 500,
+            'currency_id' => 1,
+            'exchange_rate' => null,
+            'frequency' => 'Otro',
+            'status' => 'Activo'
+        ]);
+
+        Service::create([
+            'budget_id' => 4,
+            'supplier_id' => 32,
+            'name' => "Asesoría en temas de Marca - Indecopi",
+            'description' => "Asesoría en temas de MArcoa - Indecopi",
+            'amount' => 2000,
+            'currency_id' => 1,
+            'exchange_rate' => null,
+            'frequency' => 'Otro',
+            'status' => 'Activo'
+        ]);
+
 
 
         BusinessBankAccount::truncate();
@@ -1058,6 +1111,29 @@ class TestDataController extends Controller
             'account_type_id' => "1",
             'status' => 'Activo'
         ]);
+
+
+        RefundBankAccount::truncate();
+        RefundBankAccount::create([
+            'user_id' => 483,
+            'bank_id' => 1,
+            'account_number' => '19319941567095',
+            'cci_number' => "00219311994156709518",
+            'currency_id' => '1',
+            'account_type_id' => "1",
+            'status' => 'Activo'
+        ]);
+
+        RefundBankAccount::create([
+            'user_id' => 483,
+            'bank_id' => 2,
+            'account_number' => '19432363638142',
+            'cci_number' => "00219413236363814293",
+            'currency_id' => '2',
+            'account_type_id' => "1",
+            'status' => 'Activo'
+        ]);
+
 
         DetractionType::truncate();
 

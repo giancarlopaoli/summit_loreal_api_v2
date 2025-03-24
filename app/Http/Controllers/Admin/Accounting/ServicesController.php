@@ -37,6 +37,7 @@ class ServicesController extends Controller
 
         $suppliers = Supplier::select('id','name','logo_url')
             ->where('status', 'Activo')
+            ->orderBy('name')
             ->get();
 
         return response()->json([
@@ -89,7 +90,7 @@ class ServicesController extends Controller
         $services = Service::select('id','budget_id','supplier_id','name','description','amount','currency_id','exchange_rate','frequency','status')
             ->where('status','Activo')
             ->with('budget:id,area_id,code,description,period,initial_budget','budget.area:id,name,code')
-            ->with('supplier:id,name')
+            ->with('supplier:id,name,document_type_id','supplier.document_type:id,name')
             ->get();
 
         return response()->json([

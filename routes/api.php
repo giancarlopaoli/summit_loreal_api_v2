@@ -670,8 +670,10 @@ Route::middleware('encryptresponses')->group(function () {
 
                 //Route::middleware('permission:accounting_purchase_create')->group(function () {
                     Route::POST('', [\App\Http\Controllers\Admin\Accounting\PurchasesController::class, 'new_purchase']);
+                    Route::POST('upload-invoice-document/{purchase_invoice}', [\App\Http\Controllers\Admin\Accounting\PurchasesController::class, 'upload_invoice_document']);
                 //});
                 
+                Route::GET('invoice-exists', [\App\Http\Controllers\Admin\Accounting\PurchasesController::class, 'invoice_exists']);
                 Route::GET('', [\App\Http\Controllers\Admin\Accounting\PurchasesController::class, 'list_purchases']);
 
                 Route::middleware('permission:accounting_purchase_reopen')->group(function () {
