@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
+use App\Models\PurchaseInvoice;
 use App\Models\Supplier;
 use App\Models\SupplierBankAccount;
 use App\Models\SupplierContact;
@@ -294,5 +295,20 @@ class SuppliersController extends Controller
         ]);
     }
 
+    // Add Bank Account
+    public function invoices(Request $request, Supplier $supplier) {
+
+        $invoices = PurchaseInvoice::select('id','service_id','total_amount','total_igv','type','invoice_type','currency_id','serie','number','issue_date','service_month','service_year','status')
+            ->whereRaw("service_id in (select id from services where supplier_id = $supplier->id) ")
+            ->with('currency:id,name,sign')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'purchases' => $invoices
+            ]
+        ]);
+    }
     
 }

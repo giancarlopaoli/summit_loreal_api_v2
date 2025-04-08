@@ -647,6 +647,7 @@ Route::middleware('encryptresponses')->group(function () {
                 Route::POST('contact/{supplier}', [\App\Http\Controllers\Admin\Accounting\SuppliersController::class, 'new_contact']);
                 Route::GET('contact/{supplier}', [\App\Http\Controllers\Admin\Accounting\SuppliersController::class, 'list_contacts']);
                 Route::DELETE('contact/{supplier_contact}', [\App\Http\Controllers\Admin\Accounting\SuppliersController::class, 'delete_contact']);
+                Route::GET('invoices/{supplier}', [\App\Http\Controllers\Admin\Accounting\SuppliersController::class, 'invoices']);
 
                 Route::POST('bank-account/{supplier}', [\App\Http\Controllers\Admin\Accounting\SuppliersController::class, 'new_bank_account']);
                 Route::PUT('bank-account/main/{supplier_bank_account}', [\App\Http\Controllers\Admin\Accounting\SuppliersController::class, 'set_default_account']);
