@@ -674,6 +674,7 @@ Route::middleware('encryptresponses')->group(function () {
                 //});
                 
                 Route::GET('invoice-exists', [\App\Http\Controllers\Admin\Accounting\PurchasesController::class, 'invoice_exists']);
+                Route::GET('previous/{service}', [\App\Http\Controllers\Admin\Accounting\PurchasesController::class, 'previous_invoices']);
                 Route::GET('', [\App\Http\Controllers\Admin\Accounting\PurchasesController::class, 'list_purchases']);
 
                 Route::middleware('permission:accounting_purchase_reopen')->group(function () {

@@ -29,7 +29,7 @@ class PurchasesController extends Controller
                 'service_id' => 'required|exists:mysql2.services,id',
                 'type' => 'required|in:Producto,Servicio',
                 'currency_id' => 'required|exists:currencies,id',
-                'exchange_rate' => 'nullable|numeric',
+                //'exchange_rate' => 'nullable|numeric',
                 'serie' => 'nullable|string',
                 'number' => 'nullable|string',
                 'issue_date' => 'required|date',
@@ -222,6 +222,22 @@ class PurchasesController extends Controller
             'success' => true,
             'data' => [
                 'El número de factura no existe en el sistema'
+            ]
+        ]);
+    }
+
+    // Previous Invoices of a service
+    public function previous_invoices(Request $request, Service $service) {
+
+        $previous_invoices = PurchaseInvoice::select('id','service_id','total_amount','total_igv','type','invoice_type','currency_id','exchange_rate','detraction_type_id','detraction_percentage','detraction_amount','serie','number','issue_date','service_month','service_year','status')
+            ->where('service_id', $service->id)
+            ->with('lines:id,purchase_invoice_id,description,quantity,unit_amount,igv,ipm')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'purchases' => $previous_invoices
             ]
         ]);
     }
