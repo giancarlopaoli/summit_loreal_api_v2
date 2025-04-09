@@ -820,6 +820,25 @@ class ClientsController extends Controller
             if($request->action == 'approve'){
                 if($client->status->name == 'Registrado' || $client->status->name == 'Rechazo parcial'){
 
+                    //Validating document number
+                    if($client->document_type_id == 1 && Str::length($client->document_number) != 11){
+                        return response()->json([
+                            'success' => false,
+                            'errors' => [
+                                'El Nro de RUC del cliente debe tener 11 dígitos'
+                            ]
+                        ]);
+                    }
+
+                    if($client->document_type_id == 2 && Str::length($client->document_number) != 8){
+                        return response()->json([
+                            'success' => false,
+                            'errors' => [
+                                'El Nro de DNI del cliente debe tener 8 dígitos'
+                            ]
+                        ]);
+                    }
+
                     // Validating if bank accounts were already approved
 
                     if($client->bank_accounts->where('bank_account_status_id', BankAccountStatus::where('name','Pendiente')->first()->id)->count() > 0){
