@@ -301,6 +301,7 @@ class SuppliersController extends Controller
         $invoices = PurchaseInvoice::select('id','service_id','total_amount','total_igv','type','invoice_type','currency_id','serie','number','issue_date','service_month','service_year','status')
             ->whereRaw("service_id in (select id from services where supplier_id = $supplier->id) ")
             ->with('currency:id,name,sign')
+            ->with('service:id,name,description')
             ->get();
 
         return response()->json([
