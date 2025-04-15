@@ -237,6 +237,8 @@ Route::middleware('encryptresponses')->group(function () {
             Route::GET('escrow-accounts', [\App\Http\Controllers\Clients\InterbankOperationController::class, 'get_escrow_accounts']);
             Route::GET('bank-accounts', [\App\Http\Controllers\Clients\InterbankOperationController::class, 'get_client_bank_accounts']);
             Route::GET('origin-bank-accounts/{operation}', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'origin_bank_accounts']);
+            Route::GET('escrow-account-operation', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'get_escrow_account_operation']);
+            Route::GET('escrow-account-operation/{operation}', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'get_escrow_account_operations']);
 
             Route::GET('download-file', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'download_file']);
 

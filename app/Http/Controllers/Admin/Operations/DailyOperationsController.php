@@ -1913,9 +1913,18 @@ class DailyOperationsController extends Controller
 
                 $igv = round($total_comission - $comission_amount,2);
 
+                // Calculando detracción
+                $detraction_percentage = Configuration::where('shortname', 'DETRACTION')->first()->value;
+                $detraction_amount = 0;
+
+                if($total_comission >= 700) {
+                    $detraction_amount = round( ($total_comission) * ($detraction_percentage / 100), 0);
+                }
+
                 $operation->amount = $request->value;
                 $operation->comission_amount = $comission_amount;
                 $operation->igv = $igv;
+                $operation->detraction_amount = $detraction_amount;
                 $operation->save();
             }
             elseif($request->field == 'comission_spread'){
@@ -1926,9 +1935,18 @@ class DailyOperationsController extends Controller
 
                 $igv = round($total_comission - $comission_amount,2);
 
+                // Calculando detracción
+                $detraction_percentage = Configuration::where('shortname', 'DETRACTION')->first()->value;
+                $detraction_amount = 0;
+
+                if($total_comission >= 700) {
+                    $detraction_amount = round( ($total_comission) * ($detraction_percentage / 100), 0);
+                }
+
                 $operation->comission_spread = $request->value;
                 $operation->comission_amount = $comission_amount;
                 $operation->igv = $igv;
+                $operation->detraction_amount = $detraction_amount;
                 $operation->save();
             }
             else{
@@ -2070,7 +2088,10 @@ class DailyOperationsController extends Controller
                     'La suma de montos enviados en las cuentas de fideicomiso es incorrecto = ' . $total_amount_escrow . '. Debería ser ' . $envia 
                 ]
             ]);
-        }   
+        }
+
+        //Setting null escrow account operation id in client destiny accounts
+        DB::table('bank_account_operation')->whereIn('escrow_account_operation_id', $operation->escrow_accounts->pluck('pivot.id'))->update(['escrow_account_operation_id' => null]);
 
         // Detaching old escrow accounts from operation
         $operation->escrow_accounts()->detach();
@@ -2157,6 +2178,7 @@ class DailyOperationsController extends Controller
             }
 
             $bank_account->amount = $bank_account_data['amount'];
+            $bank_account->escrow_account_operation_id = $bank_account_data['escrow_account_operation_id'];
             $total_amount_bank = round(round($total_amount_bank,2) + round($bank_account_data['amount'],2),2);
             $bank_accounts[] = $bank_account;
         }
@@ -2170,14 +2192,14 @@ class DailyOperationsController extends Controller
             $recibe = round($operation->amount * $operation->exchange_rate - $operation->comission_amount - $operation->igv,2);
         }
 
-        /*if( $recibe != $total_amount_bank){
+        if( $recibe != $total_amount_bank){
             return response()->json([
                 'success' => false,
                 'errors' => [
                     'La suma de montos enviados en las cuentas bancarias del cliente es incorrecto = ' . $total_amount_bank . '. Debería ser ' . $recibe 
                 ]
             ]);
-        }*/
+        }
 
         // Detaching old client accounts from operation
         $operation->bank_accounts()->detach();
@@ -2187,6 +2209,7 @@ class DailyOperationsController extends Controller
             $operation->bank_accounts()->attach($bank_account_data['id'], [
                 'amount' => $bank_account_data['amount'],
                 'comission_amount' => $bank_account_data['comission_amount'],
+                'escrow_account_operation_id' => $bank_account_data['escrow_account_operation_id'],
                 'created_at' => Carbon::now()
             ]);
         }
@@ -2368,6 +2391,57 @@ class DailyOperationsController extends Controller
             'success' => true,
             'data' => [
                 'client_bank_accounts' => $bank_account
+            ]
+        ]);
+    }
+
+    public function get_escrow_account_operation(Request $request) {
+        $val = Validator::make($request->all(), [
+            'escrow_account_operation_id' => 'required|exists:escrow_account_operation,id',
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+
+        $escrow_account_operation = DB::table('escrow_account_operation as eao')
+            ->join('escrow_accounts as ea', 'ea.id','=','eao.escrow_account_id')
+            ->join('currencies as cu', 'cu.id','=','ea.currency_id')
+            ->join('operations as op', 'op.id','=','eao.operation_id')
+            ->join('clients as cl', 'cl.id','=','op.client_id')
+            ->join('banks as bk', 'bk.id','=','ea.bank_id')
+            ->select('eao.id','eao.escrow_account_id','eao.operation_id','eao.amount','eao.comission_amount','ea.bank_id','ea.account_number','ea.currency_id','cu.name as currency_name','cu.sign as currency_sign','cl.last_name as pl_name','bk.shortname as bank_name')
+            ->where('eao.id', $request->escrow_account_operation_id)
+            ->first();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'escrow_account_operation' => $escrow_account_operation
+            ]
+        ]);
+    }
+
+    public function get_escrow_account_operations(Request $request, Operation $operation) {
+
+
+        if($operation->matches->count() == 1){
+            $matched_operation_id = $operation->matches->first()->id;
+        }
+
+
+        $escrow_account_operation = DB::table('escrow_account_operation as eao')
+            ->join('escrow_accounts as ea', 'ea.id','=','eao.escrow_account_id')
+            ->join('currencies as cu', 'cu.id','=','ea.currency_id')
+            ->join('operations as op', 'op.id','=','eao.operation_id')
+            ->join('clients as cl', 'cl.id','=','op.client_id')
+            ->join('banks as bk', 'bk.id','=','ea.bank_id')
+            ->select('eao.id','eao.escrow_account_id','eao.operation_id','eao.amount','eao.comission_amount','ea.bank_id','ea.account_number','ea.currency_id','cu.name as currency_name','cu.sign as currency_sign','cl.last_name as pl_name','bk.shortname as bank_name')
+            ->where('op.id', $matched_operation_id)
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'escrow_account_operations' => $escrow_account_operation
             ]
         ]);
     }
