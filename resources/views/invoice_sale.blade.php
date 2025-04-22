@@ -289,7 +289,7 @@
   <table style="margin: 0; padding: 20px 20px; width: 650px; margin: 0 auto; background-color: #fff;" cellpadding="0" cellspacing="0">
     <tr>
       <td class="header" align="center">
-        <img src="https://i.ibb.co/bWvsHd7/logo.jpg" alt="" />
+        <img src="https://bill-upload.s3.amazonaws.com/static/img/logo.png" alt="" />
       </td>
     </tr>
     <tr>

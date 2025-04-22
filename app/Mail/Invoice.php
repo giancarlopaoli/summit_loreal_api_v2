@@ -35,7 +35,7 @@ class Invoice extends Mailable
         $mail_executive = (isset($this->operation->client->executive->user->email)) ? $this->operation->client->executive->user->email : env('MAIL_CRM');
 
         $email = $this
-            ->subject('BILLEX | OPERACIÓN FINALIZADA')
+            ->subject('BILLEX | FACTURA ELECTRÓNICA')
             ->to($this->operation->client->email)
             ->cc($this->operation->user->email)
             ->cc($emails)
