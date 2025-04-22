@@ -1239,7 +1239,7 @@ class TestDataController extends Controller
         ]);
         DetractionType::create([
             "code" => "029",
-            "name" => "Algodòn en rama sin desmontar"
+            "name" => "Algodón en rama sin desmontar"
         ]);
         DetractionType::create([
             "code" => "030",

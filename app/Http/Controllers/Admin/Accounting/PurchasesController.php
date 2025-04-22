@@ -108,7 +108,6 @@ class PurchasesController extends Controller
                 'exchange_rate' => isset($request->exchange_rate) ? $request->exchange_rate : null,
                 'serie' => $request->serie,
                 'number' => $request->number,
-                'detraction_amount' => $detraction_amount,
                 'issue_date' => $request->issue_date,
                 'due_date' => $request->due_date,
                 'service_month' => isset($request->service_month) ? $request->service_month : null,
@@ -149,7 +148,7 @@ class PurchasesController extends Controller
 
                 } catch (\Exception $e) {
                     // Registrando el el log los datos ingresados
-                    logger('ERROR: subiendo factura proveedor: new_supplier@PurchasesController', ["error" => $e]);
+                    logger('ERROR: subiendo factura proveedor: new_purchase@PurchasesController', ["error" => $e]);
 
                     return response()->json([
                         'success' => false,
@@ -417,7 +416,7 @@ class PurchasesController extends Controller
             'service_month' => 'nullable|numeric',
             'service_year' => 'nullable|numeric',
             'detail' => 'required|array',
-            'detraction_type' => 'nullable|exists:mysql2.detraction_types,code',
+            'detraction_type' => 'nullable|exists:mysql2.detraction_types,id',
             'detraction_percentage' => 'nullable|numeric',
             'detraction_amount' => 'nullable|numeric',
         ]);
@@ -444,7 +443,7 @@ class PurchasesController extends Controller
         if(isset($request->detraction_type) || isset($request->detraction_percentage) || isset($request->detraction_amount)){
 
             $val = Validator::make($request->all(), [
-                'detraction_type' => 'required|exists:mysql2.detraction_types,code',
+                'detraction_type' => 'required|exists:mysql2.detraction_types,id',
                 'detraction_percentage' => 'required|numeric',
                 'detraction_amount' => 'required|numeric',
             ]);
@@ -460,7 +459,7 @@ class PurchasesController extends Controller
             'exchange_rate' => !is_null($request->exchange_rate) ? $request->exchange_rate : null,
             'serie' => $request->serie,
             'number' => $request->number,
-            'detraction_type' => isset($request->detraction_type) ? $request->detraction_type : null,
+            'detraction_type_id' => isset($request->detraction_type) ? $request->detraction_type : null,
             'detraction_percentage' => isset($request->detraction_percentage) ? $request->detraction_percentage : null,
             'detraction_amount' => isset($request->detraction_amount) ? $request->detraction_amount : null,
             'issue_date' => $request->issue_date,
@@ -524,7 +523,7 @@ class PurchasesController extends Controller
         ]);
     }
 
-    //Request edit Purchase
+    //Edit Purchase
     public function delete(Request $request, PurchaseInvoice $purchase_invoice) {
 
         if($purchase_invoice->payments->count() > 0){
@@ -745,6 +744,95 @@ class PurchasesController extends Controller
         ]);
     }
 
+    //Massive Purchase register
+    public function massive_purchase(Request $request) {
+
+        // Validando que no exista una factura con el mismo número
+        $exists_invoice = PurchaseInvoice::where('service_id', $request->service_id)->where('serie', $request->serie)->where('number', $request->number)->get();
+
+        if($exists_invoice->count() > 0 ){
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'El número de factura ingresado ya existe'
+                ]
+            ]);
+        }
+
+        $amount = round($request->quantity * $request->unit_amount , 2);
+        $igv = round($request->quantiy * $request->igv, 2);
+
+        $new_purchase = PurchaseInvoice::create([
+            'service_id' => $request->service_id,
+            'type' => $request->type,
+            'total_amount' => $amount,
+            'total_igv' => $igv,
+            'currency_id' => $request->currency_id,
+            'exchange_rate' => isset($request->exchange_rate) ? $request->exchange_rate : null,
+            'serie' => $request->serie,
+            'number' => $request->number,
+            'issue_date' => $request->issue_date,
+            'due_date' => $request->due_date,
+            'service_month' => isset($request->service_month) ? $request->service_month : null,
+            'service_year' => isset($request->service_year) ? $request->service_year : null,
+            'detraction_type_id' => isset($request->detraction_type_id) ? $request->detraction_type_id : null,
+            'detraction_percentage' => isset($request->detraction_percentage) ? $request->detraction_percentage : null,
+            'detraction_amount' => isset($request->detraction_amount) ? $request->detraction_amount : null,
+            'status' => 'Borrador'
+        ]);
+
+        $new_purchase->lines()->create([
+            'description' => $request->description,
+            'quantity' => $request->quantity,
+            'unit_amount' => $request->unit_amount,
+            'igv' => $request->igv,
+            'ipm' => $request->ipm
+        ]);
+
+
+        if($request->hasFile('file')){
+            $file = $request->file('file');
+            $path = env('AWS_ENV').'/accounting/purchases/';
+            
+            $original_name = $file->getClientOriginalName();
+            $longitud = Str::length($file->getClientOriginalName());
+
+            $filename = "invoice_" . $new_purchase->id . "_" . substr($original_name, $longitud - 6, $longitud);
+
+            try {
+                $s3 = Storage::disk('s3')->putFileAs($path, $file, $filename);
+
+                AccountingDocument::create([
+                    'name' => $path . $filename,
+                    'purchase_invoice_id' => $new_purchase->id,
+                    'type' => 'Invoice'
+                ]);
+
+                $new_purchase->status = 'Pendiente pago';
+                $new_purchase->save();
+
+            } catch (\Exception $e) {
+                // Registrando el el log los datos ingresados
+                logger('ERROR: registro masivo factura: massive_purchase@PurchasesController', ["error" => $e]);
+
+                return response()->json([
+                    'success' => false,
+                    'errors' => [
+                        'Error en el archivo adjunto'
+                    ]
+                ]);
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'purchase' => $new_purchase->only(['id']),
+            'data' => [
+                'Compra creada exitosamente'
+            ]
+        ]);
+    }
+
 ########################################################################
 
 
@@ -752,7 +840,7 @@ class PurchasesController extends Controller
     //Detractions pending
     public function pending_detractions(Request $request) {
 
-        $pending_detractions = PurchaseInvoice::select('id','service_id','total_amount','detraction_percentage','detraction_amount','detraction_type','detraction_payment_date','serie','number','issue_date','serie','number','currency_id')
+        $pending_detractions = PurchaseInvoice::select('id','service_id','total_amount','detraction_percentage','detraction_amount','detraction_type_id','detraction_payment_date','serie','number','issue_date','serie','number','currency_id')
             ->selectRaw("concat(year(issue_date),if(month(issue_date)<10,concat(0,month(issue_date)),month(issue_date))) as period")
             ->where('status', 'Pendiente pago')
             ->where('detraction_amount', '>', 0)
@@ -802,7 +890,7 @@ class PurchasesController extends Controller
     //Detractions pending
     public function detractions_in_progress(Request $request) {
 
-        $massive_detractions = PurchaseInvoice::select('id','service_id','total_amount','detraction_percentage','detraction_amount','detraction_type','detraction_payment_date','serie','number','issue_date','serie','number')
+        $massive_detractions = PurchaseInvoice::select('id','service_id','total_amount','detraction_percentage','detraction_amount','detraction_type_id','detraction_payment_date','serie','number','issue_date','serie','number')
             ->selectRaw("concat(year(issue_date),if(month(issue_date)<10,concat(0,month(issue_date)),month(issue_date))) as period")
             ->where('status', 'Pendiente pago')
             ->where('detraction_url', 'pagoMasivo')

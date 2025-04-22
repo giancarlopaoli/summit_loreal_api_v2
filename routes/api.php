@@ -668,12 +668,13 @@ Route::middleware('encryptresponses')->group(function () {
                 Route::GET('{service}', [\App\Http\Controllers\Admin\Accounting\ServicesController::class, 'detail_service']);
             });
 
-            ########## Services  #############
+            ########## Purchases  #############
             Route::prefix('purchases')->group(function () {
 
                 //Route::middleware('permission:accounting_purchase_create')->group(function () {
                     Route::POST('', [\App\Http\Controllers\Admin\Accounting\PurchasesController::class, 'new_purchase']);
                     Route::POST('upload-invoice-document/{purchase_invoice}', [\App\Http\Controllers\Admin\Accounting\PurchasesController::class, 'upload_invoice_document']);
+                    Route::POST('massive', [\App\Http\Controllers\Admin\Accounting\PurchasesController::class, 'massive_purchase']);
                 //});
                 
                 Route::GET('invoice-exists', [\App\Http\Controllers\Admin\Accounting\PurchasesController::class, 'invoice_exists']);
