@@ -2422,9 +2422,13 @@ class DailyOperationsController extends Controller
 
     public function get_escrow_account_operations(Request $request, Operation $operation) {
 
-
+        $matched_operation_id = null;
         if($operation->matches->count() == 1){
             $matched_operation_id = $operation->matches->first()->id;
+        }
+
+        if($operation->matched_operation->count() == 1){
+            $matched_operation_id = $operation->matched_operation->first()->id;
         }
 
 
