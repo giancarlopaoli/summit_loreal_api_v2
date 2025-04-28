@@ -845,17 +845,36 @@ class InmediateOperationController extends Controller
             ]);
         }
 
+        // Validating Comission is no Zero
+
+        if($request->comission_spread == 0 && $request->comission_amount == 0){
+            $allows_comission_zero = Configuration::where('shortname', 'COMIZERO')->first()->value;
+            
+            if($allows_comission_zero == 0){
+                return response()->json([
+                    'success' => false,
+                    'errors' => [
+                        'El monto de comisión no puede ser Cero.'
+                    ]
+                ]);
+            }
+            else{
+                // Regresando la configuración a inactivo por default
+                Configuration::where('shortname', 'COMIZERO')->update(['value' => 0]);
+            }
+        }
+
         // Validating if client is validated
         $max_amount = $client->customer_type == 'PN' ? Configuration::where('shortname', 'MAXOPPN')->first()->value : Configuration::where('shortname', 'MAXOPPJ')->first()->value;
 
-        /*if($request->amount > $max_amount && $client->validated == false){
+        if($request->amount > $max_amount && $client->validated == false){
             return response()->json([
                 'success' => false,
                 'errors' => [
                     'Ha excedido el monto máximo de operación. Para poder continuar comuníquese con su ejecutivo.',
                 ]
             ]);
-        }*/
+        }
 
 
         // Si op es mayor que monto máximo por tipo cliente y no ha sido validado, no será visualizado por los PLs

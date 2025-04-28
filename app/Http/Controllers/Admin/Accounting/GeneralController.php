@@ -4,8 +4,11 @@ namespace App\Http\Controllers\Admin\Accounting;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
+use Carbon\Carbon;
+use App\Models\AccountableExchangeRate;
 use App\Models\BusinessBankAccount;
 use App\Models\Client;
 use App\Models\DetractionType;
@@ -150,6 +153,130 @@ class GeneralController extends Controller
             'success' => true,
             'data' => [
                 'detraction_types' => $detraction_types
+            ]
+        ]);
+    }
+
+    public function update_tc_sbs(Request $request) {
+        $sbs = GeneralController::function_update_tc_sbs($request->date);
+
+        return response()->json(
+            $sbs->getData()
+        );
+    }
+
+    public function function_update_tc_sbs($date) {
+    
+        $consulta = AccountableExchangeRate::where('date', $date)->where('sbs_compra', '!=', null)->where('sbs_venta','!=', null)->first();
+
+        if(!is_null($consulta)){
+
+            return response()->json([
+                'success' => false,
+                'data' => [
+                    'errors' => 'La fecha ingresada ya existe',
+                    'tc_sbs' => $consulta
+                ]
+            ]);
+        }
+
+        // Utilizando https://apis.net.pe/
+        $consulta = Http::withToken(env('APISNET_TOKEN'))->get(env('APISNET_URL') . "v2/sbs/tipo-cambio?date=". $date);
+
+        $rpta_json = json_decode($consulta);
+
+
+        if(is_object($rpta_json)){
+            if(isset($rpta_json->fecha)){
+
+            try {
+                $insert = AccountableExchangeRate::updateOrCreate([
+                    'date' => $rpta_json->fecha],
+                    ['sbs_compra' => $rpta_json->precioCompra,
+                    'sbs_venta' => $rpta_json->precioVenta,
+                    'created_at' => Carbon::now()
+                ]);
+            } catch (\Exception $e) {
+                logger('Guardando TC SBS: function_update_tc_sbs@GeneralController', ["error" => $e]);
+            }
+
+                    
+                return response()->json([
+                    'success' => true,
+                    'data' => [
+                        'tc_sbs' => $insert
+                    ]
+                ]);
+            }
+        }
+                
+
+        return response()->json([
+            'success' => false,
+            'errors' => [
+                'Error al obtener el TC SBS - apis.net.pe'
+            ]
+        ]);
+    }
+
+    public function update_tc_sunat(Request $request) {
+        $sbs = GeneralController::function_update_tc_sunat($request->date);
+
+        return response()->json(
+            $sbs->getData()
+        );
+    }
+
+    public function function_update_tc_sunat($date) {
+    
+        $consulta = AccountableExchangeRate::where('date', $date)->where('sunat_compra', '!=', null)->where('sunat_venta','!=', null)->first();
+
+        if(!is_null($consulta)){
+
+            return response()->json([
+                'success' => false,
+                'data' => [
+                    'errors' => 'La fecha ingresada ya existe',
+                    'tc_sunat' => $consulta
+                ]
+            ]);
+        }
+
+        // Utilizando https://apis.net.pe/
+        $consulta = Http::withToken(env('APISNET_TOKEN'))->get(env('APISNET_URL') . "v2/sunat/tipo-cambio?date=". $date);
+
+        $rpta_json = json_decode($consulta);
+
+
+        if(is_object($rpta_json)){
+            if(isset($rpta_json->fecha)){
+
+            try {
+                $insert = AccountableExchangeRate::updateOrCreate([
+                    'date' => $rpta_json->fecha],
+                    ['sunat_compra' => $rpta_json->precioCompra,
+                    'sunat_venta' => $rpta_json->precioVenta,
+                    'created_at' => Carbon::now()
+                ]);
+            } catch (\Exception $e) {
+                logger('Guardando TC Sunat: function_update_tc_sunat@GeneralController', ["error" => $e]);
+            }
+
+                    
+                return response()->json([
+                    'success' => true,
+                    'data' => [
+                        'tc_sunat' => $insert
+                    ]
+                ]);
+            }
+        }
+                
+
+        return response()->json([
+            'success' => false,
+            'errors' => [
+                'Error al obtener el TC Sunat - apis.net.pe'
             ]
         ]);
     }

@@ -12,4 +12,8 @@ class AccountableExchangeRate extends Model
     protected $connection = 'mysql2';
 
     protected $guarded = [];
+
+    protected $table = 'accountable_exchange_rate';
+
+    protected $primaryKey = 'date';
 }

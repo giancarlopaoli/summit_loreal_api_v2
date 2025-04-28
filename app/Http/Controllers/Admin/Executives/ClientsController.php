@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin\Executives;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Models\BankAccount;
 use App\Models\Client;
 use App\Models\ClientStatus;
 use App\Models\ClientTracking;
@@ -521,5 +522,41 @@ class ClientsController extends Controller
                 'Tipo de cambio especial eliminado exitosamente'
             ]
         ]);
+    }
+
+    public function delete_bank_account (Request $request, Client $client)
+    {
+        $val = Validator::make($request->all(), [
+            'bank_account_id' => 'required|exists:clients,id',
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+        $bank_account = BankAccount::where('id', $request->bank_account_id)->where('client_id', $client->id);
+
+        if($bank_account->count() == 0){
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'Error en la cuenta bancaria seleccionada'
+                ]
+            ]);
+        }
+
+        if($bank_account->first()->bank_account_status_id != 3){
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'La cuenta bancaria no se encuentra en estado pendiente de activación'
+                ]
+            ]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'Cuenta Bancaria eliminada exitosamente'
+            ]
+        ]);
+
     }
 }

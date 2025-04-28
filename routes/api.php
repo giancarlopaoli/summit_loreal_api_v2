@@ -520,6 +520,7 @@ Route::middleware('encryptresponses')->group(function () {
 
                 Route::POST('bank-accounts', [\App\Http\Controllers\Clients\MyBankAccountsController::class, 'new_account']);
                 Route::GET('my-bank-accounts', [\App\Http\Controllers\Clients\MyBankAccountsController::class, 'list_accounts']);
+                Route::DELETE('delete-bank-account/{client}', [\App\Http\Controllers\Admin\Executives\ClientsController::class, 'delete_bank_account']);
 
                 Route::PUT('{client}/user', [\App\Http\Controllers\Admin\Executives\ClientsController::class, 'update_user']);
                 Route::GET('{client}', [\App\Http\Controllers\Admin\Executives\ClientsController::class, 'client_detail']);
@@ -612,6 +613,8 @@ Route::middleware('encryptresponses')->group(function () {
         Route::prefix('accounting')->middleware('role:contabilidad')->group(function () {
             
             Route::POST('test-data', [\App\Http\Controllers\Admin\Accounting\TestDataController::class, 'test_data']);
+            Route::GET('update-tc-sbs', [\App\Http\Controllers\Admin\Accounting\GeneralController::class, 'update_tc_sbs']);
+            Route::GET('update-tc-sunat', [\App\Http\Controllers\Admin\Accounting\GeneralController::class, 'update_tc_sunat']);
 
             ########## General APIs  #############
             Route::prefix('general')->group(function () {
