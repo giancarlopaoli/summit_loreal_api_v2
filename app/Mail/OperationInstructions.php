@@ -6,6 +6,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
+use App\Models\Configuration;
 use App\Models\Operation;
 use Illuminate\Support\Str;
 use App\Http\Controllers\Admin\AdminController;
@@ -97,6 +98,13 @@ class OperationInstructions extends Mailable
         $mail_executive = (isset($operation->client->executive->user->email)) ? $operation->client->executive->user->email : env('MAIL_OPS');
 
         $emails = (is_null($operation->client->accountable_email) || $operation->client->accountable_email == "") ? env('MAIL_OPS') : array_merge(explode(",", $operation->client->accountable_email), array(env('MAIL_OPS')));
+
+        // Verificando si es cliente autoplan
+        if($operation->client->association_id == 1){
+            $mails_autoplan = Configuration::where('shortname', 'MAILAUTOPLAN')->first()->value;
+
+            $mail_executive = array_merge(explode(",", $mail_executive), explode(",", $mails_autoplan));
+        }
 
         $consult = new AdminController();
         $instruction = $consult->instruction($operation);
