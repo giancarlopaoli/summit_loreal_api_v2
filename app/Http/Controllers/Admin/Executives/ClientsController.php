@@ -527,7 +527,7 @@ class ClientsController extends Controller
     public function delete_bank_account (Request $request, Client $client)
     {
         $val = Validator::make($request->all(), [
-            'bank_account_id' => 'required|exists:clients,id',
+            'bank_account_id' => 'required|exists:bank_account,id',
         ]);
         if($val->fails()) return response()->json($val->messages());
 
