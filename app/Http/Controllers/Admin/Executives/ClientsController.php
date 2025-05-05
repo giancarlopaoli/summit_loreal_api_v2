@@ -551,6 +551,8 @@ class ClientsController extends Controller
             ]);
         }
 
+        $bank_account->delete();
+
         return response()->json([
             'success' => true,
             'data' => [
