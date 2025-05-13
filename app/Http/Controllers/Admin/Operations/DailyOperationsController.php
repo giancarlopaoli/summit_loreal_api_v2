@@ -2339,6 +2339,7 @@ class DailyOperationsController extends Controller
         $analysts = Executive::select('id')
             ->selectRaw("(select count(*) from operations inner join clients on operations.client_id = clients.id where clients.executive_id = executives.id and operations.operation_status_id not in (6,7,9,10)) as ops_in_progress")
             ->selectRaw("(select count(*) from operations inner join clients on operations.client_id = clients.id where clients.executive_id = executives.id and operations.operation_status_id in (6,7) and date(operations.deposit_date) = date(now())) as ops_finished")
+            ->selectRaw("coalesce((select sum(amount) from operations inner join clients on operations.client_id = clients.id where clients.executive_id = executives.id and operations.operation_status_id not in (9,10) and date(operations.operation_date) = date(now())),0) as total_volume")
             ->where('type', 'Tiempo Completo')
             ->where('status', 'Activo')
             ->with('user:id,name,last_name')
