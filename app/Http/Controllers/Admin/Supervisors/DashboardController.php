@@ -102,7 +102,7 @@ class DashboardController extends Controller
             ->whereIn('operations.type', ['Compra','Venta'])
             ->where('customer_type', 'PJ')
             ->selectRaw('SUBSTRING(clients.name,1,20) as client_name,sum(comission_amount) as comissions,sum(amount) as volume, count(amount) as num_operations')
-            ->whereRaw("(select op.operation_date from operations op where op.client_id = clients.id order by op.id desc limit 1) >= DATE_SUB(now(), INTERVAL 6 MONTH)")
+            ->whereRaw("(select op.operation_date from operations op where op.client_id = clients.id order by op.id desc limit 1) >= ñ")
             ->groupByRaw("clients.name")
             ->orderByRaw('sum(comission_amount) desc')
             ->havingRaw('count(amount) > 10 ')
@@ -185,7 +185,7 @@ class DashboardController extends Controller
 
 
         $goal_progress = DB::table('goals_achievement')
-            ->select('operation_executive_id','operation_month', 'operation_year','progress','goal')
+            ->select('operation_executive_id','operation_month', 'operation_year','progress','goal','num_operations')
             ->selectRaw(" round(achievement,4) as achievement, if( ((operation_executive_id = 2801 or operation_executive_id = 2811) and $year = 2023),0.05, comission_achieved ) as comission_achieved")
             ->selectRaw("(select sum(round( ov.comission_amount*ov.executive_comission ,2))  from operations_view ov where ov.executive_id = goals_achievement.operation_executive_id and month(ov.operation_date) = goals_achievement.operation_month and year(ov.operation_date) = goals_achievement.operation_year) as comission_earned")
             ->selectRaw("(select concat(name,' ',last_name) from users where users.id = goals_achievement.operation_executive_id) as executive_name")
