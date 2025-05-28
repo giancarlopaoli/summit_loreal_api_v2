@@ -67,6 +67,10 @@ class Kernel extends ConsoleKernel
             $schedule->job(new Jobs\BankAccountOpError)
                 ->everyMinute();
 
+            // Pending Unaffected Invoices
+            $schedule->job(new Jobs\UnaffectedInvoiceAlert)
+                ->hourly();
+
             if(env('APP_ENV') == 'production'){
                 // Executing daily DB Backups
                 $schedule->command('backup:run --only-db')
