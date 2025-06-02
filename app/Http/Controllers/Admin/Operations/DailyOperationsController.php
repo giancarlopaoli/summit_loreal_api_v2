@@ -644,12 +644,12 @@ class DailyOperationsController extends Controller
                 $s3 = Storage::disk('s3')->putFileAs($path, $file, $filename);
 
                 // Si es operación de Cliente se elimina comprobantes anteriores
-                if($operation->client->type == 'Cliente'){
+                /*if($operation->client->type == 'Cliente'){
                     // eliminando cualquier comprobante anterior
                     $delete = OperationDocument::where('id', $escrow_account->first()->voucher_id)
                         ->where('type', Enums\DocumentType::Comprobante)
                         ->delete();
-                }
+                }*/
 
                 $insert = OperationDocument::create([
                     'operation_id' => $request->operation_id,
