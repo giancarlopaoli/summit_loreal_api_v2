@@ -48,8 +48,13 @@ class DashboardController extends Controller
 
             ->selectRaw(" sum(if(clients.customer_type='PJ', operations.amount,0)) as volume_pj")
             ->selectRaw(" sum(if(clients.customer_type='PN', operations.amount,0)) as volume_pn")
+
             ->selectRaw(" sum(if(clients.customer_type='PJ', 1,0)) as num_operations_pj")
             ->selectRaw(" sum(if(clients.customer_type='PN', 1,0)) as num_operations_pn")
+
+            ->selectRaw(" coalesce((select count(distinct op.client_id) from operations op inner join clients cl on cl.id = op.client_id where month(op.operation_date) = month(operations.operation_date) and year(op.operation_date) = year(operations.operation_date) and op.operation_status_id in (6,7) and op.type in ('Compra','Venta') and cl.type = 'Cliente' and cl.customer_type ='PJ'),0) as ops_clients_pj")
+            ->selectRaw(" coalesce((select count(distinct op.client_id) from operations op inner join clients cl on cl.id = op.client_id where month(op.operation_date) = month(operations.operation_date) and year(op.operation_date) = year(operations.operation_date) and op.operation_status_id in (6,7) and op.type in ('Compra','Venta') and cl.type = 'Cliente' and cl.customer_type ='PN'),0) as ops_clients_pn")
+
 
             ->selectRaw("(select sum(ov.amount) from operations ov where ov.client_id = 366 and year(ov.operation_date) = year(operations.operation_date) and month(ov.operation_date) = month(operations.operation_date) and ov.operation_status_id = 7 ) as volume_coril")
             ->selectRaw("(select sum(ov.amount) from operations ov where ov.client_id = 2815 and year(ov.operation_date) = year(operations.operation_date) and month(ov.operation_date) = month(operations.operation_date) and ov.operation_status_id = 7 ) as volume_mibanco")
@@ -147,6 +152,8 @@ class DashboardController extends Controller
                     'volume_pn' => $monthly_indicators->pluck('volume_pn'),
                     'num_operations_pj' => $monthly_indicators->pluck('num_operations_pj'),
                     'num_operations_pn' => $monthly_indicators->pluck('num_operations_pn'),
+                    'ops_clients_pj' => $monthly_indicators->pluck('ops_clients_pj'),
+                    'ops_clients_pn' => $monthly_indicators->pluck('ops_clients_pn'),
                     'volume_coril' => $monthly_indicators->pluck('volume_coril'),
                     'volume_mibanco' => $monthly_indicators->pluck('volume_mibanco'),
                     'volume_renta4' => $monthly_indicators->pluck('volume_renta4'),
