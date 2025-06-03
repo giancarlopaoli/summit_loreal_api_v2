@@ -643,17 +643,26 @@ class DailyOperationsController extends Controller
             try {
                 $s3 = Storage::disk('s3')->putFileAs($path, $file, $filename);
 
+                $creation_date = Carbon::now();
                 // Si es operación de Cliente se elimina comprobantes anteriores
-                /*if($operation->client->type == 'Cliente'){
+                if($operation->client->type == 'Cliente'){
+                    // Si existe otro documento, se captura la fecha de creación para no perderla
+                    $document = OperationDocument::where('id', $escrow_account->first()->voucher_id)
+                        ->where('type', Enums\DocumentType::Comprobante)->first();
+                    if(!is_null($document)){
+                        $creation_date = $document->created_at;
+                    }
+
                     // eliminando cualquier comprobante anterior
                     $delete = OperationDocument::where('id', $escrow_account->first()->voucher_id)
                         ->where('type', Enums\DocumentType::Comprobante)
                         ->delete();
-                }*/
+                }
 
                 $insert = OperationDocument::create([
                     'operation_id' => $request->operation_id,
                     'type' => Enums\DocumentType::Comprobante,
+                    'created_at' => $creation_date,
                     'document_name' => $filename
                 ]);
 
@@ -675,7 +684,7 @@ class DailyOperationsController extends Controller
                 ]);
             }
 
-            OperationHistory::create(["operation_id" => $request->operation_id,"user_id" => auth()->id(),"action" => "Comprobante cargado", "detail" => 'filename: ' . $filename]);
+            OperationHistory::create(["operation_id" => $request->operation_id,"user_id" => auth()->id(),"action" => "Comprobante cargado", "detail" => 'filename: ' . $filename . ', id: ' . $insert->id]);
 
             // Notificación Telegram
             try {
