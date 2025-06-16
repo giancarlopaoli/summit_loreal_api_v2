@@ -711,6 +711,56 @@ class DailyOperationsController extends Controller
         }
     }
 
+    public function delete_voucher(Request $request) {
+        $val = Validator::make($request->all(), [
+            'operation_id' => 'required|exists:operations,id',
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+        logger('Archivo adjunto: DailyOperationsController@delete_voucher', ["operation_id" => $request->operation_id, "operation_document_id" => $request->operation_document_id]);
+
+        $document = OperationDocument::where('id', $request->operation_document_id)->where('operation_id', $request->operation_id);
+
+        // Confirming that document exists
+        if($document->count() == 0){
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'No se encontró el comprobante'
+                ]
+            ]);
+        }
+
+        // Deleting file from S3
+        try {
+            $document_name = $document->first()->document_name;
+            $rpta = Storage::disk('s3')->delete(env('AWS_ENV').'/operations/' . $document_name);
+        } catch (\Exception $e) {
+            logger('ERROR: eliminando voucher S3: DailyOperationsController@delete_voucher', ["error" => $e]);
+        }
+
+
+        // deleting voucher from escrow_account_operations
+        $escrow_account = DB::table('escrow_account_operation')
+            ->where('voucher_id', $request->operation_document_id)
+            ->where('operation_id', $request->operation_id)->update(['voucher_id' => null]);
+
+
+        // deleting voucher from operation_documents table
+        $delete = OperationDocument::where('id', $request->operation_document_id)->where('operation_id', $request->operation_id)
+            ->where('type', Enums\DocumentType::Comprobante)
+            ->delete();
+
+        OperationHistory::create(["operation_id" => $request->operation_id,"user_id" => auth()->id(),"action" => "Comprobante eliminado", "detail" => 'operation_document_id: ' . $request->operation_document_id]);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'Comprobante eliminado exitosamente'
+            ]
+        ]);
+    }
+
     public function upload_deposit_client(Request $request) {
         $val = Validator::make($request->all(), [
             'operation_id' => 'required|exists:operations,id',

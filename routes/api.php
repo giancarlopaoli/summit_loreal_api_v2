@@ -234,6 +234,10 @@ Route::middleware('encryptresponses')->group(function () {
                 Route::PUT('update-client-accounts/{operation}', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'update_client_accounts']);
             });
 
+            Route::middleware('permission:eliminar_comprobante')->group(function () {
+                Route::DELETE('delete-voucher', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'delete_voucher']);
+            });
+
             Route::GET('escrow-accounts', [\App\Http\Controllers\Clients\InterbankOperationController::class, 'get_escrow_accounts']);
             Route::GET('bank-accounts', [\App\Http\Controllers\Clients\InterbankOperationController::class, 'get_client_bank_accounts']);
             Route::GET('origin-bank-accounts/{operation}', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'origin_bank_accounts']);
