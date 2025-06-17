@@ -55,7 +55,7 @@ class DashboardController extends Controller
 
     public function graphs(Request $request) {
         $val = Validator::make($request->all(), [
-            'type' => 'required|in:1,2,3,4'
+            'type' => 'required|in:1,2,3,4,5,6'
         ]);
 
         if ($val->fails()) {
@@ -107,6 +107,22 @@ class DashboardController extends Controller
         elseif($request->type == '4'){
             $data = ExchangeRate::selectRaw('max(created_at) as created_at,(select (exr.compra + exr.venta)/2 from exchange_rates exr where exr.created_at = max(exchange_rates.created_at) limit 1 ) as tipodecambio')
                 ->whereRaw('DATE(created_at) >= DATE(NOW() - INTERVAL 365 DAY)')
+                ->groupByRaw('DATE(created_at)')
+                ->orderByRaw('max(created_at) desc')
+                ->get();
+        }
+        // Ulimos 3 meses
+        elseif($request->type == '5'){
+            $data = ExchangeRate::selectRaw('max(created_at) as created_at,(select (exr.compra + exr.venta)/2 from exchange_rates exr where exr.created_at = max(exchange_rates.created_at) limit 1 ) as tipodecambio')
+                ->whereRaw('DATE(created_at) >= DATE(NOW() - INTERVAL 93 DAY)')
+                ->groupByRaw('DATE(created_at)')
+                ->orderByRaw('max(created_at) desc')
+                ->get();
+        }
+        // Últimos 6 meses
+        elseif($request->type == '6'){
+            $data = ExchangeRate::selectRaw('max(created_at) as created_at,(select (exr.compra + exr.venta)/2 from exchange_rates exr where exr.created_at = max(exchange_rates.created_at) limit 1 ) as tipodecambio')
+                ->whereRaw('DATE(created_at) >= DATE(NOW() - INTERVAL 183 DAY)')
                 ->groupByRaw('DATE(created_at)')
                 ->orderByRaw('max(created_at) desc')
                 ->get();
