@@ -31,10 +31,12 @@ class Kernel extends ConsoleKernel
 
             // Activating Operation Analysts
             $schedule->job(new Jobs\ActivatingOperationAnalysts)
+                ->weekdays()
                 ->everyMinute();
 
             // Deactivating Operation Analysts
             $schedule->job(new Jobs\DesactivatingOperationAnalysts)
+                ->weekdays()
                 ->everyMinute();
 
             // Pending Operations Send WS Corfid
