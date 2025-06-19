@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\ClientComission;
+use App\Http\Controllers\Clients\InmediateOperationController;
 
 class ExchangeRate extends Model
 {
@@ -25,6 +26,7 @@ class ExchangeRate extends Model
     //public function for_user(User $user=null, float $amount) : ExchangeRate {
     public function for_user(User $user=null, float $amount) {
         
+        $client_id = 363;
         if(!is_null($user)){
             $client = $user->assigned_client()->first();
 
@@ -102,6 +104,21 @@ class ExchangeRate extends Model
 
         /*$buy_spread_comission = min($buy_spread_comissions) / 10000.0;
         $sell_spread_comission = min($sell_spread_comissions) / 10000.0;*/
+
+        // Cotizando con plataforma cerrada
+        $consult = new InmediateOperationController();
+        $hours = $consult->operation_hours($client_id)->getData();
+
+        if(!$hours->available){
+            $comission_spread_conf = Configuration::where("shortname", "COMSPREADCLOSEPLAT")->first()->value;
+            $pl_spread_conf = Configuration::where("shortname", "PLPREADCLOSEPLAT")->first()->value;
+
+            $buy_spread_comission = $comission_spread_conf;
+            $sell_spread_comission = $comission_spread_conf;
+
+            $buy_spread = $pl_spread_conf / 10000.0;
+            $sell_spread = $pl_spread_conf / 10000.0;
+        }
 
         $buy_spread_comission = $buy_spread_comission / 10000.0;
         $sell_spread_comission = $sell_spread_comission / 10000.0;

@@ -149,30 +149,36 @@ class InmediateOperationController extends Controller
                 $exchange_rate = $type == 'compra' ? $special_exchange_rate->buying : $special_exchange_rate->selling;
             } else {
 
-                // retreiving Vendor spread
-                $spreads =[];
+                if($hours->available){
+                    // retreiving Vendor spread
+                    $spreads =[];
 
-                $spreads[] = $range->spread;
+                    $spreads[] = $range->spread;
 
-                $vendor_ranges = VendorRange::where('min_range', '<=', $amount)
-                    ->where('max_range', '>=', $amount)
-                    ->where('active', true)
-                    ->get();
+                    $vendor_ranges = VendorRange::where('min_range', '<=', $amount)
+                        ->where('max_range', '>=', $amount)
+                        ->where('active', true)
+                        ->get();
 
-                $vendor_spreads = VendorSpread::whereIn('vendor_range_id', $vendor_ranges->pluck("id"))
-                    ->where('active', true)
-                    ->get();
+                    $vendor_spreads = VendorSpread::whereIn('vendor_range_id', $vendor_ranges->pluck("id"))
+                        ->where('active', true)
+                        ->get();
 
-                foreach ($vendor_spreads as $vendor_spread) {
-                    if($type == 'compra') {
-                        $spreads[] = $vendor_spread->buying_spread;
-                    } else {
-                        $spreads[] = $vendor_spread->selling_spread;
+                    foreach ($vendor_spreads as $vendor_spread) {
+                        if($type == 'compra') {
+                            $spreads[] = $vendor_spread->buying_spread;
+                        } else {
+                            $spreads[] = $vendor_spread->selling_spread;
+                        }
                     }
+
+                    $spread = min($spreads);
                 }
-
-                $spread = min($spreads);
-
+                else{
+                    $pl_spread_conf = Configuration::where("shortname", "PLPREADCLOSEPLAT")->first()->value;
+                    $spread = $pl_spread_conf;
+                }
+                
                 $exchange_rate = $type == 'compra' ? round($exchange_rate->compra + $spread/10000, 4) : round($exchange_rate->venta - $spread/10000, 4);
             }
 
@@ -237,6 +243,11 @@ class InmediateOperationController extends Controller
                         ], 400);
                     }
                 }
+            }
+
+            if(!$hours->available){
+                $comission_spread_conf = Configuration::where("shortname", "COMSPREADCLOSEPLAT")->first()->value;
+                $comission_spread = $comission_spread_conf;
             }
 
             $final_exchange_rate = $type == 'compra' ? round($exchange_rate + $comission_spread/10000,4) : round($exchange_rate - $comission_spread/10000,4);
@@ -361,6 +372,15 @@ class InmediateOperationController extends Controller
         $old_comission_spread = InmediateOperationController::calculate_comission_spread($amount,$request->client_id,$type,$coupon)->getData()->old_comission_spread;
 
         $coupon = InmediateOperationController::calculate_comission_spread($amount,$request->client_id,$type,$coupon)->getData()->coupon;
+
+        // Cotizando con plataforma cerrada
+        if(!$hours->available){
+            $comission_spread_conf = Configuration::where("shortname", "COMSPREADCLOSEPLAT")->first()->value;
+            $pl_spread_conf = Configuration::where("shortname", "PLPREADCLOSEPLAT")->first()->value;
+
+            $comission_spread = $comission_spread_conf;
+            $comission_spread = $comission_spread_conf;
+        }
         
         $total_comission = round($amount * $comission_spread/10000, 2);
         ############# End calculating comission
@@ -464,6 +484,16 @@ class InmediateOperationController extends Controller
             }
 
             $spread = min($spreads);
+
+            // Validating available hours
+            $hours = InmediateOperationController::operation_hours($client_id)->getData();
+
+            // Cotizando con plataforma cerrada
+            if(!$hours->available){
+                $pl_spread_conf = Configuration::where("shortname", "PLPREADCLOSEPLAT")->first()->value;
+
+                $spread = $pl_spread_conf;
+            }
 
             $exchange_rate = ExchangeRate::latest()->first();
             $exchange_rate = $type == 'compra' ? $exchange_rate->compra + $spread/ 10000.0 : $exchange_rate->venta - $spread/ 10000.0;
