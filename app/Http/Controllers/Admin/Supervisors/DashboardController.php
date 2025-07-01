@@ -35,16 +35,16 @@ class DashboardController extends Controller
 
 
         $monthly_indicators = Operation::join("clients","clients.id","=","operations.client_id")
-            ->selectRaw("month(operation_date) as month,year(operation_date) as year")
+            ->selectRaw("month(deposit_date) as month,year(deposit_date) as year")
             ->selectRaw("sum(amount) as volume, count(amount) as num_operations, round(sum(comission_amount),2) as comissions")
             ->selectRaw("round(100*sum(if(operations.type='Compra',amount,0))/sum(amount),2) as rate_buying")
             ->selectRaw("round(100*sum(if(operations.type='Venta',amount,0))/sum(amount),2) as rate_selling")
 
-            ->selectRaw("coalesce((select sum(amount) from operations op where month(op.operation_date) = month(operations.operation_date) and year(op.operation_date) = year(operations.operation_date) and op.operation_status_id in (2,3,4,5) and op.type in ('Compra','Venta') and op.client_id not in (select id from clients where type = 'PL')),0) as volume_in_progress")
+            ->selectRaw("coalesce((select sum(amount) from operations op where month(op.deposit_date) = month(operations.deposit_date) and year(op.deposit_date) = year(operations.deposit_date) and op.operation_status_id in (2,3,4,5) and op.type in ('Compra','Venta') and op.client_id not in (select id from clients where type = 'PL')),0) as volume_in_progress")
 
-            ->selectRaw("coalesce((select sum(comission_amount) from operations op where month(op.operation_date) = month(operations.operation_date) and year(op.operation_date) = year(operations.operation_date) and op.operation_status_id in (2,3,4,5) and op.type in ('Compra','Venta') and op.client_id not in (select id from clients where type = 'PL')),0) as comission_in_progress")
+            ->selectRaw("coalesce((select sum(comission_amount) from operations op where month(op.deposit_date) = month(operations.deposit_date) and year(op.deposit_date) = year(operations.deposit_date) and op.operation_status_id in (2,3,4,5) and op.type in ('Compra','Venta') and op.client_id not in (select id from clients where type = 'PL')),0) as comission_in_progress")
 
-            ->selectRaw("coalesce((select sg.goal from sales_goals sg where sg.year = year(operations.operation_date) and sg.month = month(operations.operation_date)),0) as sales_goal")
+            ->selectRaw("coalesce((select sg.goal from sales_goals sg where sg.year = year(operations.deposit_date) and sg.month = month(operations.deposit_date)),0) as sales_goal")
 
             ->selectRaw(" sum(if(clients.customer_type='PJ', operations.amount,0)) as volume_pj")
             ->selectRaw(" sum(if(clients.customer_type='PN', operations.amount,0)) as volume_pn")
@@ -52,52 +52,52 @@ class DashboardController extends Controller
             ->selectRaw(" sum(if(clients.customer_type='PJ', 1,0)) as num_operations_pj")
             ->selectRaw(" sum(if(clients.customer_type='PN', 1,0)) as num_operations_pn")
 
-            ->selectRaw(" coalesce((select count(distinct op.client_id) from operations op inner join clients cl on cl.id = op.client_id where month(op.operation_date) = month(operations.operation_date) and year(op.operation_date) = year(operations.operation_date) and op.operation_status_id in (6,7) and op.type in ('Compra','Venta') and cl.type = 'Cliente' and cl.customer_type ='PJ'),0) as ops_clients_pj")
-            ->selectRaw(" coalesce((select count(distinct op.client_id) from operations op inner join clients cl on cl.id = op.client_id where month(op.operation_date) = month(operations.operation_date) and year(op.operation_date) = year(operations.operation_date) and op.operation_status_id in (6,7) and op.type in ('Compra','Venta') and cl.type = 'Cliente' and cl.customer_type ='PN'),0) as ops_clients_pn")
+            ->selectRaw(" coalesce((select count(distinct op.client_id) from operations op inner join clients cl on cl.id = op.client_id where month(op.deposit_date) = month(operations.deposit_date) and year(op.deposit_date) = year(operations.deposit_date) and op.operation_status_id in (6,7) and op.type in ('Compra','Venta') and cl.type = 'Cliente' and cl.customer_type ='PJ'),0) as ops_clients_pj")
+            ->selectRaw(" coalesce((select count(distinct op.client_id) from operations op inner join clients cl on cl.id = op.client_id where month(op.deposit_date) = month(operations.deposit_date) and year(op.deposit_date) = year(operations.deposit_date) and op.operation_status_id in (6,7) and op.type in ('Compra','Venta') and cl.type = 'Cliente' and cl.customer_type ='PN'),0) as ops_clients_pn")
 
 
-            ->selectRaw("(select sum(ov.amount) from operations ov where ov.client_id = 366 and year(ov.operation_date) = year(operations.operation_date) and month(ov.operation_date) = month(operations.operation_date) and ov.operation_status_id = 7 ) as volume_coril")
-            ->selectRaw("(select sum(ov.amount) from operations ov where ov.client_id = 2815 and year(ov.operation_date) = year(operations.operation_date) and month(ov.operation_date) = month(operations.operation_date) and ov.operation_status_id = 7 ) as volume_mibanco")
-            ->selectRaw("(select sum(ov.amount) from operations ov where ov.client_id = 3166 and year(ov.operation_date) = year(operations.operation_date) and month(ov.operation_date) = month(operations.operation_date) and ov.operation_status_id = 7 ) as volume_renta4")
-            ->selectRaw("(select sum(ov.amount) from operations ov where ov.client_id = 4280 and year(ov.operation_date) = year(operations.operation_date) and month(ov.operation_date) = month(operations.operation_date) and ov.operation_status_id = 7 ) as volume_ripley")
-            //->selectRaw("(select sum(ov.amount) from operations ov where ov.client_id = 4540 and year(ov.operation_date) = year(operations.operation_date) and month(ov.operation_date) = month(operations.operation_date) and ov.operation_status_id = 7 ) as volume_cajatru")
-            ->selectRaw("(select sum(ov.amount) from operations ov where ov.client_id = 4889 and year(ov.operation_date) = year(operations.operation_date) and month(ov.operation_date) = month(operations.operation_date) and ov.operation_status_id = 7 ) as volume_bcp")
-            ->selectRaw("(select sum(ov.amount) from operations ov where ov.client_id = 4960 and year(ov.operation_date) = year(operations.operation_date) and month(ov.operation_date) = month(operations.operation_date) and ov.operation_status_id = 7 ) as volume_cajaarequipa")
-            ->selectRaw("(select sum(ov.amount) from operations ov where ov.client_id = 5091 and year(ov.operation_date) = year(operations.operation_date) and month(ov.operation_date) = month(operations.operation_date) and ov.operation_status_id = 7 ) as volume_kallpa")
-            ->selectRaw("(select sum(ov.amount) from operations ov where ov.client_id = 5381 and year(ov.operation_date) = year(operations.operation_date) and month(ov.operation_date) = month(operations.operation_date) and ov.operation_status_id = 7 ) as volume_falabella")
+            ->selectRaw("(select sum(ov.amount) from operations ov where ov.client_id = 366 and year(ov.deposit_date) = year(operations.deposit_date) and month(ov.deposit_date) = month(operations.deposit_date) and ov.operation_status_id = 7 ) as volume_coril")
+            ->selectRaw("(select sum(ov.amount) from operations ov where ov.client_id = 2815 and year(ov.deposit_date) = year(operations.deposit_date) and month(ov.deposit_date) = month(operations.deposit_date) and ov.operation_status_id = 7 ) as volume_mibanco")
+            ->selectRaw("(select sum(ov.amount) from operations ov where ov.client_id = 3166 and year(ov.deposit_date) = year(operations.deposit_date) and month(ov.deposit_date) = month(operations.deposit_date) and ov.operation_status_id = 7 ) as volume_renta4")
+            ->selectRaw("(select sum(ov.amount) from operations ov where ov.client_id = 4280 and year(ov.deposit_date) = year(operations.deposit_date) and month(ov.deposit_date) = month(operations.deposit_date) and ov.operation_status_id = 7 ) as volume_ripley")
+            //->selectRaw("(select sum(ov.amount) from operations ov where ov.client_id = 4540 and year(ov.deposit_date) = year(operations.deposit_date) and month(ov.deposit_date) = month(operations.deposit_date) and ov.operation_status_id = 7 ) as volume_cajatru")
+            ->selectRaw("(select sum(ov.amount) from operations ov where ov.client_id = 4889 and year(ov.deposit_date) = year(operations.deposit_date) and month(ov.deposit_date) = month(operations.deposit_date) and ov.operation_status_id = 7 ) as volume_bcp")
+            ->selectRaw("(select sum(ov.amount) from operations ov where ov.client_id = 4960 and year(ov.deposit_date) = year(operations.deposit_date) and month(ov.deposit_date) = month(operations.deposit_date) and ov.operation_status_id = 7 ) as volume_cajaarequipa")
+            ->selectRaw("(select sum(ov.amount) from operations ov where ov.client_id = 5091 and year(ov.deposit_date) = year(operations.deposit_date) and month(ov.deposit_date) = month(operations.deposit_date) and ov.operation_status_id = 7 ) as volume_kallpa")
+            ->selectRaw("(select sum(ov.amount) from operations ov where ov.client_id = 5381 and year(ov.deposit_date) = year(operations.deposit_date) and month(ov.deposit_date) = month(operations.deposit_date) and ov.operation_status_id = 7 ) as volume_falabella")
 
             ->whereIn("operations.type", ['Compra','Venta'])
             ->whereIn("operation_status_id", [6,7,8])
             //->whereNotIn("client_id", Client::where('type', 'PL')->get()->pluck('id') )
             ->where("clients.type", "Cliente")
-            ->whereRaw("((year(operation_date)-2000)*12 + month(operation_date)) >= ((year(now()) - 2000 )*12 + month(now()) -6)")
-            ->groupByRaw("month(operation_date), year(operation_date)")
-            ->orderByRaw('year(operation_date) asc, month(operation_date)')
+            ->whereRaw("((year(deposit_date)-2000)*12 + month(deposit_date)) >= ((year(now()) - 2000 )*12 + month(now()) -6)")
+            ->groupByRaw("month(deposit_date), year(deposit_date)")
+            ->orderByRaw('year(deposit_date) asc, month(deposit_date)')
             ->limit(7)
             ->get();
 
 
-        $daily_indicators = Operation::selectRaw("day(operation_date) as dia")
+        $daily_indicators = Operation::selectRaw("day(deposit_date) as dia")
             ->selectRaw("coalesce((select daily_goal from sales_goals sg where sg.month = month(now()) and sg.year = year(now())),0) as daily_goal")
             ->selectRaw("( sum(amount)) as volume")
             
-            ->selectRaw("coalesce((select sum(amount) from operations op where month(op.operation_date) = month(operations.operation_date) and year(op.operation_date) = year(operations.operation_date) and day(op.operation_date) <= day(operations.operation_date) and op.operation_status_id in (6,7,8) and op.type in ('Compra','Venta') and op.client_id not in (select id from clients where type = 'PL')),0) as accumulated_volume")
+            ->selectRaw("coalesce((select sum(amount) from operations op where month(op.deposit_date) = month(operations.deposit_date) and year(op.deposit_date) = year(operations.deposit_date) and day(op.deposit_date) <= day(operations.deposit_date) and op.operation_status_id in (6,7,8) and op.type in ('Compra','Venta') and op.client_id not in (select id from clients where type = 'PL')),0) as accumulated_volume")
 
-            ->selectRaw("coalesce((select sum(amount) from operations op where month(op.operation_date) = month(operations.operation_date) and year(op.operation_date) = year(operations.operation_date) and day(op.operation_date) <= day(operations.operation_date) and op.operation_status_id in (2,3,4,5) and op.type in ('Compra','Venta') and op.client_id not in (select id from clients where type = 'PL')),0) as volume_in_progress")
+            ->selectRaw("coalesce((select sum(amount) from operations op where month(op.deposit_date) = month(operations.deposit_date) and year(op.deposit_date) = year(operations.deposit_date) and day(op.deposit_date) <= day(operations.deposit_date) and op.operation_status_id in (2,3,4,5) and op.type in ('Compra','Venta') and op.client_id not in (select id from clients where type = 'PL')),0) as volume_in_progress")
 
             ->selectRaw("( sum(comission_amount)) as comission_amount")
-            ->selectRaw("coalesce((select sum(comission_amount) from operations op where month(op.operation_date) = month(operations.operation_date) and year(op.operation_date) = year(operations.operation_date) and day(op.operation_date) <= day(operations.operation_date) and op.operation_status_id in (6,7,8) and op.type in ('Compra','Venta') and op.client_id not in (select id from clients where type = 'PL')),0) as accumulated_comission")
+            ->selectRaw("coalesce((select sum(comission_amount) from operations op where month(op.deposit_date) = month(operations.deposit_date) and year(op.deposit_date) = year(operations.deposit_date) and day(op.deposit_date) <= day(operations.deposit_date) and op.operation_status_id in (6,7,8) and op.type in ('Compra','Venta') and op.client_id not in (select id from clients where type = 'PL')),0) as accumulated_comission")
 
-            ->selectRaw("coalesce((select sum(comission_amount) from operations op where month(op.operation_date) = month(operations.operation_date) and year(op.operation_date) = year(operations.operation_date) and day(op.operation_date) <= day(operations.operation_date) and op.operation_status_id in (2,3,4,5) and op.type in ('Compra','Venta') and op.client_id not in (select id from clients where type = 'PL')),0) as comission_in_progress")
+            ->selectRaw("coalesce((select sum(comission_amount) from operations op where month(op.deposit_date) = month(operations.deposit_date) and year(op.deposit_date) = year(operations.deposit_date) and day(op.deposit_date) <= day(operations.deposit_date) and op.operation_status_id in (2,3,4,5) and op.type in ('Compra','Venta') and op.client_id not in (select id from clients where type = 'PL')),0) as comission_in_progress")
             ->selectRaw("( count(amount)) as num_operations")
             ->selectRaw("( count(distinct client_id)) as unique_clients")
 
             ->whereIn("operations.type", ['Compra','Venta'])
             ->whereIn("operation_status_id", [6,7,8])
             ->whereNotIn("client_id", Client::where('type', 'PL')->get()->pluck('id') )
-            ->whereRaw('month(operation_date) = month(now()) and year(operation_date) = year(now())')
-            ->groupByRaw("day(operation_date)")
-            ->orderByRaw('day(operation_date)')
+            ->whereRaw('month(deposit_date) = month(now()) and year(deposit_date) = year(now())')
+            ->groupByRaw("day(deposit_date)")
+            ->orderByRaw('day(deposit_date)')
             ->get();
 
 
@@ -108,7 +108,7 @@ class DashboardController extends Controller
             ->whereIn('operations.type', ['Compra','Venta'])
             ->where('customer_type', 'PJ')
             ->selectRaw('SUBSTRING(clients.name,1,20) as client_name,sum(comission_amount) as comissions,sum(amount) as volume, count(amount) as num_operations')
-            ->whereRaw("(select op.operation_date from operations op where op.client_id = clients.id order by op.id desc limit 1) >= DATE_SUB(now(), INTERVAL 6 MONTH)")
+            ->whereRaw("(select op.deposit_date from operations op where op.client_id = clients.id order by op.id desc limit 1) >= DATE_SUB(now(), INTERVAL 6 MONTH)")
             ->groupByRaw("clients.name")
             ->orderByRaw('sum(comission_amount) desc')
             ->havingRaw('count(amount) > 10 ')
@@ -117,10 +117,10 @@ class DashboardController extends Controller
 
         $banks = Bank::select('banks.id','banks.name','banks.shortname')
             ->join("escrow_accounts as ea","ea.bank_id","=","banks.id")
-            ->selectRaw("(select coalesce(sum(round((eao.amount+eao.comission_amount)/if(op.type='compra',op.exchange_rate,1),2)),0) from operations op inner join escrow_account_operation eao on eao.operation_id = op.id inner join escrow_accounts ea on ea.id = eao.escrow_account_id where op.operation_status_id in (6,7) and op.type in ('Compra','Venta') and op.client_id not in (select id from clients where clients.type = 'PL') and ea.bank_id = banks.id and year(op.operation_date) = year(now())) as yearly_amount")
-            ->selectRaw("(select coalesce(sum(round((eao.amount+eao.comission_amount)/if(op.type='compra',op.exchange_rate,1),2)),0) from operations op inner join escrow_account_operation eao on eao.operation_id = op.id inner join escrow_accounts ea on ea.id = eao.escrow_account_id where op.operation_status_id in (6,7) and op.type in ('Compra','Venta') and op.client_id not in (select id from clients where clients.type = 'PL') and ea.bank_id = banks.id and year(op.operation_date) = year(now()) and month(op.operation_date) = month(now())) as monthly_amount")
-            ->selectRaw("(select coalesce(count(op.id),0) from operations op inner join escrow_account_operation eao on eao.operation_id = op.id inner join escrow_accounts ea on ea.id = eao.escrow_account_id where op.operation_status_id in (6,7) and op.type in ('Compra','Venta') and op.client_id not in (select id from clients where clients.type = 'PL') and ea.bank_id = banks.id and year(op.operation_date) = year(now())) as yearly_operations")
-            ->selectRaw("(select coalesce(count(op.id),0) from operations op inner join escrow_account_operation eao on eao.operation_id = op.id inner join escrow_accounts ea on ea.id = eao.escrow_account_id where op.operation_status_id in (6,7) and op.type in ('Compra','Venta') and op.client_id not in (select id from clients where clients.type = 'PL') and ea.bank_id = banks.id and year(op.operation_date) = year(now()) and month(op.operation_date) = month(now())) as monthly_operations")
+            ->selectRaw("(select coalesce(sum(round((eao.amount+eao.comission_amount)/if(op.type='compra',op.exchange_rate,1),2)),0) from operations op inner join escrow_account_operation eao on eao.operation_id = op.id inner join escrow_accounts ea on ea.id = eao.escrow_account_id where op.operation_status_id in (6,7) and op.type in ('Compra','Venta') and op.client_id not in (select id from clients where clients.type = 'PL') and ea.bank_id = banks.id and year(op.deposit_date) = year(now())) as yearly_amount")
+            ->selectRaw("(select coalesce(sum(round((eao.amount+eao.comission_amount)/if(op.type='compra',op.exchange_rate,1),2)),0) from operations op inner join escrow_account_operation eao on eao.operation_id = op.id inner join escrow_accounts ea on ea.id = eao.escrow_account_id where op.operation_status_id in (6,7) and op.type in ('Compra','Venta') and op.client_id not in (select id from clients where clients.type = 'PL') and ea.bank_id = banks.id and year(op.deposit_date) = year(now()) and month(op.deposit_date) = month(now())) as monthly_amount")
+            ->selectRaw("(select coalesce(count(op.id),0) from operations op inner join escrow_account_operation eao on eao.operation_id = op.id inner join escrow_accounts ea on ea.id = eao.escrow_account_id where op.operation_status_id in (6,7) and op.type in ('Compra','Venta') and op.client_id not in (select id from clients where clients.type = 'PL') and ea.bank_id = banks.id and year(op.deposit_date) = year(now())) as yearly_operations")
+            ->selectRaw("(select coalesce(count(op.id),0) from operations op inner join escrow_account_operation eao on eao.operation_id = op.id inner join escrow_accounts ea on ea.id = eao.escrow_account_id where op.operation_status_id in (6,7) and op.type in ('Compra','Venta') and op.client_id not in (select id from clients where clients.type = 'PL') and ea.bank_id = banks.id and year(op.deposit_date) = year(now()) and month(op.deposit_date) = month(now())) as monthly_operations")
             ->where("ea.active",1)
             ->groupByRaw("banks.id,banks.name,banks.shortname")
             ->get();
