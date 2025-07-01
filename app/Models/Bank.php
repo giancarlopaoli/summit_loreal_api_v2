@@ -9,6 +9,8 @@ class Bank extends Model
 {
     use HasFactory;
 
+    protected $guarded = [];
+
     protected $connection = 'mysql';
 
     public function bank_accounts() {

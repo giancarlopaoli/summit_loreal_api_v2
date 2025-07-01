@@ -612,6 +612,18 @@ Route::middleware('encryptresponses')->group(function () {
 
         });
 
+        ########## Módulo ADMINISTRADOR  #############
+        Route::prefix('admin')->middleware('role:administrador')->group(function () {
+
+            ########## banks  #############
+            Route::prefix('banks')->group(function () {
+                Route::GET('', [\App\Http\Controllers\Admin\Admin\BanksController::class, 'bank_list']);
+                Route::PUT('{bank}', [\App\Http\Controllers\Admin\Admin\BanksController::class, 'edit_bank']);
+                Route::POST('', [\App\Http\Controllers\Admin\Admin\BanksController::class, 'new_bank']);
+            });
+
+        });
+
 
         ########## Módulo de Supervidores  #############
         Route::prefix('accounting')->middleware('role:contabilidad')->group(function () {
