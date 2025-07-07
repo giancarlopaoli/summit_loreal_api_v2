@@ -40,9 +40,9 @@ class DashboardController extends Controller
             ->selectRaw("round(100*sum(if(operations.type='Compra',amount,0))/sum(amount),2) as rate_buying")
             ->selectRaw("round(100*sum(if(operations.type='Venta',amount,0))/sum(amount),2) as rate_selling")
 
-            ->selectRaw("coalesce((select sum(amount) from operations op where month(op.deposit_date) = month(operations.deposit_date) and year(op.deposit_date) = year(operations.deposit_date) and op.operation_status_id in (2,3,4,5) and op.type in ('Compra','Venta') and op.client_id not in (select id from clients where type = 'PL')),0) as volume_in_progress")
+            ->selectRaw("coalesce((select sum(amount) from operations op where month(op.operation_date) = month(operations.deposit_date) and year(op.operation_date) = year(operations.deposit_date) and op.operation_status_id in (2,3,4,5) and op.type in ('Compra','Venta') and op.client_id not in (select id from clients where type = 'PL')),0) as volume_in_progress")
 
-            ->selectRaw("coalesce((select sum(comission_amount) from operations op where month(op.deposit_date) = month(operations.deposit_date) and year(op.deposit_date) = year(operations.deposit_date) and op.operation_status_id in (2,3,4,5) and op.type in ('Compra','Venta') and op.client_id not in (select id from clients where type = 'PL')),0) as comission_in_progress")
+            ->selectRaw("coalesce((select sum(comission_amount) from operations op where month(op.operation_date) = month(operations.deposit_date) and year(op.operation_date) = year(operations.deposit_date) and op.operation_status_id in (2,3,4,5) and op.type in ('Compra','Venta') and op.client_id not in (select id from clients where type = 'PL')),0) as comission_in_progress")
 
             ->selectRaw("coalesce((select sg.goal from sales_goals sg where sg.year = year(operations.deposit_date) and sg.month = month(operations.deposit_date)),0) as sales_goal")
 
@@ -83,12 +83,12 @@ class DashboardController extends Controller
             
             ->selectRaw("coalesce((select sum(amount) from operations op where month(op.deposit_date) = month(operations.deposit_date) and year(op.deposit_date) = year(operations.deposit_date) and day(op.deposit_date) <= day(operations.deposit_date) and op.operation_status_id in (6,7,8) and op.type in ('Compra','Venta') and op.client_id not in (select id from clients where type = 'PL')),0) as accumulated_volume")
 
-            ->selectRaw("coalesce((select sum(amount) from operations op where month(op.deposit_date) = month(operations.deposit_date) and year(op.deposit_date) = year(operations.deposit_date) and day(op.deposit_date) <= day(operations.deposit_date) and op.operation_status_id in (2,3,4,5) and op.type in ('Compra','Venta') and op.client_id not in (select id from clients where type = 'PL')),0) as volume_in_progress")
+            ->selectRaw("coalesce((select sum(amount) from operations op where month(op.operation_date) = month(operations.deposit_date) and year(op.operation_date) = year(operations.deposit_date) and day(op.operation_date) <= day(operations.deposit_date) and op.operation_status_id in (2,3,4,5) and op.type in ('Compra','Venta') and op.client_id not in (select id from clients where type = 'PL')),0) as volume_in_progress")
 
             ->selectRaw("( sum(comission_amount)) as comission_amount")
             ->selectRaw("coalesce((select sum(comission_amount) from operations op where month(op.deposit_date) = month(operations.deposit_date) and year(op.deposit_date) = year(operations.deposit_date) and day(op.deposit_date) <= day(operations.deposit_date) and op.operation_status_id in (6,7,8) and op.type in ('Compra','Venta') and op.client_id not in (select id from clients where type = 'PL')),0) as accumulated_comission")
 
-            ->selectRaw("coalesce((select sum(comission_amount) from operations op where month(op.deposit_date) = month(operations.deposit_date) and year(op.deposit_date) = year(operations.deposit_date) and day(op.deposit_date) <= day(operations.deposit_date) and op.operation_status_id in (2,3,4,5) and op.type in ('Compra','Venta') and op.client_id not in (select id from clients where type = 'PL')),0) as comission_in_progress")
+            ->selectRaw("coalesce((select sum(comission_amount) from operations op where month(op.operation_date) = month(operations.deposit_date) and year(op.operation_date) = year(operations.deposit_date) and day(op.operation_date) <= day(operations.deposit_date) and op.operation_status_id in (2,3,4,5) and op.type in ('Compra','Venta') and op.client_id not in (select id from clients where type = 'PL')),0) as comission_in_progress")
             ->selectRaw("( count(amount)) as num_operations")
             ->selectRaw("( count(distinct client_id)) as unique_clients")
 
