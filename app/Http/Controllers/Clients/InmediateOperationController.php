@@ -98,7 +98,7 @@ class InmediateOperationController extends Controller
             return response()->json([
                 'success' => false,
                 'errors' => [
-                    'El cliente no se encuentra aprobado.'
+                    'Su cuenta aún no se encuentra activa. Por favor comuníquese con su ejecutivo comercial.'
                 ]
             ]);
         }
