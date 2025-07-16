@@ -435,9 +435,14 @@ class InterbankOperationController extends Controller
                     $counter_value = round($matched_operation->amount/$matched_operation->exchange_rate*$tc_venta,2);
                     $financial_expenses = round($counter_value - $matched_operation->amount, 2);
 
+                    //obteniendo escrow_account_operation_id de op creadora para indicar origen de fondos
+                    $escrow_account_operation = DB::table('escrow_account_operation')
+                        ->where('operation_id', $operation_id);
+
                     $matched_operation->bank_accounts()->attach($vendor_bank_account->id, [
                         'amount' => $counter_value,
                         'comission_amount' => 0,
+                        'escrow_account_operation_id' => ($escrow_account_operation->get()->count() > 0 ) ? $escrow_account_operation->first()->id : null,
                         'created_at' => Carbon::now()
                     ]);
                     
@@ -454,6 +459,16 @@ class InterbankOperationController extends Controller
                         'amount' => $matched_operation->amount,
                         'comission_amount' => 0,
                         'created_at' => Carbon::now()
+                    ]);
+
+                    // Actualizando escrow_account_operation_id en tabla bank_account_operation para saber de donde salndrán los fondos
+                    $matched_operation_insert = DB::table('escrow_account_operation')
+                        ->where('operation_id', $matched_operation->id)
+                        ->where('escrow_account_id', $vendor_escrow_account->id)
+                        ->first();
+
+                    DB::table('bank_account_operation')->where('operation_id', $operation->id)->update([
+                        'escrow_account_operation_id' => $matched_operation_insert->id
                     ]);
                 }
                 else{
