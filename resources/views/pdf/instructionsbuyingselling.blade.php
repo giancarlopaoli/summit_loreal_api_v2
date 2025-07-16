@@ -425,7 +425,7 @@
 
             <tr class="details_item account">
               <td class="details_item_left account" style="display: inline-block;" colspan="1">
-                <img style="display: inline-block;vertical-align: middle;" src="{{ $escrow_account->bank->image }}" alt="">
+                <img style="display: inline-block;vertical-align: middle;" width="45" height="45" src="{{ $escrow_account->bank->image }}" alt="">
                 <div class="account_info" style="display: inline-block;vertical-align: middle;">
                   <p>{{ $escrow_account->bank->shortname }}</p>
                   <p>{{ $escrow_account->account_number }}</p>
@@ -453,7 +453,7 @@
 
             <tr class="details_item account">
               <td class="details_item_left account" style="display: inline-block;" colspan="1">
-                <img style="display: inline-block;vertical-align: middle;" src="{{ $vendor_bank_account->bank->image }}" alt="">
+                <img style="display: inline-block;vertical-align: middle;" width="45" height="45" src="{{ $vendor_bank_account->bank->image }}" alt="">
                 <div class="account_info" style="display: inline-block;vertical-align: middle;">
                   <p>{{ $vendor_bank_account->bank->shortname }}</p>
                   <p>{{ $vendor_bank_account->account_number }}</p>
@@ -514,7 +514,7 @@
 
           <tr class="details_item account">
             <td class="details_item_left account" style="display: inline-block;" colspan="1">
-              <img style="display: inline-block;vertical-align: middle;" src="{{ $bank_account->bank->image }}" alt="">
+              <img style="display: inline-block;vertical-align: middle;" width="45" height="45" src="{{ $bank_account->bank->image }}" alt="">
               <div class="account_info" style="display: inline-block;vertical-align: middle;">
                 <p>{{ $bank_account->bank->shortname }}</p>
                 <p>{{ $bank_account->account_number }}</p>
