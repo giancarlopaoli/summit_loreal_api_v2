@@ -760,7 +760,9 @@ class RegisterController extends Controller
                             $executive_comission = ExecutivesComission::create([
                                 'executive_id' => $executive->id,
                                 'client_id' => $client_id,
-                                'comission' => $executive->comission
+                                'comission' => $executive->comission,
+                                'start_date' => $now,
+                                'end_date' =>  Carbon::parse($now)->addYear($executive->years)
                             ]);
                         }
                     }
@@ -1081,7 +1083,9 @@ class RegisterController extends Controller
                             $executive_comission = ExecutivesComission::create([
                                 'executive_id' => $executive->id,
                                 'client_id' => $client_id,
-                                'comission' => $executive->comission
+                                'comission' => $executive->comission,
+                                'start_date' => $now,
+                                'end_date' =>  Carbon::parse($now)->addYear($executive->years)
                             ]);
                         }
                     }
