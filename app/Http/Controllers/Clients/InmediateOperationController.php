@@ -776,7 +776,7 @@ class InmediateOperationController extends Controller
         $dayStartStr = $daysSpanish[$dayStart-1];
         $dayEndStr = $daysSpanish[$dayEnd-1];
         $hourStartStr = Configuration::where('shortname', 'OPSSTARTTIME')->first()->value;
-        $hourEndStr   =  $client->customer_type == 'PN' ? Configuration::where('shortname', 'OPSENDTIMEPN')->first()->value : Configuration::where('shortname', 'OPSENDTIMEPJ')->first()->value;
+        $hourEndStr   =  isset($client) ? ( $client->customer_type == 'PN' ? Configuration::where('shortname', 'OPSENDTIMEPN')->first()->value : Configuration::where('shortname', 'OPSENDTIMEPJ')->first()->value) : Configuration::where('shortname', 'OPSENDTIMEPJ')->first()->value;
         $hourStart = Carbon::createFromTimeString($hourStartStr);
         $hourEnd   = Carbon::createFromTimeString($hourEndStr);
 
