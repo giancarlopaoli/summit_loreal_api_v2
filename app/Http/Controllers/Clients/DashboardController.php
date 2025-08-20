@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Client;
 use App\Models\Configuration;
 use App\Models\ExchangeRate;
+use App\Models\ExchangeRateOnline;
 use App\Models\Operation;
 use App\Models\OperationStatus;
 use App\Models\Range;
@@ -67,7 +68,7 @@ class DashboardController extends Controller
 
         // Del día
         if($request->type == '1'){
-            $data = ExchangeRate::select('created_at')
+            $data = ExchangeRateOnline::select('created_at')
                 ->selectRaw('(compra + venta)/2 as tipodecambio')
                 ->whereRaw('DATE(created_at) = DATE(NOW())')
                 ->orderByDesc('created_at')
@@ -79,7 +80,7 @@ class DashboardController extends Controller
         ]);
 
             if(count($data) == 0){
-                $data = ExchangeRate::select('created_at')
+                $data = ExchangeRateOnline::select('created_at')
                     ->selectRaw('(compra + venta)/2 as tipodecambio')
                     ->orderByDesc('created_at')
                     ->take(1)
@@ -89,7 +90,7 @@ class DashboardController extends Controller
         
         // De la última semana
         elseif($request->type == '2'){
-            $data = ExchangeRate::selectRaw('max(created_at) as created_at,(select (exr.compra + exr.venta)/2 from exchange_rates exr where exr.created_at = max(exchange_rates.created_at) limit 1 ) as tipodecambio')
+            $data = ExchangeRateOnline::selectRaw('max(created_at) as created_at,(select (exr.compra + exr.venta)/2 from view_exchange_rate exr where exr.created_at = max(view_exchange_rate.created_at) limit 1 ) as tipodecambio')
                 ->whereRaw('DATE(created_at) >= DATE(NOW() - INTERVAL 7 DAY)')
                 ->groupByRaw('DATE(created_at)')
                 ->orderByRaw('max(created_at) desc')
@@ -97,7 +98,7 @@ class DashboardController extends Controller
         }
         // Del último mes
         elseif($request->type == '3'){
-            $data = ExchangeRate::selectRaw('max(created_at) as created_at,(select (exr.compra + exr.venta)/2 from exchange_rates exr where exr.created_at = max(exchange_rates.created_at) limit 1 ) as tipodecambio')
+            $data = ExchangeRateOnline::selectRaw('max(created_at) as created_at,(select (exr.compra + exr.venta)/2 from view_exchange_rate exr where exr.created_at = max(view_exchange_rate.created_at) limit 1 ) as tipodecambio')
                 ->whereRaw('DATE(created_at) >= DATE(NOW() - INTERVAL 30 DAY)')
                 ->groupByRaw('DATE(created_at)')
                 ->orderByRaw('max(created_at) desc')
@@ -105,7 +106,7 @@ class DashboardController extends Controller
         }
         // Del último anio
         elseif($request->type == '4'){
-            $data = ExchangeRate::selectRaw('max(created_at) as created_at,(select (exr.compra + exr.venta)/2 from exchange_rates exr where exr.created_at = max(exchange_rates.created_at) limit 1 ) as tipodecambio')
+            $data = ExchangeRateOnline::selectRaw('max(created_at) as created_at,(select (exr.compra + exr.venta)/2 from view_exchange_rate exr where exr.created_at = max(view_exchange_rate.created_at) limit 1 ) as tipodecambio')
                 ->whereRaw('DATE(created_at) >= DATE(NOW() - INTERVAL 365 DAY)')
                 ->groupByRaw('DATE(created_at)')
                 ->orderByRaw('max(created_at) desc')
@@ -113,7 +114,7 @@ class DashboardController extends Controller
         }
         // Ulimos 3 meses
         elseif($request->type == '5'){
-            $data = ExchangeRate::selectRaw('max(created_at) as created_at,(select (exr.compra + exr.venta)/2 from exchange_rates exr where exr.created_at = max(exchange_rates.created_at) limit 1 ) as tipodecambio')
+            $data = ExchangeRateOnline::selectRaw('max(created_at) as created_at,(select (exr.compra + exr.venta)/2 from view_exchange_rate exr where exr.created_at = max(view_exchange_rate.created_at) limit 1 ) as tipodecambio')
                 ->whereRaw('DATE(created_at) >= DATE(NOW() - INTERVAL 93 DAY)')
                 ->groupByRaw('DATE(created_at)')
                 ->orderByRaw('max(created_at) desc')
@@ -121,7 +122,7 @@ class DashboardController extends Controller
         }
         // Últimos 6 meses
         elseif($request->type == '6'){
-            $data = ExchangeRate::selectRaw('max(created_at) as created_at,(select (exr.compra + exr.venta)/2 from exchange_rates exr where exr.created_at = max(exchange_rates.created_at) limit 1 ) as tipodecambio')
+            $data = ExchangeRateOnline::selectRaw('max(created_at) as created_at,(select (exr.compra + exr.venta)/2 from view_exchange_rate exr where exr.created_at = max(view_exchange_rate.created_at) limit 1 ) as tipodecambio')
                 ->whereRaw('DATE(created_at) >= DATE(NOW() - INTERVAL 183 DAY)')
                 ->groupByRaw('DATE(created_at)')
                 ->orderByRaw('max(created_at) desc')

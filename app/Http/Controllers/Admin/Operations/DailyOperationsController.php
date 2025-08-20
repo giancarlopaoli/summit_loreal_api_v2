@@ -51,6 +51,9 @@ class DailyOperationsController extends Controller
         $date = isset($request->date) ? $request->date : Carbon::now()->format('Y-m-d');
         $month = Carbon::now()->month;
         $year = Carbon::now()->year;
+        $now = Carbon::now();
+        $daydiff = $now->diff($date)->days;
+
 
         $pendientes = OperationStatus::wherein('name', ['Disponible','Pendiente envio fondos','Pendiente fondos contraparte','Contravalor recaudado','Fondos enviados','Pendiente facturar'])->get()->pluck('id');
         $finalizadas = OperationStatus::wherein('name', ['Facturado','Finalizado sin factura'])->get()->pluck('id');
@@ -86,13 +89,6 @@ class DailyOperationsController extends Controller
 
         #############################################
 
-        $indicators = OperationOnline::selectRaw("coalesce(sum(amount),0) as total_amount, count(id) as num_operations")
-            ->selectRaw("(select sum(op1.amount) from view_operations_online op1 inner join clients cl on op1.client_id = cl.id where month(op1.operation_date) = $month and year(op1.operation_date) = $year and op1.operation_status_id not in (9,10) and cl.type != 'PL') as monthly_amount")
-            ->selectRaw("(select count(op1.amount) from view_operations_online op1 inner join clients cl on op1.client_id = cl.id where month(op1.operation_date) = $month and year(op1.operation_date) = $year and op1.operation_status_id not in (9,10) and cl.type != 'PL') as monthly_operations")
-            ->whereRaw("date(operation_date) = '$date'")
-            ->whereNotIn('client_id', Client::where('type','PL')->get()->pluck('id'))
-            ->whereNotIn('operation_status_id', [9,10])
-            ->get();
 
         $graphs = OperationOnline::
             selectRaw("day(operation_date) as dia, sum(amount) as amount, count(amount) as num_operations")
@@ -108,113 +104,242 @@ class DailyOperationsController extends Controller
             ->orderByRaw('day(operation_date)')
             ->get();
 
-        $pending_operations = OperationOnline::select('id','code','class','type','client_id','user_id','use_escrow_account','amount','currency_id','exchange_rate','comission_spread','comission_amount','igv','spread','operation_status_id','post','operation_date')
-            ->selectRaw("if(type = 'Interbancaria', round(amount/exchange_rate*(exchange_rate+spread/10000), 2), round(amount * exchange_rate, 2)) as conversion_amount")
-                ->selectRaw("if(type = 'Compra', round(exchange_rate + comission_spread/10000, 4), if(type = 'Venta', round(exchange_rate - comission_spread/10000, 4), round(exchange_rate + (spread/10000),4))) as final_exchange_rate")
-                ->selectRaw("if(type = 'Compra', round(round(amount * exchange_rate, 2) + comission_amount + igv, 2), if(type = 'Venta', round(round(amount * exchange_rate, 2) - comission_amount - igv, 2), round(round(amount/exchange_rate*(exchange_rate+spread/10000), 2) + comission_amount + igv, 2)) ) as counter_value")
-                ->selectRaw("if(type = 'Interbancaria', round(amount/exchange_rate*(exchange_rate+spread/10000), 2) - amount , null ) as financial_expenses")
-            ->whereIn('operation_status_id', OperationStatus::wherein('name', ['Disponible'])->get()->pluck('id'))
-            ->whereRaw("date(operation_date) = '$date'")
-            ->with('client:id,name,last_name,mothers_name,customer_type,type,document_type_id,document_number,executive_id','client.document_type:id,name','client.executive.user:id,name,last_name')
-            ->with('currency:id,name:sign')
-            ->with('status:id,name')
-            ->with('bank_accounts:id,bank_id,currency_id,account_number,cci_number,account_type_id','bank_accounts.currency:id,name,sign','bank_accounts.bank:id,name,shortname,image')
-            ->with('escrow_accounts:id,bank_id,currency_id,account_number,cci_number','escrow_accounts.currency:id,name,sign','escrow_accounts.bank:id,name,shortname,image')
-            ->with('vendor_bank_accounts:id,bank_id,currency_id,client_id,account_number,cci_number,account_type_id','vendor_bank_accounts.bank:id,name,shortname,image')
-            ->with('documents:id,operation_id,type')
-            ->get();
+        if($daydiff > 33){
+            $indicators = Operation::selectRaw("coalesce(sum(amount),0) as total_amount, count(id) as num_operations")
+                ->selectRaw("(select sum(op1.amount) from operations op1 inner join clients cl on op1.client_id = cl.id where month(op1.operation_date) = $month and year(op1.operation_date) = $year and op1.operation_status_id not in (9,10) and cl.type != 'PL') as monthly_amount")
+                ->selectRaw("(select count(op1.amount) from operations op1 inner join clients cl on op1.client_id = cl.id where month(op1.operation_date) = $month and year(op1.operation_date) = $year and op1.operation_status_id not in (9,10) and cl.type != 'PL') as monthly_operations")
+                ->whereRaw("date(operation_date) = '$date'")
+                ->whereNotIn('client_id', Client::where('type','PL')->get()->pluck('id'))
+                ->whereNotIn('operation_status_id', [9,10])
+                ->get();
 
-        $matched_operations = DB::table('operation_matches')
-            ->select('operation_id', 'matched_id')
-            ->join('view_operations_online as op1', 'op1.id', "=", "operation_matches.operation_id")
-            ->join('view_operations_online as op2', 'op2.id', "=", "operation_matches.matched_id")
-            ->whereRaw($where_str)
-            ->whereRaw("$status_str")
-            ->whereRaw($operations_analyst)
-            ->get();
-
-
-        $matched_operations->each(function ($item, $key) {
-
-            $item->created_operation = OperationOnline::where('id',$item->operation_id)
-                ->select('view_operations_online.id','code','class','type','client_id','user_id','use_escrow_account','amount','currency_id','exchange_rate','comission_spread','comission_amount','igv','spread','operation_status_id','post','operation_date','funds_confirmation_date', 'sign_date', 'mail_instructions', 'invoice_url', 'unaffected_invoice_url','operations_analyst_id','corfid_id','corfid_message')
+            $pending_operations = Operation::select('id','code','class','type','client_id','user_id','use_escrow_account','amount','currency_id','exchange_rate','comission_spread','comission_amount','igv','spread','operation_status_id','post','operation_date')
                 ->selectRaw("if(type = 'Interbancaria', round(amount/exchange_rate*(exchange_rate+spread/10000), 2), round(amount * exchange_rate, 2)) as conversion_amount")
-                ->selectRaw("if(type = 'Compra', round(exchange_rate + comission_spread/10000, 4), if(type = 'Venta', round(exchange_rate - comission_spread/10000, 4), round(exchange_rate + (spread/10000),4))) as final_exchange_rate")
-                ->selectRaw("if(type = 'Compra', round(round(amount * exchange_rate, 2) + comission_amount + igv, 2), if(type = 'Venta', round(round(amount * exchange_rate, 2) - comission_amount - igv, 2), round(round(amount/exchange_rate*(exchange_rate+spread/10000), 2) + comission_amount + igv, 2)) ) as counter_value")
-                ->selectRaw("if(type = 'Interbancaria', round(amount/exchange_rate*(exchange_rate+spread/10000), 2) - amount , null ) as financial_expenses")
-                ->with('operations_analyst.user:id,name,last_name')
-                ->with('status:id,name')
+                    ->selectRaw("if(type = 'Compra', round(exchange_rate + comission_spread/10000, 4), if(type = 'Venta', round(exchange_rate - comission_spread/10000, 4), round(exchange_rate + (spread/10000),4))) as final_exchange_rate")
+                    ->selectRaw("if(type = 'Compra', round(round(amount * exchange_rate, 2) + comission_amount + igv, 2), if(type = 'Venta', round(round(amount * exchange_rate, 2) - comission_amount - igv, 2), round(round(amount/exchange_rate*(exchange_rate+spread/10000), 2) + comission_amount + igv, 2)) ) as counter_value")
+                    ->selectRaw("if(type = 'Interbancaria', round(amount/exchange_rate*(exchange_rate+spread/10000), 2) - amount , null ) as financial_expenses")
+                ->whereIn('operation_status_id', OperationStatus::wherein('name', ['Disponible'])->get()->pluck('id'))
+                ->whereRaw("date(operation_date) = '$date'")
                 ->with('client:id,name,last_name,mothers_name,customer_type,type,document_type_id,document_number,executive_id','client.document_type:id,name','client.executive.user:id,name,last_name')
                 ->with('currency:id,name:sign')
-                ->with('bank_accounts:id,bank_id,currency_id,account_number,cci_number,account_type_id','bank_accounts.bank:id,name,shortname,image','bank_accounts.currency:id,name,sign')
-                ->with('escrow_accounts:id,bank_id,currency_id,account_number,cci_number','escrow_accounts.currency:id,name,sign','escrow_accounts.bank:id,name,shortname,image')
-                ->with('vendor_bank_accounts:id,bank_id,currency_id,client_id,account_number,cci_number,account_type_id','vendor_bank_accounts.currency:id,name,sign','vendor_bank_accounts.bank:id,name,shortname,image')
-                ->with('documents:id,operation_id,type')
-                ->first();
-
-            $item->created_operation->escrow_account_operation = DB::table('escrow_account_operation')->where('operation_id', $item->matched_id)->get();
-
-            $item->created_operation->time = OperationOnline::select('view_operations_online.id','view_operations_online.code','view_operations_online.operation_date','view_operations_online.sign_date')
-            ->where('view_operations_online.id', $item->operation_id)
-            ->join('clients', 'clients.id', '=','view_operations_online.client_id')
-            ->join('operation_matches', 'operation_matches.operation_id', '=', 'view_operations_online.id')
-            ->join('view_operations_online as op2', 'op2.id', '=', 'operation_matches.matched_id')
-            ->selectRaw("coalesce(TIMESTAMPDIFF(MINUTE,(select od.created_at from operation_documents od where od.operation_id = view_operations_online.id and od.type = 'Comprobante' order by id limit 1 ),view_operations_online.deposit_date),TIMESTAMPDIFF(MINUTE,(select od.created_at from operation_documents od where od.operation_id = view_operations_online.id and od.type = 'Comprobante' order by id limit 1 ),now())) as total_time")
-            ->selectRaw("if(view_operations_online.operation_status_id = 2 && (select od.created_at from operation_documents od where od.operation_id = view_operations_online.id and od.type = 'Comprobante' order by id limit 1) is null,
-                TIMESTAMPDIFF(MINUTE,view_operations_online.operation_date,now()),
-                if(view_operations_online.operation_status_id = 2 && (select od.created_at from operation_documents od where od.operation_id = view_operations_online.id and od.type = 'Comprobante' order by id limit 1) is not null,
-                TIMESTAMPDIFF(MINUTE,(select od.created_at from operation_documents od where od.operation_id = view_operations_online.id and od.type = 'Comprobante' order by id limit 1 ),now()),
-                if(view_operations_online.operation_status_id=3 && (op2.sign_date is null),
-                TIMESTAMPDIFF(MINUTE,view_operations_online.funds_confirmation_date,now()),
-                if(view_operations_online.operation_status_id = 3 && (op2.sign_date is not null),
-                TIMESTAMPDIFF(MINUTE,op2.sign_date,now()),
-                if(view_operations_online.operation_status_id = 4 && op2.operation_status_id = 5,
-                TIMESTAMPDIFF(MINUTE,op2.deposit_date,now()),
-                if(view_operations_online.operation_status_id = 4 && op2.operation_status_id = 7 && (view_operations_online.sign_date is null),
-                TIMESTAMPDIFF(MINUTE,op2.funds_confirmation_date,now()),
-                if(view_operations_online.operation_status_id = 4 && op2.operation_status_id = 7 && (view_operations_online.sign_date is not null),
-                TIMESTAMPDIFF(MINUTE,view_operations_online.sign_date,now()),
-
-                if((view_operations_online.operation_status_id in (6,7,8)) && (op2.operation_status_id in (6,7,8)),
-                TIMESTAMPDIFF(MINUTE,(select od.created_at from operation_documents od where od.operation_id = view_operations_online.id and od.type = 'Comprobante' order by id limit 1 ),view_operations_online.deposit_date),
-
-
-                0)))))))) as currenttime")->first();
-
-            $item->matched_operation = OperationOnline::where('id',$item->matched_id)
-                ->select('view_operations_online.id','code','class','type','client_id','user_id','use_escrow_account','amount','currency_id','exchange_rate','comission_spread','comission_amount','igv','spread','operation_status_id','post','operation_date','funds_confirmation_date', 'sign_date', 'mail_instructions', 'invoice_url','unaffected_invoice_url','operations_analyst_id','corfid_id','corfid_message')
-                ->selectRaw("if(type = 'Interbancaria', round(amount/exchange_rate*(exchange_rate+spread/10000), 2), round(amount * exchange_rate, 2)) as conversion_amount")
-                ->selectRaw("if(type = 'Compra', round(exchange_rate + comission_spread/10000, 4), if(type = 'Venta', round(exchange_rate - comission_spread/10000, 4), round(exchange_rate + (spread/10000),4))) as final_exchange_rate")
-                ->selectRaw("if(type = 'Compra', round(round(amount * exchange_rate, 2) + comission_amount + igv, 2), if(type = 'Venta', round(round(amount * exchange_rate, 2) - comission_amount - igv, 2), round(round(amount/exchange_rate*(exchange_rate+spread/10000), 2) + comission_amount + igv, 2)) ) as counter_value")
-                ->selectRaw("if(type = 'Interbancaria', round(amount/exchange_rate*(exchange_rate+spread/10000), 2) - amount , null ) as financial_expenses")
-                ->with('operations_analyst.user:id,name,last_name')
                 ->with('status:id,name')
-                ->with('client:id,name,last_name,mothers_name,customer_type,type,document_type_id,document_number,executive_id','client.document_type:id,name','client.executive.user:id,name,last_name')
-                ->with('currency:id,name:sign')
                 ->with('bank_accounts:id,bank_id,currency_id,account_number,cci_number,account_type_id','bank_accounts.currency:id,name,sign','bank_accounts.bank:id,name,shortname,image')
                 ->with('escrow_accounts:id,bank_id,currency_id,account_number,cci_number','escrow_accounts.currency:id,name,sign','escrow_accounts.bank:id,name,shortname,image')
                 ->with('vendor_bank_accounts:id,bank_id,currency_id,client_id,account_number,cci_number,account_type_id','vendor_bank_accounts.bank:id,name,shortname,image')
                 ->with('documents:id,operation_id,type')
-                ->first();
-        });
-    
-        $pending_deposits = DB::table('operation_matches')
-            ->select('op1.id as operation_id', 'op2.id as matched_id','op1.code','op1.type','op1.amount','op2.sign_date','op2.deposit_date','eao.deposit_at','bao.amount as client_amount')
-            ->selectRaw("if(cl1.customer_type = 'PJ',cl1.name,concat(cl1.name,' ',cl1.last_name,' ',cl1.mothers_name)) as client_name, cl2.last_name as pl_name")
-            ->selectRaw("eao.amount as expected_amount, ea.account_number, ba.shortname,cu.sign as currency_sign, cu.name as currency_name, concat(us.name, ' ', us.last_name) as analyst")
-            ->selectRaw("if(eao.deposit_at is null, 'Pendiente fondos', if(bao.signed_at is null, '2da firma pendiente', if(bao.signed_at is not null and bao.deposit_at is null,'Depósito en proceso',0))) as deposit_status")
-            ->join('view_operations_online as op1', 'op1.id', "=", "operation_matches.operation_id")
-            ->join('view_operations_online as op2', 'op2.id', "=", "operation_matches.matched_id")
-            ->join('clients as cl1', 'cl1.id', "=", "op1.client_id")
-            ->join('clients as cl2', 'cl2.id', "=", "op2.client_id")
-            ->join('escrow_account_operation as eao', 'eao.operation_id', "=", "op2.id")
-            ->join('escrow_accounts as ea', 'eao.escrow_account_id', "=", "ea.id")
-            ->join('banks as ba', 'ba.id', "=", "ea.bank_id")
-            ->join('currencies as cu', 'cu.id', "=", "ea.currency_id")
-            ->join('users as us', 'us.id', "=", "op1.operations_analyst_id")
-            ->join('bank_account_operation as bao', 'bao.escrow_account_operation_id', "=", "eao.id")
-            ->whereRaw("op1.operation_status_id = 4 and bao.deposit_at is null")
-            ->get();
+                ->get();
+
+            $matched_operations = DB::table('operation_matches')
+                ->select('operation_id', 'matched_id')
+                ->join('operations as op1', 'op1.id', "=", "operation_matches.operation_id")
+                ->join('operations as op2', 'op2.id', "=", "operation_matches.matched_id")
+                ->whereRaw($where_str)
+                ->whereRaw("$status_str")
+                ->whereRaw($operations_analyst)
+                ->get();
+
+
+            $matched_operations->each(function ($item, $key) {
+
+                $item->created_operation = Operation::where('id',$item->operation_id)
+                    ->select('operations.id','code','class','type','client_id','user_id','use_escrow_account','amount','currency_id','exchange_rate','comission_spread','comission_amount','igv','spread','operation_status_id','post','operation_date','funds_confirmation_date', 'sign_date', 'mail_instructions', 'invoice_url', 'unaffected_invoice_url','operations_analyst_id','corfid_id','corfid_message')
+                    ->selectRaw("if(type = 'Interbancaria', round(amount/exchange_rate*(exchange_rate+spread/10000), 2), round(amount * exchange_rate, 2)) as conversion_amount")
+                    ->selectRaw("if(type = 'Compra', round(exchange_rate + comission_spread/10000, 4), if(type = 'Venta', round(exchange_rate - comission_spread/10000, 4), round(exchange_rate + (spread/10000),4))) as final_exchange_rate")
+                    ->selectRaw("if(type = 'Compra', round(round(amount * exchange_rate, 2) + comission_amount + igv, 2), if(type = 'Venta', round(round(amount * exchange_rate, 2) - comission_amount - igv, 2), round(round(amount/exchange_rate*(exchange_rate+spread/10000), 2) + comission_amount + igv, 2)) ) as counter_value")
+                    ->selectRaw("if(type = 'Interbancaria', round(amount/exchange_rate*(exchange_rate+spread/10000), 2) - amount , null ) as financial_expenses")
+                    ->with('operations_analyst.user:id,name,last_name')
+                    ->with('status:id,name')
+                    ->with('client:id,name,last_name,mothers_name,customer_type,type,document_type_id,document_number,executive_id','client.document_type:id,name','client.executive.user:id,name,last_name')
+                    ->with('currency:id,name:sign')
+                    ->with('bank_accounts:id,bank_id,currency_id,account_number,cci_number,account_type_id','bank_accounts.bank:id,name,shortname,image','bank_accounts.currency:id,name,sign')
+                    ->with('escrow_accounts:id,bank_id,currency_id,account_number,cci_number','escrow_accounts.currency:id,name,sign','escrow_accounts.bank:id,name,shortname,image')
+                    ->with('vendor_bank_accounts:id,bank_id,currency_id,client_id,account_number,cci_number,account_type_id','vendor_bank_accounts.currency:id,name,sign','vendor_bank_accounts.bank:id,name,shortname,image')
+                    ->with('documents:id,operation_id,type')
+                    ->first();
+
+                $item->created_operation->escrow_account_operation = DB::table('escrow_account_operation')->where('operation_id', $item->matched_id)->get();
+
+                $item->created_operation->time = Operation::select('operations.id','operations.code','operations.operation_date','operations.sign_date')
+                ->where('operations.id', $item->operation_id)
+                ->join('clients', 'clients.id', '=','operations.client_id')
+                ->join('operation_matches', 'operation_matches.operation_id', '=', 'operations.id')
+                ->join('operations as op2', 'op2.id', '=', 'operation_matches.matched_id')
+                ->selectRaw("coalesce(TIMESTAMPDIFF(MINUTE,(select od.created_at from operation_documents od where od.operation_id = operations.id and od.type = 'Comprobante' order by id limit 1 ),operations.deposit_date),TIMESTAMPDIFF(MINUTE,(select od.created_at from operation_documents od where od.operation_id = operations.id and od.type = 'Comprobante' order by id limit 1 ),now())) as total_time")
+                ->selectRaw("if(operations.operation_status_id = 2 && (select od.created_at from operation_documents od where od.operation_id = operations.id and od.type = 'Comprobante' order by id limit 1) is null,
+                    TIMESTAMPDIFF(MINUTE,operations.operation_date,now()),
+                    if(operations.operation_status_id = 2 && (select od.created_at from operation_documents od where od.operation_id = operations.id and od.type = 'Comprobante' order by id limit 1) is not null,
+                    TIMESTAMPDIFF(MINUTE,(select od.created_at from operation_documents od where od.operation_id = operations.id and od.type = 'Comprobante' order by id limit 1 ),now()),
+                    if(operations.operation_status_id=3 && (op2.sign_date is null),
+                    TIMESTAMPDIFF(MINUTE,operations.funds_confirmation_date,now()),
+                    if(operations.operation_status_id = 3 && (op2.sign_date is not null),
+                    TIMESTAMPDIFF(MINUTE,op2.sign_date,now()),
+                    if(operations.operation_status_id = 4 && op2.operation_status_id = 5,
+                    TIMESTAMPDIFF(MINUTE,op2.deposit_date,now()),
+                    if(operations.operation_status_id = 4 && op2.operation_status_id = 7 && (operations.sign_date is null),
+                    TIMESTAMPDIFF(MINUTE,op2.funds_confirmation_date,now()),
+                    if(operations.operation_status_id = 4 && op2.operation_status_id = 7 && (operations.sign_date is not null),
+                    TIMESTAMPDIFF(MINUTE,operations.sign_date,now()),
+
+                    if((operations.operation_status_id in (6,7,8)) && (op2.operation_status_id in (6,7,8)),
+                    TIMESTAMPDIFF(MINUTE,(select od.created_at from operation_documents od where od.operation_id = operations.id and od.type = 'Comprobante' order by id limit 1 ),operations.deposit_date),
+
+
+                    0)))))))) as currenttime")->first();
+
+                $item->matched_operation = Operation::where('id',$item->matched_id)
+                    ->select('operations.id','code','class','type','client_id','user_id','use_escrow_account','amount','currency_id','exchange_rate','comission_spread','comission_amount','igv','spread','operation_status_id','post','operation_date','funds_confirmation_date', 'sign_date', 'mail_instructions', 'invoice_url','unaffected_invoice_url','operations_analyst_id','corfid_id','corfid_message')
+                    ->selectRaw("if(type = 'Interbancaria', round(amount/exchange_rate*(exchange_rate+spread/10000), 2), round(amount * exchange_rate, 2)) as conversion_amount")
+                    ->selectRaw("if(type = 'Compra', round(exchange_rate + comission_spread/10000, 4), if(type = 'Venta', round(exchange_rate - comission_spread/10000, 4), round(exchange_rate + (spread/10000),4))) as final_exchange_rate")
+                    ->selectRaw("if(type = 'Compra', round(round(amount * exchange_rate, 2) + comission_amount + igv, 2), if(type = 'Venta', round(round(amount * exchange_rate, 2) - comission_amount - igv, 2), round(round(amount/exchange_rate*(exchange_rate+spread/10000), 2) + comission_amount + igv, 2)) ) as counter_value")
+                    ->selectRaw("if(type = 'Interbancaria', round(amount/exchange_rate*(exchange_rate+spread/10000), 2) - amount , null ) as financial_expenses")
+                    ->with('operations_analyst.user:id,name,last_name')
+                    ->with('status:id,name')
+                    ->with('client:id,name,last_name,mothers_name,customer_type,type,document_type_id,document_number,executive_id','client.document_type:id,name','client.executive.user:id,name,last_name')
+                    ->with('currency:id,name:sign')
+                    ->with('bank_accounts:id,bank_id,currency_id,account_number,cci_number,account_type_id','bank_accounts.currency:id,name,sign','bank_accounts.bank:id,name,shortname,image')
+                    ->with('escrow_accounts:id,bank_id,currency_id,account_number,cci_number','escrow_accounts.currency:id,name,sign','escrow_accounts.bank:id,name,shortname,image')
+                    ->with('vendor_bank_accounts:id,bank_id,currency_id,client_id,account_number,cci_number,account_type_id','vendor_bank_accounts.bank:id,name,shortname,image')
+                    ->with('documents:id,operation_id,type')
+                    ->first();
+            });
+        
+            $pending_deposits = DB::table('operation_matches')
+                ->select('op1.id as operation_id', 'op2.id as matched_id','op1.code','op1.type','op1.amount','op2.sign_date','op2.deposit_date','eao.deposit_at','bao.amount as client_amount')
+                ->selectRaw("if(cl1.customer_type = 'PJ',cl1.name,concat(cl1.name,' ',cl1.last_name,' ',cl1.mothers_name)) as client_name, cl2.last_name as pl_name")
+                ->selectRaw("eao.amount as expected_amount, ea.account_number, ba.shortname,cu.sign as currency_sign, cu.name as currency_name, concat(us.name, ' ', us.last_name) as analyst")
+                ->selectRaw("if(eao.deposit_at is null, 'Pendiente fondos', if(bao.signed_at is null, '2da firma pendiente', if(bao.signed_at is not null and bao.deposit_at is null,'Depósito en proceso',0))) as deposit_status")
+                ->join('operations as op1', 'op1.id', "=", "operation_matches.operation_id")
+                ->join('operations as op2', 'op2.id', "=", "operation_matches.matched_id")
+                ->join('clients as cl1', 'cl1.id', "=", "op1.client_id")
+                ->join('clients as cl2', 'cl2.id', "=", "op2.client_id")
+                ->join('escrow_account_operation as eao', 'eao.operation_id', "=", "op2.id")
+                ->join('escrow_accounts as ea', 'eao.escrow_account_id', "=", "ea.id")
+                ->join('banks as ba', 'ba.id', "=", "ea.bank_id")
+                ->join('currencies as cu', 'cu.id', "=", "ea.currency_id")
+                ->join('users as us', 'us.id', "=", "op1.operations_analyst_id")
+                ->join('bank_account_operation as bao', 'bao.escrow_account_operation_id', "=", "eao.id")
+                ->whereRaw("op1.operation_status_id = 4 and bao.deposit_at is null")
+                ->get();
+        }
+        else{
+            $indicators = OperationOnline::selectRaw("coalesce(sum(amount),0) as total_amount, count(id) as num_operations")
+                ->selectRaw("(select sum(op1.amount) from view_operations_online op1 inner join clients cl on op1.client_id = cl.id where month(op1.operation_date) = $month and year(op1.operation_date) = $year and op1.operation_status_id not in (9,10) and cl.type != 'PL') as monthly_amount")
+                ->selectRaw("(select count(op1.amount) from view_operations_online op1 inner join clients cl on op1.client_id = cl.id where month(op1.operation_date) = $month and year(op1.operation_date) = $year and op1.operation_status_id not in (9,10) and cl.type != 'PL') as monthly_operations")
+                ->whereRaw("date(operation_date) = '$date'")
+                ->whereNotIn('client_id', Client::where('type','PL')->get()->pluck('id'))
+                ->whereNotIn('operation_status_id', [9,10])
+                ->get();
+
+            $pending_operations = OperationOnline::select('id','code','class','type','client_id','user_id','use_escrow_account','amount','currency_id','exchange_rate','comission_spread','comission_amount','igv','spread','operation_status_id','post','operation_date')
+                ->selectRaw("if(type = 'Interbancaria', round(amount/exchange_rate*(exchange_rate+spread/10000), 2), round(amount * exchange_rate, 2)) as conversion_amount")
+                    ->selectRaw("if(type = 'Compra', round(exchange_rate + comission_spread/10000, 4), if(type = 'Venta', round(exchange_rate - comission_spread/10000, 4), round(exchange_rate + (spread/10000),4))) as final_exchange_rate")
+                    ->selectRaw("if(type = 'Compra', round(round(amount * exchange_rate, 2) + comission_amount + igv, 2), if(type = 'Venta', round(round(amount * exchange_rate, 2) - comission_amount - igv, 2), round(round(amount/exchange_rate*(exchange_rate+spread/10000), 2) + comission_amount + igv, 2)) ) as counter_value")
+                    ->selectRaw("if(type = 'Interbancaria', round(amount/exchange_rate*(exchange_rate+spread/10000), 2) - amount , null ) as financial_expenses")
+                ->whereIn('operation_status_id', OperationStatus::wherein('name', ['Disponible'])->get()->pluck('id'))
+                ->whereRaw("date(operation_date) = '$date'")
+                ->with('client:id,name,last_name,mothers_name,customer_type,type,document_type_id,document_number,executive_id','client.document_type:id,name','client.executive.user:id,name,last_name')
+                ->with('currency:id,name:sign')
+                ->with('status:id,name')
+                ->with('bank_accounts:id,bank_id,currency_id,account_number,cci_number,account_type_id','bank_accounts.currency:id,name,sign','bank_accounts.bank:id,name,shortname,image')
+                ->with('escrow_accounts:id,bank_id,currency_id,account_number,cci_number','escrow_accounts.currency:id,name,sign','escrow_accounts.bank:id,name,shortname,image')
+                ->with('vendor_bank_accounts:id,bank_id,currency_id,client_id,account_number,cci_number,account_type_id','vendor_bank_accounts.bank:id,name,shortname,image')
+                ->with('documents:id,operation_id,type')
+                ->get();
+
+            $matched_operations = DB::table('operation_matches')
+                ->select('operation_id', 'matched_id')
+                ->join('view_operations_online as op1', 'op1.id', "=", "operation_matches.operation_id")
+                ->join('view_operations_online as op2', 'op2.id', "=", "operation_matches.matched_id")
+                ->whereRaw($where_str)
+                ->whereRaw("$status_str")
+                ->whereRaw($operations_analyst)
+                ->get();
+
+
+            $matched_operations->each(function ($item, $key) {
+
+                $item->created_operation = OperationOnline::where('id',$item->operation_id)
+                    ->select('view_operations_online.id','code','class','type','client_id','user_id','use_escrow_account','amount','currency_id','exchange_rate','comission_spread','comission_amount','igv','spread','operation_status_id','post','operation_date','funds_confirmation_date', 'sign_date', 'mail_instructions', 'invoice_url', 'unaffected_invoice_url','operations_analyst_id','corfid_id','corfid_message')
+                    ->selectRaw("if(type = 'Interbancaria', round(amount/exchange_rate*(exchange_rate+spread/10000), 2), round(amount * exchange_rate, 2)) as conversion_amount")
+                    ->selectRaw("if(type = 'Compra', round(exchange_rate + comission_spread/10000, 4), if(type = 'Venta', round(exchange_rate - comission_spread/10000, 4), round(exchange_rate + (spread/10000),4))) as final_exchange_rate")
+                    ->selectRaw("if(type = 'Compra', round(round(amount * exchange_rate, 2) + comission_amount + igv, 2), if(type = 'Venta', round(round(amount * exchange_rate, 2) - comission_amount - igv, 2), round(round(amount/exchange_rate*(exchange_rate+spread/10000), 2) + comission_amount + igv, 2)) ) as counter_value")
+                    ->selectRaw("if(type = 'Interbancaria', round(amount/exchange_rate*(exchange_rate+spread/10000), 2) - amount , null ) as financial_expenses")
+                    ->with('operations_analyst.user:id,name,last_name')
+                    ->with('status:id,name')
+                    ->with('client:id,name,last_name,mothers_name,customer_type,type,document_type_id,document_number,executive_id','client.document_type:id,name','client.executive.user:id,name,last_name')
+                    ->with('currency:id,name:sign')
+                    ->with('bank_accounts:id,bank_id,currency_id,account_number,cci_number,account_type_id','bank_accounts.bank:id,name,shortname,image','bank_accounts.currency:id,name,sign')
+                    ->with('escrow_accounts:id,bank_id,currency_id,account_number,cci_number','escrow_accounts.currency:id,name,sign','escrow_accounts.bank:id,name,shortname,image')
+                    ->with('vendor_bank_accounts:id,bank_id,currency_id,client_id,account_number,cci_number,account_type_id','vendor_bank_accounts.currency:id,name,sign','vendor_bank_accounts.bank:id,name,shortname,image')
+                    ->with('documents:id,operation_id,type')
+                    ->first();
+
+                $item->created_operation->escrow_account_operation = DB::table('escrow_account_operation')->where('operation_id', $item->matched_id)->get();
+
+                $item->created_operation->time = OperationOnline::select('view_operations_online.id','view_operations_online.code','view_operations_online.operation_date','view_operations_online.sign_date')
+                ->where('view_operations_online.id', $item->operation_id)
+                ->join('clients', 'clients.id', '=','view_operations_online.client_id')
+                ->join('operation_matches', 'operation_matches.operation_id', '=', 'view_operations_online.id')
+                ->join('view_operations_online as op2', 'op2.id', '=', 'operation_matches.matched_id')
+                ->selectRaw("coalesce(TIMESTAMPDIFF(MINUTE,(select od.created_at from operation_documents od where od.operation_id = view_operations_online.id and od.type = 'Comprobante' order by id limit 1 ),view_operations_online.deposit_date),TIMESTAMPDIFF(MINUTE,(select od.created_at from operation_documents od where od.operation_id = view_operations_online.id and od.type = 'Comprobante' order by id limit 1 ),now())) as total_time")
+                ->selectRaw("if(view_operations_online.operation_status_id = 2 && (select od.created_at from operation_documents od where od.operation_id = view_operations_online.id and od.type = 'Comprobante' order by id limit 1) is null,
+                    TIMESTAMPDIFF(MINUTE,view_operations_online.operation_date,now()),
+                    if(view_operations_online.operation_status_id = 2 && (select od.created_at from operation_documents od where od.operation_id = view_operations_online.id and od.type = 'Comprobante' order by id limit 1) is not null,
+                    TIMESTAMPDIFF(MINUTE,(select od.created_at from operation_documents od where od.operation_id = view_operations_online.id and od.type = 'Comprobante' order by id limit 1 ),now()),
+                    if(view_operations_online.operation_status_id=3 && (op2.sign_date is null),
+                    TIMESTAMPDIFF(MINUTE,view_operations_online.funds_confirmation_date,now()),
+                    if(view_operations_online.operation_status_id = 3 && (op2.sign_date is not null),
+                    TIMESTAMPDIFF(MINUTE,op2.sign_date,now()),
+                    if(view_operations_online.operation_status_id = 4 && op2.operation_status_id = 5,
+                    TIMESTAMPDIFF(MINUTE,op2.deposit_date,now()),
+                    if(view_operations_online.operation_status_id = 4 && op2.operation_status_id = 7 && (view_operations_online.sign_date is null),
+                    TIMESTAMPDIFF(MINUTE,op2.funds_confirmation_date,now()),
+                    if(view_operations_online.operation_status_id = 4 && op2.operation_status_id = 7 && (view_operations_online.sign_date is not null),
+                    TIMESTAMPDIFF(MINUTE,view_operations_online.sign_date,now()),
+
+                    if((view_operations_online.operation_status_id in (6,7,8)) && (op2.operation_status_id in (6,7,8)),
+                    TIMESTAMPDIFF(MINUTE,(select od.created_at from operation_documents od where od.operation_id = view_operations_online.id and od.type = 'Comprobante' order by id limit 1 ),view_operations_online.deposit_date),
+
+
+                    0)))))))) as currenttime")->first();
+
+                $item->matched_operation = OperationOnline::where('id',$item->matched_id)
+                    ->select('view_operations_online.id','code','class','type','client_id','user_id','use_escrow_account','amount','currency_id','exchange_rate','comission_spread','comission_amount','igv','spread','operation_status_id','post','operation_date','funds_confirmation_date', 'sign_date', 'mail_instructions', 'invoice_url','unaffected_invoice_url','operations_analyst_id','corfid_id','corfid_message')
+                    ->selectRaw("if(type = 'Interbancaria', round(amount/exchange_rate*(exchange_rate+spread/10000), 2), round(amount * exchange_rate, 2)) as conversion_amount")
+                    ->selectRaw("if(type = 'Compra', round(exchange_rate + comission_spread/10000, 4), if(type = 'Venta', round(exchange_rate - comission_spread/10000, 4), round(exchange_rate + (spread/10000),4))) as final_exchange_rate")
+                    ->selectRaw("if(type = 'Compra', round(round(amount * exchange_rate, 2) + comission_amount + igv, 2), if(type = 'Venta', round(round(amount * exchange_rate, 2) - comission_amount - igv, 2), round(round(amount/exchange_rate*(exchange_rate+spread/10000), 2) + comission_amount + igv, 2)) ) as counter_value")
+                    ->selectRaw("if(type = 'Interbancaria', round(amount/exchange_rate*(exchange_rate+spread/10000), 2) - amount , null ) as financial_expenses")
+                    ->with('operations_analyst.user:id,name,last_name')
+                    ->with('status:id,name')
+                    ->with('client:id,name,last_name,mothers_name,customer_type,type,document_type_id,document_number,executive_id','client.document_type:id,name','client.executive.user:id,name,last_name')
+                    ->with('currency:id,name:sign')
+                    ->with('bank_accounts:id,bank_id,currency_id,account_number,cci_number,account_type_id','bank_accounts.currency:id,name,sign','bank_accounts.bank:id,name,shortname,image')
+                    ->with('escrow_accounts:id,bank_id,currency_id,account_number,cci_number','escrow_accounts.currency:id,name,sign','escrow_accounts.bank:id,name,shortname,image')
+                    ->with('vendor_bank_accounts:id,bank_id,currency_id,client_id,account_number,cci_number,account_type_id','vendor_bank_accounts.bank:id,name,shortname,image')
+                    ->with('documents:id,operation_id,type')
+                    ->first();
+            });
+        
+            $pending_deposits = DB::table('operation_matches')
+                ->select('op1.id as operation_id', 'op2.id as matched_id','op1.code','op1.type','op1.amount','op2.sign_date','op2.deposit_date','eao.deposit_at','bao.amount as client_amount')
+                ->selectRaw("if(cl1.customer_type = 'PJ',cl1.name,concat(cl1.name,' ',cl1.last_name,' ',cl1.mothers_name)) as client_name, cl2.last_name as pl_name")
+                ->selectRaw("eao.amount as expected_amount, ea.account_number, ba.shortname,cu.sign as currency_sign, cu.name as currency_name, concat(us.name, ' ', us.last_name) as analyst")
+                ->selectRaw("if(eao.deposit_at is null, 'Pendiente fondos', if(bao.signed_at is null, '2da firma pendiente', if(bao.signed_at is not null and bao.deposit_at is null,'Depósito en proceso',0))) as deposit_status")
+                ->join('view_operations_online as op1', 'op1.id', "=", "operation_matches.operation_id")
+                ->join('view_operations_online as op2', 'op2.id', "=", "operation_matches.matched_id")
+                ->join('clients as cl1', 'cl1.id', "=", "op1.client_id")
+                ->join('clients as cl2', 'cl2.id', "=", "op2.client_id")
+                ->join('escrow_account_operation as eao', 'eao.operation_id', "=", "op2.id")
+                ->join('escrow_accounts as ea', 'eao.escrow_account_id', "=", "ea.id")
+                ->join('banks as ba', 'ba.id', "=", "ea.bank_id")
+                ->join('currencies as cu', 'cu.id', "=", "ea.currency_id")
+                ->join('users as us', 'us.id', "=", "op1.operations_analyst_id")
+                ->join('bank_account_operation as bao', 'bao.escrow_account_operation_id', "=", "eao.id")
+                ->whereRaw("op1.operation_status_id = 4 and bao.deposit_at is null")
+                ->get();
+        }
+
+            
 
         return response()->json([
             'success' => true,
