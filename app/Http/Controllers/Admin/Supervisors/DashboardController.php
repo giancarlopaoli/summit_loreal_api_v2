@@ -34,14 +34,6 @@ class DashboardController extends Controller
             ->limit(7)
             ->get();
 
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'indicators,' => $indicators,
-                'graphs,' => $graphs,
-            ]
-        ]);
-
         $monthly_indicators = Operation::join("clients","clients.id","=","operations.client_id")
             ->selectRaw("month(deposit_date) as month,year(deposit_date) as year")
             ->selectRaw("sum(amount) as volume, count(amount) as num_operations, round(sum(comission_amount),2) as comissions")
