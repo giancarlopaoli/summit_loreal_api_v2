@@ -447,7 +447,7 @@ class DashboardController extends Controller
                     'volume_cajaarequipa' => $monthly_indicators->pluck('volume_cajaarequipa'),
                     'volume_kallpa' => $monthly_indicators->pluck('volume_kallpa'),
                     'volume_falabella' => $monthly_indicators->pluck('volume_falabella'),
-                    'volume_falabella' => $monthly_indicators->pluck('volume_compartamos')
+                    'volume_compartamos' => $monthly_indicators->pluck('volume_compartamos')
                 ]
             ]
         ]);
