@@ -563,6 +563,10 @@ Route::middleware('encryptresponses')->group(function () {
             ########## dashboard  #############
             Route::prefix('dashboard')->group(function () {
                 Route::GET('', [\App\Http\Controllers\Admin\Supervisors\DashboardController::class, 'dashboard']);
+                Route::GET('indicators', [\App\Http\Controllers\Admin\Supervisors\DashboardController::class, 'dashboard_indicators']);
+                Route::GET('monthly', [\App\Http\Controllers\Admin\Supervisors\DashboardController::class, 'dashboard_monthly']);
+                Route::GET('daily', [\App\Http\Controllers\Admin\Supervisors\DashboardController::class, 'dashboard_daily']);
+                Route::GET('reports', [\App\Http\Controllers\Admin\Supervisors\DashboardController::class, 'dashboard_reports']);
                 Route::GET('sales-progress', [\App\Http\Controllers\Admin\Supervisors\DashboardController::class, 'sales_progress']);
                 Route::GET('executive-summary', [\App\Http\Controllers\Admin\Supervisors\DashboardController::class, 'executive_summary']);
             });
