@@ -202,6 +202,10 @@ Route::middleware('encryptresponses')->group(function () {
         ########## Módulo de Operaciones  #############
         Route::prefix('operations')->middleware('role:operaciones')->group(function () {
             Route::GET('daily-operations', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'daily_operations']);
+            Route::GET('daily-operations-indicators', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'daily_indicators']);
+            Route::GET('daily-operations-deposits', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'pending_deposits']);
+            
+
             Route::GET('detail/{operation}', [\App\Http\Controllers\Clients\MyOperationsController::class, 'operation_detail']);
             Route::GET('vendor-list', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'vendor_list']);
             Route::GET('operation-statuses', [\App\Http\Controllers\Admin\Operations\DailyOperationsController::class, 'operation_statuses']);

@@ -89,30 +89,7 @@ class DailyOperationsController extends Controller
 
         #############################################
 
-
-        $graphs = OperationOnline::
-            selectRaw("day(operation_date) as dia, sum(amount) as amount, count(amount) as num_operations")
-            ->selectRaw("(select sum(amount) from view_operations_online as op2 where month(op2.operation_date) = month(CURRENT_TIMESTAMP) and year(op2.operation_date) = year(CURRENT_TIMESTAMP) and day(op2.operation_date) <= day(view_operations_online.operation_date) and operation_status_id in (" . substr($finalizadas, 1, Str::length($finalizadas)-2) . ") and type in ('Compra','Venta') and op2.client_id not in (select id from clients where type = 'PL')) as accumulated_amount")
-
-            ->selectRaw("(select count(amount) from view_operations_online as op2 where month(op2.operation_date) = month(CURRENT_TIMESTAMP) and year(op2.operation_date) = year(CURRENT_TIMESTAMP) and day(op2.operation_date) <= day(view_operations_online.operation_date) and operation_status_id in (" . substr($finalizadas, 1, Str::length($finalizadas)-2) . ") and type in ('Compra','Venta') and op2.client_id not in (select id from clients where type = 'PL')) as accumulated_num_operations")
-
-            ->whereIn('operation_status_id', $finalizadas)
-            ->whereIn('type', ['Compra', 'Venta'])
-            ->whereNotIn('client_id', Client::where('type','PL')->get()->pluck('id'))
-            ->whereRaw('month(operation_date) = month(CURRENT_TIMESTAMP) and year(operation_date) = year(CURRENT_TIMESTAMP) ')
-            ->groupByRaw("day(operation_date)")
-            ->orderByRaw('day(operation_date)')
-            ->get();
-
         if($daydiff > 33){
-            $indicators = Operation::selectRaw("coalesce(sum(amount),0) as total_amount, count(id) as num_operations")
-                ->selectRaw("(select sum(op1.amount) from operations op1 inner join clients cl on op1.client_id = cl.id where month(op1.operation_date) = $month and year(op1.operation_date) = $year and op1.operation_status_id not in (9,10) and cl.type != 'PL') as monthly_amount")
-                ->selectRaw("(select count(op1.amount) from operations op1 inner join clients cl on op1.client_id = cl.id where month(op1.operation_date) = $month and year(op1.operation_date) = $year and op1.operation_status_id not in (9,10) and cl.type != 'PL') as monthly_operations")
-                ->whereRaw("date(operation_date) = '$date'")
-                ->whereNotIn('client_id', Client::where('type','PL')->get()->pluck('id'))
-                ->whereNotIn('operation_status_id', [9,10])
-                ->get();
-
             $pending_operations = Operation::select('id','code','class','type','client_id','user_id','use_escrow_account','amount','currency_id','exchange_rate','comission_spread','comission_amount','igv','spread','operation_status_id','post','operation_date')
                 ->selectRaw("if(type = 'Interbancaria', round(amount/exchange_rate*(exchange_rate+spread/10000), 2), round(amount * exchange_rate, 2)) as conversion_amount")
                     ->selectRaw("if(type = 'Compra', round(exchange_rate + comission_spread/10000, 4), if(type = 'Venta', round(exchange_rate - comission_spread/10000, 4), round(exchange_rate + (spread/10000),4))) as final_exchange_rate")
@@ -202,34 +179,8 @@ class DailyOperationsController extends Controller
                     ->with('documents:id,operation_id,type')
                     ->first();
             });
-        
-            $pending_deposits = DB::table('operation_matches')
-                ->select('op1.id as operation_id', 'op2.id as matched_id','op1.code','op1.type','op1.amount','op2.sign_date','op2.deposit_date','eao.deposit_at','bao.amount as client_amount')
-                ->selectRaw("if(cl1.customer_type = 'PJ',cl1.name,concat(cl1.name,' ',cl1.last_name,' ',cl1.mothers_name)) as client_name, cl2.last_name as pl_name")
-                ->selectRaw("eao.amount as expected_amount, ea.account_number, ba.shortname,cu.sign as currency_sign, cu.name as currency_name, concat(us.name, ' ', us.last_name) as analyst")
-                ->selectRaw("if(eao.deposit_at is null, 'Pendiente fondos', if(bao.signed_at is null, '2da firma pendiente', if(bao.signed_at is not null and bao.deposit_at is null,'Depósito en proceso',0))) as deposit_status")
-                ->join('operations as op1', 'op1.id', "=", "operation_matches.operation_id")
-                ->join('operations as op2', 'op2.id', "=", "operation_matches.matched_id")
-                ->join('clients as cl1', 'cl1.id', "=", "op1.client_id")
-                ->join('clients as cl2', 'cl2.id', "=", "op2.client_id")
-                ->join('escrow_account_operation as eao', 'eao.operation_id', "=", "op2.id")
-                ->join('escrow_accounts as ea', 'eao.escrow_account_id', "=", "ea.id")
-                ->join('banks as ba', 'ba.id', "=", "ea.bank_id")
-                ->join('currencies as cu', 'cu.id', "=", "ea.currency_id")
-                ->join('users as us', 'us.id', "=", "op1.operations_analyst_id")
-                ->join('bank_account_operation as bao', 'bao.escrow_account_operation_id', "=", "eao.id")
-                ->whereRaw("op1.operation_status_id = 4 and bao.deposit_at is null")
-                ->get();
         }
         else{
-            $indicators = OperationOnline::selectRaw("coalesce(sum(amount),0) as total_amount, count(id) as num_operations")
-                ->selectRaw("(select sum(op1.amount) from view_operations_online op1 inner join clients cl on op1.client_id = cl.id where month(op1.operation_date) = $month and year(op1.operation_date) = $year and op1.operation_status_id not in (9,10) and cl.type != 'PL') as monthly_amount")
-                ->selectRaw("(select count(op1.amount) from view_operations_online op1 inner join clients cl on op1.client_id = cl.id where month(op1.operation_date) = $month and year(op1.operation_date) = $year and op1.operation_status_id not in (9,10) and cl.type != 'PL') as monthly_operations")
-                ->whereRaw("date(operation_date) = '$date'")
-                ->whereNotIn('client_id', Client::where('type','PL')->get()->pluck('id'))
-                ->whereNotIn('operation_status_id', [9,10])
-                ->get();
-
             $pending_operations = OperationOnline::select('id','code','class','type','client_id','user_id','use_escrow_account','amount','currency_id','exchange_rate','comission_spread','comission_amount','igv','spread','operation_status_id','post','operation_date')
                 ->selectRaw("if(type = 'Interbancaria', round(amount/exchange_rate*(exchange_rate+spread/10000), 2), round(amount * exchange_rate, 2)) as conversion_amount")
                     ->selectRaw("if(type = 'Compra', round(exchange_rate + comission_spread/10000, 4), if(type = 'Venta', round(exchange_rate - comission_spread/10000, 4), round(exchange_rate + (spread/10000),4))) as final_exchange_rate")
@@ -319,7 +270,125 @@ class DailyOperationsController extends Controller
                     ->with('documents:id,operation_id,type')
                     ->first();
             });
-        
+        }
+
+            
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'pending_operations' => $pending_operations,
+                'matched_operations' => $matched_operations
+            ]
+        ]);
+
+    }
+
+    public function daily_indicators(Request $request) {
+        $val = Validator::make($request->all(), [
+            'date' => 'date'
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+        ########### Configuration ##################
+
+        $date = isset($request->date) ? $request->date : Carbon::now()->format('Y-m-d');
+        $month = Carbon::now()->month;
+        $year = Carbon::now()->year;
+        $now = Carbon::now();
+        $daydiff = $now->diff($date)->days;
+
+
+        $pendientes = OperationStatus::wherein('name', ['Disponible','Pendiente envio fondos','Pendiente fondos contraparte','Contravalor recaudado','Fondos enviados','Pendiente facturar'])->get()->pluck('id');
+        $finalizadas = OperationStatus::wherein('name', ['Facturado','Finalizado sin factura'])->get()->pluck('id');
+        $todas = OperationStatus::get()->pluck('id');
+
+        #############################################
+
+
+        $graphs = OperationOnline::
+            selectRaw("day(operation_date) as dia, sum(amount) as amount, count(amount) as num_operations")
+            ->selectRaw("(select sum(amount) from view_operations_online as op2 where month(op2.operation_date) = month(CURRENT_TIMESTAMP) and year(op2.operation_date) = year(CURRENT_TIMESTAMP) and day(op2.operation_date) <= day(view_operations_online.operation_date) and operation_status_id in (" . substr($finalizadas, 1, Str::length($finalizadas)-2) . ") and type in ('Compra','Venta') and op2.client_id not in (select id from clients where type = 'PL')) as accumulated_amount")
+
+            ->selectRaw("(select count(amount) from view_operations_online as op2 where month(op2.operation_date) = month(CURRENT_TIMESTAMP) and year(op2.operation_date) = year(CURRENT_TIMESTAMP) and day(op2.operation_date) <= day(view_operations_online.operation_date) and operation_status_id in (" . substr($finalizadas, 1, Str::length($finalizadas)-2) . ") and type in ('Compra','Venta') and op2.client_id not in (select id from clients where type = 'PL')) as accumulated_num_operations")
+
+            ->whereIn('operation_status_id', $finalizadas)
+            ->whereIn('type', ['Compra', 'Venta'])
+            ->whereNotIn('client_id', Client::where('type','PL')->get()->pluck('id'))
+            ->whereRaw('month(operation_date) = month(CURRENT_TIMESTAMP) and year(operation_date) = year(CURRENT_TIMESTAMP) ')
+            ->groupByRaw("day(operation_date)")
+            ->orderByRaw('day(operation_date)')
+            ->get();
+
+        if($daydiff > 33){
+            $indicators = Operation::selectRaw("coalesce(sum(amount),0) as total_amount, count(id) as num_operations")
+                ->selectRaw("(select sum(op1.amount) from operations op1 inner join clients cl on op1.client_id = cl.id where month(op1.operation_date) = $month and year(op1.operation_date) = $year and op1.operation_status_id not in (9,10) and cl.type != 'PL') as monthly_amount")
+                ->selectRaw("(select count(op1.amount) from operations op1 inner join clients cl on op1.client_id = cl.id where month(op1.operation_date) = $month and year(op1.operation_date) = $year and op1.operation_status_id not in (9,10) and cl.type != 'PL') as monthly_operations")
+                ->whereRaw("date(operation_date) = '$date'")
+                ->whereNotIn('client_id', Client::where('type','PL')->get()->pluck('id'))
+                ->whereNotIn('operation_status_id', [9,10])
+                ->get();
+        }
+        else{
+            $indicators = OperationOnline::selectRaw("coalesce(sum(amount),0) as total_amount, count(id) as num_operations")
+                ->selectRaw("(select sum(op1.amount) from view_operations_online op1 inner join clients cl on op1.client_id = cl.id where month(op1.operation_date) = $month and year(op1.operation_date) = $year and op1.operation_status_id not in (9,10) and cl.type != 'PL') as monthly_amount")
+                ->selectRaw("(select count(op1.amount) from view_operations_online op1 inner join clients cl on op1.client_id = cl.id where month(op1.operation_date) = $month and year(op1.operation_date) = $year and op1.operation_status_id not in (9,10) and cl.type != 'PL') as monthly_operations")
+                ->whereRaw("date(operation_date) = '$date'")
+                ->whereNotIn('client_id', Client::where('type','PL')->get()->pluck('id'))
+                ->whereNotIn('operation_status_id', [9,10])
+                ->get();
+        }
+
+            
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'indicators' => $indicators,
+                'graphs' => $graphs
+            ]
+        ]);
+
+    }
+
+    public function pending_deposits(Request $request) {
+        $val = Validator::make($request->all(), [
+            'date' => 'date'
+        ]);
+        if($val->fails()) return response()->json($val->messages());
+
+        ########### Configuration ##################
+
+        $date = isset($request->date) ? $request->date : Carbon::now()->format('Y-m-d');
+        $month = Carbon::now()->month;
+        $year = Carbon::now()->year;
+        $now = Carbon::now();
+        $daydiff = $now->diff($date)->days;
+
+
+        #############################################
+
+
+        if($daydiff > 33){
+            $pending_deposits = DB::table('operation_matches')
+                ->select('op1.id as operation_id', 'op2.id as matched_id','op1.code','op1.type','op1.amount','op2.sign_date','op2.deposit_date','eao.deposit_at','bao.amount as client_amount')
+                ->selectRaw("if(cl1.customer_type = 'PJ',cl1.name,concat(cl1.name,' ',cl1.last_name,' ',cl1.mothers_name)) as client_name, cl2.last_name as pl_name")
+                ->selectRaw("eao.amount as expected_amount, ea.account_number, ba.shortname,cu.sign as currency_sign, cu.name as currency_name, concat(us.name, ' ', us.last_name) as analyst")
+                ->selectRaw("if(eao.deposit_at is null, 'Pendiente fondos', if(bao.signed_at is null, '2da firma pendiente', if(bao.signed_at is not null and bao.deposit_at is null,'Depósito en proceso',0))) as deposit_status")
+                ->join('operations as op1', 'op1.id', "=", "operation_matches.operation_id")
+                ->join('operations as op2', 'op2.id', "=", "operation_matches.matched_id")
+                ->join('clients as cl1', 'cl1.id', "=", "op1.client_id")
+                ->join('clients as cl2', 'cl2.id', "=", "op2.client_id")
+                ->join('escrow_account_operation as eao', 'eao.operation_id', "=", "op2.id")
+                ->join('escrow_accounts as ea', 'eao.escrow_account_id', "=", "ea.id")
+                ->join('banks as ba', 'ba.id', "=", "ea.bank_id")
+                ->join('currencies as cu', 'cu.id', "=", "ea.currency_id")
+                ->join('users as us', 'us.id', "=", "op1.operations_analyst_id")
+                ->join('bank_account_operation as bao', 'bao.escrow_account_operation_id', "=", "eao.id")
+                ->whereRaw("op1.operation_status_id = 4 and bao.deposit_at is null")
+                ->get();
+        }
+        else{        
             $pending_deposits = DB::table('operation_matches')
                 ->select('op1.id as operation_id', 'op2.id as matched_id','op1.code','op1.type','op1.amount','op2.sign_date','op2.deposit_date','eao.deposit_at','bao.amount as client_amount')
                 ->selectRaw("if(cl1.customer_type = 'PJ',cl1.name,concat(cl1.name,' ',cl1.last_name,' ',cl1.mothers_name)) as client_name, cl2.last_name as pl_name")
@@ -344,10 +413,6 @@ class DailyOperationsController extends Controller
         return response()->json([
             'success' => true,
             'data' => [
-                'indicators' => $indicators,
-                'graphs' => $graphs,
-                'pending_operations' => $pending_operations,
-                'matched_operations' => $matched_operations,
                 'pending_deposits' => $pending_deposits
             ]
         ]);
