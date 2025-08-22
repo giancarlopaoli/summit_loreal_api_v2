@@ -56,7 +56,7 @@ class ExecutivesController extends Controller
         $month = (isset($request->month)) ? $request->month : Carbon::now()->month;
         $year = (isset($request->year)) ? $request->year : Carbon::now()->year;
         $executive_id = $executive->id;
-        $itfeffect = '2024-09-01';
+        $itfeffect = '2025-09-01';
 
         $operations = DB::table('operations_view')
             ->select('id','operation_date','client_name','type','amount','comission_spread')

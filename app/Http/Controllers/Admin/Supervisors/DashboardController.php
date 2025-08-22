@@ -541,7 +541,7 @@ class DashboardController extends Controller
     public function sales_progress(Request $request) {
         $month = (isset($request->month)) ? $request->month : Carbon::now()->month;
         $year = (isset($request->year)) ? $request->year : Carbon::now()->year;
-        $itfeffect='2025-08-15';
+        $itfeffect='2025-09-01';
 
         $goal_progress = DB::table('goals_achievement')
             ->select('operation_executive_id','operation_month', 'operation_year','progress','goal','num_operations')
