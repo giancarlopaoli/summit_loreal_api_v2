@@ -461,12 +461,13 @@ class DashboardController extends Controller
             
             ->selectRaw("coalesce((select sum(amount) from view_operations_online op where month(op.deposit_date) = month(view_operations_online.deposit_date) and year(op.deposit_date) = year(view_operations_online.deposit_date) and day(op.deposit_date) <= day(view_operations_online.deposit_date) and op.operation_status_id in (6,7,8) and op.type in ('Compra','Venta') and op.client_id not in (select id from clients where type = 'PL')),0) as accumulated_volume")
 
-            ->selectRaw("coalesce((select sum(amount) from view_operations_online op where month(op.operation_date) = month(view_operations_online.deposit_date) and year(op.operation_date) = year(view_operations_online.deposit_date) and day(op.operation_date) <= day(view_operations_online.deposit_date) and op.operation_status_id in (2,3,4,5) and op.type in ('Compra','Venta') and op.client_id not in (select id from clients where type = 'PL')),0) as volume_in_progress")
+            ->selectRaw("coalesce((select sum(amount) from view_operations_online op where month(op.operation_date) = month(view_operations_online.operation_date) and year(op.operation_date) = year(view_operations_online.operation_date) and day(op.operation_date) <= day(view_operations_online.operation_date) and op.operation_status_id in (2,3,4,5) and op.type in ('Compra','Venta') and op.client_id not in (select id from clients where type = 'PL')),0) as volume_in_progress")
 
             ->selectRaw("( sum(comission_amount)) as comission_amount")
             ->selectRaw("coalesce((select sum(comission_amount) from view_operations_online op where month(op.deposit_date) = month(view_operations_online.deposit_date) and year(op.deposit_date) = year(view_operations_online.deposit_date) and day(op.deposit_date) <= day(view_operations_online.deposit_date) and op.operation_status_id in (6,7,8) and op.type in ('Compra','Venta') and op.client_id not in (select id from clients where type = 'PL')),0) as accumulated_comission")
 
-            ->selectRaw("coalesce((select sum(comission_amount) from view_operations_online op where month(op.operation_date) = month(view_operations_online.deposit_date) and year(op.operation_date) = year(view_operations_online.deposit_date) and day(op.operation_date) <= day(view_operations_online.deposit_date) and op.operation_status_id in (2,3,4,5) and op.type in ('Compra','Venta') and op.client_id not in (select id from clients where type = 'PL')),0) as comission_in_progress")
+            ->selectRaw("coalesce((select sum(comission_amount) from view_operations_online op where month(op.operation_date) = month(view_operations_online.operation_date) and year(op.operation_date) = year(view_operations_online.operation_date) and day(op.operation_date) <= day(view_operations_online.operation_date) and op.operation_status_id in (2,3,4,5) and op.type in ('Compra','Venta') and op.client_id not in (select id from clients where type = 'PL')),0) as comission_in_progress")
+            
             ->selectRaw("( count(amount)) as num_operations")
             ->selectRaw("( count(distinct client_id)) as unique_clients")
 
@@ -540,12 +541,12 @@ class DashboardController extends Controller
     public function sales_progress(Request $request) {
         $month = (isset($request->month)) ? $request->month : Carbon::now()->month;
         $year = (isset($request->year)) ? $request->year : Carbon::now()->year;
-
+        $itfeffect='2025-08-15';
 
         $goal_progress = DB::table('goals_achievement')
             ->select('operation_executive_id','operation_month', 'operation_year','progress','goal','num_operations')
             ->selectRaw(" round(achievement,4) as achievement, if( ((operation_executive_id = 2801 or operation_executive_id = 2811) and $year = 2023),0.05, comission_achieved ) as comission_achieved")
-            ->selectRaw("(select sum(round( ov.comission_amount*ov.executive_comission ,2))  from operations_view ov where ov.executive_id = goals_achievement.operation_executive_id and month(ov.operation_date) = goals_achievement.operation_month and year(ov.operation_date) = goals_achievement.operation_year) as comission_earned")
+            ->selectRaw("(select sum(round( (ov.comission_amount - if(ov.operation_date>='$itfeffect',ov.itf,0))*ov.executive_comission ,2))  from operations_view ov where ov.executive_id = goals_achievement.operation_executive_id and month(ov.operation_date) = goals_achievement.operation_month and year(ov.operation_date) = goals_achievement.operation_year) as comission_earned")
             ->selectRaw("(select concat(name,' ',last_name) from users where users.id = goals_achievement.operation_executive_id) as executive_name")
             ->where('operation_executive_id','!=',null)
             ->whereRaw(" operation_month = $month and operation_year = $year")

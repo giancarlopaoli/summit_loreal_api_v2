@@ -16,6 +16,8 @@ class DashboardController extends Controller
     // Dashboard
     public function dashboard(Request $request) {
 
+        $itfeffect = '2025-09-01';
+
         $executive_id = (isset($request->executive_id)) ? $request->executive_id : auth()->id();
         $year = (isset($request->year)) ? $request->year : Carbon::now()->year;
 
@@ -55,7 +57,9 @@ class DashboardController extends Controller
 
         // Operaciones Mensuales
         $grafico_ventas = DB::table('operations_view')
-            ->selectRaw("year(operation_date) as anio, month(operation_date) as mes, sum(amount) as monto, count(amount) as nro_ops, sum(comission_amount) as comision, count(distinct client_id) as clientes_unicos, sum(round(comission_amount*if(executive_id =$executive_id, executive_comission,0),2)) + sum(round(comission_amount*if(executive2_id =$executive_id, executive2_comission,0),2)) as comision_ejecutivo")
+            ->selectRaw("year(operation_date) as anio, month(operation_date) as mes, sum(amount) as monto, count(amount) as nro_ops, sum(comission_amount) as comision, count(distinct client_id) as clientes_unicos, 
+                sum(round((comission_amount - if(operation_date>='$itfeffect',itf,0))*if(executive_id =$executive_id, executive_comission,0),2)) + sum(round((comission_amount - if(operation_date>='$itfeffect',itf,0))*if(executive2_id =$executive_id, executive2_comission,0),2)) as comision_ejecutivo")
+
             ->selectRaw("sum(if(type = 'Compra', amount,0)) as volumen_compra")
             ->selectRaw("sum(if(type = 'Venta', amount,0)) as volumen_venta")
             ->selectRaw("coalesce((select eg.goal from executive_goals eg where eg.executive_id = $executive_id  and eg.month = mes and eg.year = anio), 0) as meta")
@@ -107,7 +111,7 @@ class DashboardController extends Controller
         $cumplimiento_meta = DB::table('goals_achievement')
             ->select('operation_executive_id as executive_id','operation_month as month', 'operation_year as year','progress as operations_amount','goal')
             ->selectRaw(" round(achievement,4) as goal_achieved, if( ((operation_executive_id = 2801 or operation_executive_id = 2811) and year(CURRENT_TIMESTAMP) = 2023),0.05, comission_achieved ) as comission_achieved")
-            ->selectRaw("(select sum(round( ov.comission_amount*ov.executive_comission ,2)) from operations_view ov where ov.executive_id = goals_achievement.operation_executive_id and month(ov.operation_date) = goals_achievement.operation_month and year(ov.operation_date) = goals_achievement.operation_year) as comission_earned")
+            ->selectRaw("(select sum(round( (ov.comission_amount - if(ov.operation_date>='$itfeffect',ov.itf,0))*ov.executive_comission ,2)) from operations_view ov where ov.executive_id = goals_achievement.operation_executive_id and month(ov.operation_date) = goals_achievement.operation_month and year(ov.operation_date) = goals_achievement.operation_year) as comission_earned")
             ->where('operation_executive_id', $executive_id)
             ->whereRaw(" operation_month = month(CURRENT_TIMESTAMP) and operation_year = year(CURRENT_TIMESTAMP)")
             ->first();

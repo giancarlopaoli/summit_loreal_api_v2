@@ -23,12 +23,15 @@ class ExecutivesController extends Controller
 
         $month = (isset($request->month)) ? $request->month : Carbon::now()->month;
         $year = (isset($request->year)) ? $request->year : Carbon::now()->year;
+        $itfeffect = '2025-09-01';
 
         $executives = Executive::select('id','type','comission','years')
             ->selectRaw("coalesce((select sum(round(ov.amount/if(ov.type='Interbancaria',if(ov.currency_id=1,exchange_rate,1),1),2)) from operations_view ov where (ov.executive_id = executives.id or ov.executive2_id = executives.id) and year(ov.operation_date) = $year and month(ov.operation_date) = $month),0) as volume")
             ->selectRaw("coalesce((select count(ov.amount) from operations_view ov where (ov.executive_id = executives.id or ov.executive2_id = executives.id) and year(ov.operation_date) = $year and month(ov.operation_date) = $month),0) as num_operations")
-            ->selectRaw("coalesce((select sum(round(ov.comission_amount*if(ov.type='Interbancaria',if(ov.currency_id=2,exchange_rate,1),1),2)) from operations_view ov where (ov.executive_id = executives.id or ov.executive2_id = executives.id) and year(ov.operation_date) = $year and month(ov.operation_date) = $month),0) as billex_comission")
-            ->selectRaw("coalesce((select sum(round(ov.comission_amount*if(ov.type='Interbancaria',if(ov.currency_id=2,exchange_rate,1),1)*if(ov.executive_id = executives.id,ov.executive_comission,0),2)) + sum(round(ov.comission_amount*if(ov.type='Interbancaria',if(ov.currency_id=2,exchange_rate,1),1)*if(ov.executive2_id = executives.id,ov.executive2_comission,0),2)) from operations_view ov where (ov.executive_id = executives.id or ov.executive2_id = executives.id) and year(ov.operation_date) = $year and month(ov.operation_date) = $month),0) as executive_comission")
+            ->selectRaw("coalesce((select sum(round((ov.comission_amount - if(ov.operation_date>='$itfeffect',ov.itf,0))*if(ov.type='Interbancaria',if(ov.currency_id=2,exchange_rate,1),1),2)) from operations_view ov where (ov.executive_id = executives.id or ov.executive2_id = executives.id) and year(ov.operation_date) = $year and month(ov.operation_date) = $month),0) as billex_comission")
+
+            ->selectRaw("coalesce((select sum(round((ov.comission_amount - if(ov.operation_date>='$itfeffect',ov.itf,0))*if(ov.type='Interbancaria',if(ov.currency_id=2,exchange_rate,1),1)*if(ov.executive_id = executives.id,ov.executive_comission,0),2)) + sum(round((ov.comission_amount - if(ov.operation_date>='$itfeffect',ov.itf,0))*if(ov.type='Interbancaria',if(ov.currency_id=2,exchange_rate,1),1)*if(ov.executive2_id = executives.id,ov.executive2_comission,0),2)) from operations_view ov where (ov.executive_id = executives.id or ov.executive2_id = executives.id) and year(ov.operation_date) = $year and month(ov.operation_date) = $month),0) as executive_comission")
+
             ->with('user:id,name,last_name,email');
 
         if(!Auth::user()->hasRole('administrador') && !Auth::user()->hasRole('supervisores')) $executives = $executives->where("type", 'Freelance');
@@ -53,14 +56,15 @@ class ExecutivesController extends Controller
         $month = (isset($request->month)) ? $request->month : Carbon::now()->month;
         $year = (isset($request->year)) ? $request->year : Carbon::now()->year;
         $executive_id = $executive->id;
+        $itfeffect = '2024-09-01';
 
         $operations = DB::table('operations_view')
             ->select('id','operation_date','client_name','type','amount','comission_spread')
-            ->selectRaw("(if(type='Interbancaria', round(comission_amount*(if(currency_id=2,exchange_rate,1)),2), comission_amount)) as comission_amount")
+            ->selectRaw("(if(type='Interbancaria', round((comission_amount - if(operation_date>='$itfeffect',itf,0))*(if(currency_id=2,exchange_rate,1)),2), (comission_amount - if(operation_date>='$itfeffect',itf,0)))) as comission_amount")
             ->selectRaw("if(currency_id = 1, 'S/','$') as currency_sign")
             ->selectRaw("round((if(executive_id = $executive_id, executive_comission, 0) + if(executive2_id = $executive_id, executive2_comission, 0))*100,2) as executive_comission_percentage")
             
-            ->selectRaw("round(if(executive_id = $executive_id, executive_comission, 0)*(if(type='Interbancaria', round(comission_amount*(if(currency_id=2,exchange_rate,1)),2), comission_amount)),2) + round(if(executive2_id = $executive_id, executive2_comission, 0)*(if(type='Interbancaria', round(comission_amount*(if(currency_id=2,exchange_rate,1)),2), comission_amount)),2) as executive_comission")
+            ->selectRaw("round(if(executive_id = $executive_id, executive_comission, 0)*(if(type='Interbancaria', round((comission_amount - if(operation_date>='$itfeffect',itf,0))*(if(currency_id=2,exchange_rate,1)),2), (comission_amount - if(operation_date>='$itfeffect',itf,0)))),2) + round(if(executive2_id = $executive_id, executive2_comission, 0)*(if(type='Interbancaria', round((comission_amount - if(operation_date>='$itfeffect',itf,0))*(if(currency_id=2,exchange_rate,1)),2), (comission_amount - if(operation_date>='$itfeffect',itf,0)))),2) as executive_comission")
 
             ->whereRaw("(executive_id = $executive_id or executive2_id = $executive_id)")
             ->whereRaw("year(operation_date) = $year and month(operation_date) = $month")
