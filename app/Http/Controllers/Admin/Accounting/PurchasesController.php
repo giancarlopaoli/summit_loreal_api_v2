@@ -761,8 +761,9 @@ class PurchasesController extends Controller
 
         $amount = round($request->quantity * $request->unit_amount , 2);
         $igv = round($request->quantity * $request->igv, 2);
-        $parsed_issue_date = isset($request->issue_date) ? Carbon::parse($request->issue_date) : null;
-        $parsed_due_date = isset($request->due_date) ? Carbon::parse($request->due_date) : null;
+        $format = "d/m/Y";
+        $parsed_issue_date = isset($request->issue_date) ? Carbon::createFromFormat($format, $request->issue_date) : null;
+        $parsed_due_date = isset($request->due_date) ? Carbon::createFromFormat($format, $request->due_date) : null;
 
         $new_purchase = PurchaseInvoice::create([
             'service_id' => $request->service_id,
