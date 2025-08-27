@@ -760,7 +760,9 @@ class PurchasesController extends Controller
         }
 
         $amount = round($request->quantity * $request->unit_amount , 2);
-        $igv = round($request->quantiy * $request->igv, 2);
+        $igv = round($request->quantity * $request->igv, 2);
+        $parsed_issue_date = isset($request->issue_date) ? Carbon::parse($request->issue_date) : null;
+        $parsed_due_date = isset($request->due_date) ? Carbon::parse($request->due_date) : null;
 
         $new_purchase = PurchaseInvoice::create([
             'service_id' => $request->service_id,
@@ -771,8 +773,8 @@ class PurchasesController extends Controller
             'exchange_rate' => isset($request->exchange_rate) ? $request->exchange_rate : null,
             'serie' => isset($request->serie) ? $request->serie : null,
             'number' => isset($request->number) ? $request->number : null,
-            'issue_date' => $request->issue_date,
-            'due_date' => isset($request->due_date) ? $request->due_date : null,
+            'issue_date' => $parsed_issue_date,
+            'due_date' => $parsed_due_date,
             'service_month' => isset($request->service_month) ? $request->service_month : null,
             'service_year' => isset($request->service_year) ? $request->service_year : null,
             'detraction_type_id' => isset($request->detraction_type_id) ? $request->detraction_type_id : null,
