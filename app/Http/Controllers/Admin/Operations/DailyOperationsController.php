@@ -1238,6 +1238,10 @@ class DailyOperationsController extends Controller
 
             $observation = ($operation->detraction_amount > 0 && $client_type == 'PJ') ? "Monto detracción: " . $currency_detraction . round($operation->detraction_amount,2) : "";
 
+            $total_amount = ($operation->type == 'Venta') ? round($operation->amount * $operation->exchange_rate,2) - $operation->comission_amount - $operation->igv : round($operation->amount * $operation->exchange_rate,2) + $operation->comission_amount + $operation->igv;
+
+            $tcfinal = round(($total_amount)/($operation->amount), 6);
+
             try{
 
                 $data = array(
@@ -1256,7 +1260,7 @@ class DailyOperationsController extends Controller
                     "fecha_de_emision"                  => Carbon::now()->format('d-m-Y'),
                     "fecha_de_vencimiento"              => Carbon::now()->format('d-m-Y'),
                     "moneda"                            => ($operation->type == 'Interbancaria') ? $operation->currency_id : 1,
-                    "tipo_de_cambio"                    => ($operation->type == 'Interbancaria' && $operation->currency_id == 2) ? $operation->exchange_rate : "",
+                    "tipo_de_cambio"                    => ($operation->type == 'Interbancaria' && $operation->currency_id == 2) ? $tcfinal : "",
                     "porcentaje_de_igv"                 => $configurations->get_value('IGV'),
                     "descuento_global"                  => "",
                     "descuento_global"                  => "",
@@ -1298,7 +1302,7 @@ class DailyOperationsController extends Controller
                         array(
                             "unidad_de_medida"          => "ZZ",
                             "codigo"                    => "COMBILL",
-                            "descripcion"               => "SERVICIOS PLATAFORMA BILLEX (" . date("d-m-Y", strtotime($operation->operation_date)) . " - " . strtoupper($operation->type) . " DE " . strtoupper($operation->currency->name) . " " . $operation->currency->sign . $operation->amount . " - TC " . round($operation->exchange_rate,6) . " - " . $operation->code . ")",
+                            "descripcion"               => "SERVICIOS PLATAFORMA BILLEX (" . date("d-m-Y", strtotime($operation->operation_date)) . " - " . strtoupper($operation->type) . " DE " . strtoupper($operation->currency->name) . " " . $operation->currency->sign . $operation->amount . " - TC Final " . round($tcfinal,6) . " - " . $operation->code . ")",
                             "cantidad"                  => "1",
                             "valor_unitario"            => round($operation->comission_amount, 2),
                             "precio_unitario"           => round($operation->comission_amount + $operation->igv, 2),
