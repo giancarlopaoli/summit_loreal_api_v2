@@ -875,16 +875,17 @@ class InmediateOperationController extends Controller
             ]);
         }
 
-        // Validating Comission is no Zero
+        // Validating Comission is not less than minimum specified
+        $mincomission = Configuration::where('shortname', 'MINCOMISSIONSPREAD')->first()->value;
 
-        if($request->comission_spread == 0 && $request->comission_amount == 0){
+        if($request->comission_spread <= $mincomission){
             $allows_comission_zero = Configuration::where('shortname', 'COMIZERO')->first()->value;
             
             if($allows_comission_zero == 0){
                 return response()->json([
                     'success' => false,
                     'errors' => [
-                        'El monto de comisión no puede ser Cero.'
+                        'El spread de comisión debe ser mayor a ' . $mincomission . ' puntos. Solicite aprobación para poder crear esta operación.'
                     ]
                 ]);
             }
