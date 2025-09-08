@@ -374,6 +374,7 @@ class ClientsController extends Controller
     // Eliminar Comision cliente
     public function comissions_indicators(Request $request) {
         $executive_id = (isset($request->executive_id)) ? $request->executive_id : auth()->id();
+        $itfeffect = '2025-09-01';
 
         $indicators = DB::table('operations_view')
             ->selectRaw("sum(if(type = 'Interbancaria', if(currency_id = 1, round(amount/exchange_rate,2) ,amount), amount)) as total_amount, count(amount) as num_operations")
@@ -393,9 +394,12 @@ class ClientsController extends Controller
             ->get();
 
         $monthly_indicators = DB::table('operations_view')
-            ->selectRaw("year(operation_date) as year,month(operation_date) as month, sum(amount) as volume, count(amount) as num_operations, round(sum(comission_amount),2) as billex_comissions, round(sum(if(type='Compra',amount,0)),2) as volume_buying, round(sum(if(type='Venta',amount,0)),2) as volume_selling")
+            ->selectRaw("year(operation_date) as year,month(operation_date) as month, sum(amount) as volume, count(amount) as num_operations, (round(sum(comission_amount),2) - if(operations_view.operation_date>='$itfeffect',operations_view.itf,0)) as billex_comissions, round(sum(if(type='Compra',amount,0)),2) as volume_buying, round(sum(if(type='Venta',amount,0)),2) as volume_selling")
+            
             ->selectRaw("coalesce((select sum(ov.amount) from operations ov where ov.operation_status_id in (1,2,3,4,5) and year(ov.operation_date) = year(operations_view.operation_date) and month(ov.operation_date) = month ),0) as volume_in_progress")
-            ->selectRaw("sum(round(if(type = 'Interbancaria', if(currency_id = 2, round(comission_amount * exchange_rate,2) ,comission_amount), comission_amount) * (if(executive_id = $executive_id,executive_comission,0) + if(executive2_id = $executive_id,executive2_comission,0)),2)) as executive_comissions")
+
+            ->selectRaw("sum(round((if(type = 'Interbancaria', if(currency_id = 2, round(comission_amount * exchange_rate,2) ,comission_amount), comission_amount)- if(operations_view.operation_date>='$itfeffect',operations_view.itf,0)) * (if(executive_id = $executive_id, executive_comission,0) + if(executive2_id = $executive_id,executive2_comission,0)),2)) as executive_comissions")
+
             ->selectRaw("coalesce((select sum(ov.amount) from operations ov where ov.operation_status_id in (1,2,3,4,5) and year(ov.operation_date) = year(operations_view.operation_date) and month(ov.operation_date) = month ),0) as volume_in_progress")
 
             ->selectRaw("(select sum(ov.amount) from operations_view ov where ov.customer_type = 'PJ' and year(ov.operation_date) = year(operations_view.operation_date) and month(ov.operation_date) = month and (ov.executive_id = $executive_id or ov.executive2_id = $executive_id)) as volume_pj")
@@ -413,7 +417,7 @@ class ClientsController extends Controller
         $cumplimiento_meta = DB::table('goals_achievement')
             ->select('operation_executive_id as executive_id','operation_month as month', 'operation_year as year','progress as operations_amount','goal')
             ->selectRaw(" round(achievement,4) as goal_achieved, if( ((operation_executive_id = 2801 or operation_executive_id = 2811) and year(CURRENT_TIMESTAMP) = 2023),0.05, comission_achieved ) as comission_achieved")
-            ->selectRaw("(select sum(round( ov.comission_amount*ov.executive_comission ,2)) from operations_view ov where ov.executive_id = goals_achievement.operation_executive_id and month(ov.operation_date) = goals_achievement.operation_month and year(ov.operation_date) = goals_achievement.operation_year) as comission_earned")
+            ->selectRaw("(select sum(round( (ov.comission_amount - if(ov.operation_date>='$itfeffect',ov.itf,0))*ov.executive_comission ,2)) from operations_view ov where ov.executive_id = goals_achievement.operation_executive_id and month(ov.operation_date) = goals_achievement.operation_month and year(ov.operation_date) = goals_achievement.operation_year) as comission_earned")
             ->where('operation_executive_id', $executive_id)
             ->whereRaw(" operation_month = month(CURRENT_TIMESTAMP) and operation_year = year(CURRENT_TIMESTAMP)")
             ->first();
@@ -421,7 +425,9 @@ class ClientsController extends Controller
         $cumplimiento_meta_mensual = DB::table('goals_achievement')
             ->select('operation_executive_id as executive_id','operation_month as month', 'operation_year as year','progress as operations_amount','goal')
             ->selectRaw(" round(achievement,4) as goal_achieved, if( ((operation_executive_id = 2801 or operation_executive_id = 2811) and year(CURRENT_TIMESTAMP) = 2023),0.05, comission_achieved ) as comission_achieved")
-            ->selectRaw("(select sum(round( ov.comission_amount*ov.executive_comission ,2)) from operations_view ov where ov.executive_id = goals_achievement.operation_executive_id and month(ov.operation_date) = goals_achievement.operation_month and year(ov.operation_date) = goals_achievement.operation_year) as comission_earned")
+            //->selectRaw("(select sum(round( ov.comission_amount*ov.executive_comission ,2)) from operations_view ov where ov.executive_id = goals_achievement.operation_executive_id and month(ov.operation_date) = goals_achievement.operation_month and year(ov.operation_date) = goals_achievement.operation_year) as comission_earned")
+            ->selectRaw("(select sum(round( (ov.comission_amount - if(ov.operation_date>='$itfeffect',ov.itf,0))*ov.executive_comission ,2)) from operations_view ov where ov.executive_id = goals_achievement.operation_executive_id and month(ov.operation_date) = goals_achievement.operation_month and year(ov.operation_date) = goals_achievement.operation_year) as comission_earned")
+
             ->where('operation_executive_id', $executive_id)
             ->whereRaw(" ((operation_year-2000)*12 + operation_month) >= ((year(CURRENT_TIMESTAMP)-2000)*12 + MONTH(CURRENT_TIMESTAMP)-6)")
             ->orderByRaw('operation_year asc, operation_month')
