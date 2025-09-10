@@ -1,18 +1,14 @@
 <?php
 
-namespace App\Http\Controllers\Clients;
+namespace App\Http\Controllers;
 
-use App\Enums\UserStatus;
-use App\Http\Controllers\Controller;
-use App\Models\AccessLog;
 use App\Models\User;
-use App\Models\Client;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\ForgotPassword;
 
@@ -33,52 +29,22 @@ class AuthController extends Controller
 
         $credentials = $request->only('email', 'password');
 
-        if (Auth::attempt(array_merge($credentials, ['status' => UserStatus::Activo]))) {
-
+        if (Auth::attempt(array_merge($credentials, ['type' => function ($query) {
+               $query->where('type', '!=', 'Administrador');
+          }]))) {
             $request->session()->regenerate();
 
             $user = Auth::user();
-            $user->tries = 0;
-            $user->last_active = Carbon::now();
-            $user->save();
-
-            AccessLog::create([
-                'ip' => $request->ip(),
-                'user_id' => $user->id
-            ]);
-
-            $assigned_client = ($user->assigned_client->count() == 0) ? null : $user->assigned_client[0]->only(['id','name','last_name','mothers_name','document_type_id', 'document_number', 'customer_type', "created_at", 'document_type', 'email', 'address']);
 
             return response()->json([
                 'success' => true,
                 'data' => [
                     'token' => $user->createToken("basic")->plainTextToken,
-                    'user' => $user->only(['id','name','last_name','email','document_type_id','document_number','phone','document_type']),
-                    'assigned_client' => $assigned_client
+                    'user' => $user->only(['id','name','email','document_type','document_number','phone','image','type','confirmed']),
                 ]
             ]);
 
-        }
-        elseif ((User::where('email', $request->email)->where('status', 'Bloqueado')->count()>0)) {
-            
-            return response()->json([
-                'errors' => 'Su usuario se encuentra bloqueado. Por favor contacte al administrador.',
-            ], 403);
-        }
-        else {
-            // Add login attempt
-            $user = User::where('email', $credentials['email'])->first();
-            if($user != null) {
-                $user->tries++;
-
-                // Check login attempts exceeds 5
-                if($user->tries >= 5) {
-                    $user->status = UserStatus::Bloqueado;
-                }
-
-                $user->save();
-            }
-
+        } else {
             return response()->json([
                 'errors' => 'Usuario o contraseña incorrectos',
             ], 403);
@@ -127,23 +93,14 @@ class AuthController extends Controller
             $user->save();
 
             //enviando mail
-            $rpta_mail = Mail::send(new ForgotPassword($user->id,$new_password));
+            $rpta_mail = Mail::to($request->email)->send(new ForgotPassword($user->id,$new_password));
         }
-
-        
 
         return response()->json([
             'success' => true,
             'data' => [
                 'Te enviamos un mail con tu nueva contraseña'
             ]
-        ]);
-    }
-
-    public function prueba() {
-
-        return response()->json([
-            'success' => true,
         ]);
     }
 }
