@@ -2,18 +2,15 @@
 
 namespace App\Models;
 
-use App\Enums\ClientUserStatus;
-use Carbon\Carbon;
-use Illuminate\Contracts\Auth\MustVerifyEmail;
+// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
-use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable, HasRoles;
+    use HasApiTokens, HasFactory, Notifiable;
 
     /**
      * The attributes that are mass assignable.
@@ -24,13 +21,16 @@ class User extends Authenticatable
         'name',
         'last_name',
         'email',
-        'phone',
         'password',
-        'status',
-        'document_type_id',
+        'phone',
+        'document_type',
         'document_number',
-        'role_id',
-        'accepts_publicity'
+        'country',
+        'city',
+        'type',
+        'preferences',
+        'accepts_publicity',
+        'confirmed'
     ];
 
     /**
@@ -50,123 +50,30 @@ class User extends Authenticatable
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'password' => 'hashed',
     ];
 
-    protected $connection = 'mysql';
-
-    public function clients() {
-        return $this->belongsToMany(Client::class)->using(ClientUser::class)->select(['id', 'name', 'last_name', 'mothers_name','document_type_id','document_number','phone','email','customer_type','type'])->withPivot("status");
+    public function trips() {
+        return $this->hasMany(Trip::class);
     }
 
-    public function active_clients() {
-        return $this->belongsToMany(Client::class)->using(ClientUser::class)->select(['id', 'name', 'last_name', 'mothers_name','document_type_id','document_number','phone','email','customer_type','type'])->withPivot("status")->wherePivotIn('status', [ClientUserStatus::Asignado, ClientUserStatus::Activo]);
+    public function media() {
+        return $this->hasMany(Media::class);
     }
 
-    public function assigned_client() {
-        return $this->belongsToMany(Client::class)->using(ClientUser::class)->wherePivot('status', ClientUserStatus::Asignado)->latest();
+    public function results() {
+        return $this->hasMany(TriviaResult::class);
     }
 
-    public function quotations() {
-        return $this->hasMany(Quotation::class);
+    public function surveys() {
+        return $this->hasMany(Survey::class);
     }
 
-    public function ibops_ranges() {
-        return $this->hasMany(IbopsRange::class);
+    public function final_surveys() {
+        return $this->hasMany(FinalSurvey::class);
     }
 
-    public function ibops_client_comissions() {
-        return $this->hasMany(IbopsClientComission::class);
-    }
-
-    public function vendor_spreads() {
-        return $this->hasMany(VendorSpread::class);
-    }
-
-    public function operations() {
-        return $this->hasMany(Operation::class);
-    }
-
-    public function operation_histories() {
-        return $this->hasMany(OperationHistory::class);
-    }
-
-    public function executive() {
-        return $this->hasOne(Executive::class);
-    }
-
-    public function operations_analyst() {
-        return $this->hasOne(OperationAnalyst::class);
-    }
-
-    public function logs() {
-        return $this->hasMany(AccessLog::class);
-    }
-
-    public function leads() {
-        return $this->hasMany(Lead::class, "created_by");
-    }
-
-    public function document_type() {
-        return $this->belongsTo(DocumentType::class);
-    }
-
-    public function role() {
-        return $this->belongsTo(Role::class);
-    }
-
-    public function scopeActivityOlderThan($query, $interval)
-    {
-        return $query->where('last_active', '>=', Carbon::now()->subMinutes($interval)->toDateTimeString());
-    }
-
-    public function alerts() {
-        return $this->hasMany(ExchangeRateAlert::class);
-    }
-
-    public function special_exchange_rates_updated() {
-        return $this->hasMany(SpecialExchangeRate::class, "updated_by");
-    }
-
-    public function operations_analyst_logs() {
-        return $this->hasMany(OperationsAnalystLog::class, "created_by");
-    }
-
-    public static function get_authenticated_users() {
-        return self::activityOlderThan(15)->get();
-    }
-
-    public function getFullNameAttribute()
-    {
-        return $this->name . ' ' . $this->last_name;
-    }
-
-
-
-    public function budgets() {
-        return $this->hasMany(Budget::class, "updated_by");
-    }
-
-    public function payrolls() {
-        return $this->hasMany(Payroll::class, "updated_by");
-    }
-
-    public function payroll_contract_created() {
-        return $this->hasMany(PayrollContract::class, "created_by");
-    }
-
-    public function payroll_contract_updated() {
-        return $this->hasMany(PayrollContract::class, "updated_by");
-    }
-
-    public function services() {
-        return $this->hasMany(Service::class, "updated_by");
-    }
-
-    public function refund_bank_accounts() {
-        return $this->hasMany(RefundBankAccount::class);
-    }
-
-    public function sales() {
-        return $this->hasMany(Sale::class, "created_by");
+    public function music_votes() {
+        return $this->hasMany(MusicVote::class);
     }
 }

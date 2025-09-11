@@ -5,7 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Country extends Model
+class Music extends Model
 {
     use HasFactory;
+
+    public function music_votes() {
+        return $this->hasMany(MusicVote::class);
+    }
 }
