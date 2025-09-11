@@ -5,7 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Country extends Model
+class Speaker extends Model
 {
     use HasFactory;
+
+    public function trivia_questions() {
+        return $this->hasMany(TriviaQuestion::class);
+    }
 }

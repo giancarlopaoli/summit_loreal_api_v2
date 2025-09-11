@@ -11,18 +11,16 @@ use Illuminate\Mail\Mailables\Address;
 use Illuminate\Queue\SerializesModels;
 use App\Models\User;
 
-class ForgotPassword extends Mailable
+class RegisterNotification extends Mailable
 {
     use Queueable, SerializesModels;
 
     /**
      * Create a new message instance.
      */
-    public function __construct($user_id, $new_password)
+    public function __construct()
     {
         //
-        $this->user_id = $user_id;
-        $this->new_password = $new_password;
     }
 
     /**
@@ -32,7 +30,7 @@ class ForgotPassword extends Mailable
     {
         return new Envelope(
             from: new Address(env('MAIL_FROM_ADDRESS'), env('MAIL_FROM_NAME')),
-            subject: "L'Oreal Summit | Nueva contraseña",
+            subject: 'Confirmación de registro',
         );
     }
 
@@ -41,14 +39,8 @@ class ForgotPassword extends Mailable
      */
     public function content(): Content
     {
-        $user = User::find($this->user_id);
-        
         return new Content(
-            view: 'forgot_password',
-            with: [
-                'names' => $user->name,
-                'new_password' => $this->new_password
-            ],
+            view: 'register_notification',
         );
     }
 

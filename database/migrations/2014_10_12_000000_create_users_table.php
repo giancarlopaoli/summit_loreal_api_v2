@@ -8,34 +8,32 @@ return new class extends Migration
 {
     /**
      * Run the migrations.
-     *
-     * @return void
      */
-    public function up()
+    public function up(): void
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
-            $table->string('name', 50);
-            $table->string('last_name', 50);
-            $table->string('email', 100)->unique();
-            $table->foreignIdFor(\App\Models\DocumentType::class)->constrained();
-            $table->string('document_number', 15);
+            $table->string('name');
+            $table->string('last_name');
+            $table->string('email')->unique();
+            $table->enum('type', ['Participante', 'Expositor','Administrador']);
             $table->string('phone', 30)->nullable();
-            $table->integer('tries')->default(0);
+            $table->string('country', 30)->nullable();
+            $table->string('city', 50)->nullable();
+            $table->enum('document_type', ['DNI', 'Pasaporte']);
+            $table->string('document_number', 20);
+            $table->string('preferences', 50)->nullable();
             $table->string('password');
-            $table->timestamp('last_active')->nullable();
-            $table->enum('status', \App\Enums\UserStatus::asArray());
             $table->boolean('accepts_publicity')->nullable()->default(false);
+            $table->rememberToken();
             $table->timestamps();
         });
     }
 
     /**
      * Reverse the migrations.
-     *
-     * @return void
      */
-    public function down()
+    public function down(): void
     {
         Schema::dropIfExists('users');
     }
