@@ -15,7 +15,7 @@ class RegisterController extends Controller
 {
     //
     public function register(Request $request) {
-/*        $validator = Validator::make($request->all(), [
+        $validator = Validator::make($request->all(), [
             'name' => 'required|string',
             'last_name' => 'required|string',
             'email' => 'required|unique:users,email',
@@ -54,14 +54,14 @@ class RegisterController extends Controller
             'data' => [
                 'user' => $user
             ]
-        ]);*/
+        ]);
 
-        return response()->json([
+        /*return response()->json([
             'success' => false,
             'data' => [
                 'El evento ha finalizado'
             ]
-        ]);
+        ]);*/
     }
 
     public function countries(Request $request) {
