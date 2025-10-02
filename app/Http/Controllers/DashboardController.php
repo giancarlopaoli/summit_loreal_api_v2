@@ -282,9 +282,16 @@ class DashboardController extends Controller
             try {
                 $s3 = Storage::disk('s3')->putFileAs($path, $file, $filename, 'public');
 
+                /*return response()->json([
+                    'success' => true,
+                    'data' => [
+                        $s3 
+                    ]
+                ]);
+*/
                 $insert = Media::create([
                     'document_type' => $request->type,
-                    'url' => env('AWS_URL').$s3,
+                    'url' => env('AWS_URL').$path."/".$filename,
                     'user_id' => auth()->user()->id
                 ]);
 
