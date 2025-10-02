@@ -9,7 +9,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Mail;
-use App\Mail\RegisterNotification;
+//use App\Mail\RegisterNotification;
 
 class RegisterController extends Controller
 {
@@ -47,7 +47,7 @@ class RegisterController extends Controller
             'accepts_publicity' => $request->accepts_publicity
         ]);
 
-        $rpta_mail = Mail::to($request->email)->bcc('giancarlopaoli@gmail.com')->send(new RegisterNotification());
+        //$rpta_mail = Mail::to($request->email)->bcc('giancarlopaoli@gmail.com')->send(new RegisterNotification());
 
         return response()->json([
             'success' => true,
