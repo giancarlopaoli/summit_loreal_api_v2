@@ -267,6 +267,7 @@ class DashboardController extends Controller
 
         if($request->hasFile('file')){
             $file = $request->file('file');
+            //$path = 'public/loreal/files/'.$request->type;
             $path = 'public/loreal/files/'.$request->type;
 
             try {
@@ -283,7 +284,7 @@ class DashboardController extends Controller
 
                 $insert = Media::create([
                     'document_type' => $request->type,
-                    'url' => $path."/".$filename,
+                    'url' => env('AWS_URL').$s3,
                     'user_id' => auth()->user()->id
                 ]);
 
