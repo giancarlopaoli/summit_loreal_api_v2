@@ -18,6 +18,7 @@ class User extends Authenticatable
      * @var array<int, string>
      */
     protected $fillable = [
+        'id',
         'name',
         'last_name',
         'email',
@@ -30,7 +31,11 @@ class User extends Authenticatable
         'type',
         'preferences',
         'accepts_publicity',
-        'confirmed'
+        'confirmed',
+        'car1',
+        'car2',
+        'car3',
+        'image'
     ];
 
     /**

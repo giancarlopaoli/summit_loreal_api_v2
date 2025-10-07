@@ -22,6 +22,8 @@ Route::prefix('register')->group(function () {
 
     ################# Registro ###############
     Route::POST('', [\App\Http\Controllers\RegisterController::class, 'register']);
+    Route::POST('massive', [\App\Http\Controllers\RegisterController::class, 'massive_register']);
+    Route::POST('image', [\App\Http\Controllers\RegisterController::class, 'image_format']);
     Route::GET('countries', [\App\Http\Controllers\RegisterController::class, 'countries']);
 });
 
@@ -53,6 +55,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::POST('finalsurvey', [\App\Http\Controllers\DashboardController::class, 'survey']);
 
     Route::GET('studies', [\App\Http\Controllers\DashboardController::class, 'get_studies']);
+
+    Route::GET('clima', [\App\Http\Controllers\DashboardController::class, 'get_clima']);
+
 
     ################# Trivia ###############
     Route::prefix('trivia')->group(function () {

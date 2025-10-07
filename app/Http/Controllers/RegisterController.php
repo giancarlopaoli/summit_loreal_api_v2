@@ -9,6 +9,8 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Http;
 //use App\Mail\RegisterNotification;
 
 class RegisterController extends Controller
@@ -62,6 +64,127 @@ class RegisterController extends Controller
                 'El evento ha finalizado'
             ]
         ]);*/
+    }
+
+    public function massive_register(Request $request) {
+        $data = Storage::get('users.json'); 
+        $jsonData = json_decode($data, true);
+
+
+        foreach ($jsonData as $key => $value) {
+            $insert = User::create(
+                $mergedArray = array_merge(
+                    $value, 
+                    [
+                        'password' => Hash::make('password'),
+                        'accepts_publicity' => 1
+                    ]
+                ) 
+            );
+
+            /*return response()->json([
+                //'success' => true,
+                $insert
+            ]);*/
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                $insert
+            ]
+        ]);
+    }
+
+    public function image_format(Request $request) {
+        
+
+        //$user = User::find(21);
+        $users = User::where('id','>=', 200)
+            ->where('id', '<=', 260)
+            ->where('confirmed', 0)
+            ->get();
+
+        foreach ($users as $user) {
+            //$image = Storage::get('1.jpeg'); 
+            //$image = file_get_contents($user->image);
+            $fileurl = $user->image;
+
+            $tmp = explode("/", $fileurl);
+            $size = sizeof($tmp);
+            $fileName = $tmp[$size - 1];
+            
+            //Storage::disk('local')->put("tpm-".$fileName, $image);
+
+            if($fileName != 'logoloreal.jpeg'){
+                $filePath = storage_path('app\\todos\\'.$fileName);
+
+                // Utilizando https://www.ailabtools.com/
+                $consulta = Http::withHeaders([
+                            //'Content-Type' => 'multipart/form-data',
+                            'ailabapi-api-key' => env('API_AILAB_TOKEN')
+                        ])
+                        //->attach('1.jpeg',file_get_contents($user->image))
+                        ->attach('image', file_get_contents($filePath), $fileName)
+                        //->post(env('API_AILAB_URL') . "/api/portrait/effects/portrait-animation", ['type' => 'head']);
+                        ->post("https://www.ailabapi.com/api/portrait/effects/portrait-animation?type=head");
+
+                $rpta_json = json_decode($consulta);
+
+                /*$rpta_json = json_decode('{
+                    "data": {
+                        "image_url": "https://ai-result-rapidapi.ailabtools.com/faceBody/portraitAnimation/2025-10-08/012100-97ea4d3e-1005-ee68-53f5-5b8054aa4cd6-1759857660.png"
+                    },
+                    "error_code": 0,
+                    "error_detail": {
+                        "status_code": 200,
+                        "code": "",
+                        "code_message": "",
+                        "message": ""
+                    },
+                    "log_id": "77496025",
+                    "request_id": "A6697900-DAA5-510F-BF1E-12F51DAD40D1"
+                }');*/
+
+
+                if($rpta_json->error_code != 0){
+                    $user->image_error_code = $rpta_json->error_code;
+                    $user->error_message = $rpta_json->error_msg;
+                    $user->save();
+                }
+                else{
+                    logger('Imagen success: image_format@RegisterController', ["user_id" => $user->id, "rpta_api" => $rpta_json]);
+
+                    if(!is_null($rpta_json->data)){
+                        $image_rslt = file_get_contents($rpta_json->data->image_url);
+                        $filenamerslt = $user->id.".png";
+                        Storage::disk('local')->put('rslt/'.$filenamerslt, $image_rslt);
+
+                        $path = 'public/loreal/images/profilecartoon';
+                        //$s3 = Storage::disk('s3')->putFileAs($path, $image_rslt, $fileName, 'public');
+
+                        $user->image = 'https://signme4.s3.us-east-1.amazonaws.com/public/loreal/images/profilecartoon/'.$filenamerslt;
+                        $user->confirmed = 1;
+                        $user->save();
+                    }
+                    else{
+                        $user->error_message = 'error desconocido';
+                        $user->save();
+
+                        logger('error procesamiento imagen: image_format@RegisterController', ["user_id" => $user->id, "rpta_api" => $rpta_json]);
+                    }
+                }
+            }
+        }
+
+            
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                $rpta_json
+            ]
+        ]);
     }
 
     public function countries(Request $request) {

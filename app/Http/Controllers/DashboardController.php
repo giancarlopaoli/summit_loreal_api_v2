@@ -438,6 +438,19 @@ class DashboardController extends Controller
         ]);
     }
 
+    public function get_clima(Request $request) {
+        $data = Storage::get('clima.json'); 
+       $jsonData = json_decode($data, true);
+
+        return response()->json([
+            'success' => false,
+            'data' => [
+                'clima' => $jsonData
+            ]
+        ]);
+
+    }
+
     public function survey (Request $request) {
         $validator = Validator::make($request->all(), [
             'question_1' => 'required|numeric',
