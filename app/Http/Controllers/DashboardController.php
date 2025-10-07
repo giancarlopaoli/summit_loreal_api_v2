@@ -443,7 +443,7 @@ class DashboardController extends Controller
        $jsonData = json_decode($data, true);
 
         return response()->json([
-            'success' => false,
+            'success' => true,
             'data' => [
                 'clima' => $jsonData
             ]
