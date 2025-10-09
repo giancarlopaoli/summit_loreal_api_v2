@@ -40,7 +40,7 @@ class AuthController extends Controller
                 'success' => true,
                 'data' => [
                     'token' => $user->createToken("basic")->plainTextToken,
-                    'user' => $user->only(['id','name','email','document_type','document_number','phone','image','type','confirmed']),
+                    'user' => $user->only(['id','name','email','document_type','document_number','phone','image','type','confirmed','car1','car2','car3']),
                 ]
             ]);
 

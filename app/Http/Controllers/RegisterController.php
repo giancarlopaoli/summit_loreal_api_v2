@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Http;
-//use App\Mail\RegisterNotification;
+use App\Mail\test;
 
 class RegisterController extends Controller
 {
@@ -100,8 +100,8 @@ class RegisterController extends Controller
         
 
         //$user = User::find(21);
-        $users = User::where('id','>=', 200)
-            ->where('id', '<=', 260)
+        $users = User::where('id','>=', 1)
+            ->where('id', '<=', 10)
             ->where('confirmed', 0)
             ->get();
 
@@ -124,10 +124,9 @@ class RegisterController extends Controller
                             //'Content-Type' => 'multipart/form-data',
                             'ailabapi-api-key' => env('API_AILAB_TOKEN')
                         ])
-                        //->attach('1.jpeg',file_get_contents($user->image))
                         ->attach('image', file_get_contents($filePath), $fileName)
-                        //->post(env('API_AILAB_URL') . "/api/portrait/effects/portrait-animation", ['type' => 'head']);
-                        ->post("https://www.ailabapi.com/api/portrait/effects/portrait-animation?type=head");
+                        //->post("https://www.ailabapi.com/api/portrait/effects/portrait-animation?type=head");
+                        ->post("https://www.ailabapi.com/api/cutout/portrait/avatar-extraction");
 
                 $rpta_json = json_decode($consulta);
 
@@ -156,7 +155,9 @@ class RegisterController extends Controller
                     logger('Imagen success: image_format@RegisterController', ["user_id" => $user->id, "rpta_api" => $rpta_json]);
 
                     if(!is_null($rpta_json->data)){
-                        $image_rslt = file_get_contents($rpta_json->data->image_url);
+                        //$image_rslt = file_get_contents($rpta_json->data->image_url);
+                        $image_rslt = file_get_contents($rpta_json->data->elements[0]->image_url);
+                        
                         $filenamerslt = $user->id.".png";
                         Storage::disk('local')->put('rslt/'.$filenamerslt, $image_rslt);
 
@@ -193,4 +194,16 @@ class RegisterController extends Controller
             'data' => Country::select('id','name','prefix','phone_code')->get()
         ]);
     }
+
+    public function test(Request $request) {
+
+        $rpta_mail = Mail::send(new test());
+
+        return response()->json([
+            'success' => true,
+            'data' => Country::select('id','name','prefix','phone_code')->get()
+        ]);
+    }
+
+
 }
