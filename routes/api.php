@@ -24,8 +24,10 @@ Route::prefix('register')->group(function () {
     Route::POST('', [\App\Http\Controllers\RegisterController::class, 'register']);
     Route::POST('massive', [\App\Http\Controllers\RegisterController::class, 'massive_register']);
     Route::POST('image', [\App\Http\Controllers\RegisterController::class, 'image_format']);
+    Route::POST('image-head', [\App\Http\Controllers\RegisterController::class, 'extract_head']);
+
     Route::GET('countries', [\App\Http\Controllers\RegisterController::class, 'countries']);
-    Route::GET('test', [\App\Http\Controllers\RegisterController::class, 'test']);
+    Route::POST('test', [\App\Http\Controllers\RegisterController::class, 'change_names']);
 });
 
 Route::POST('res/survey', [\App\Http\Controllers\DashboardController::class, 'survey']);

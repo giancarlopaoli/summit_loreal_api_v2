@@ -100,8 +100,8 @@ class RegisterController extends Controller
         
 
         //$user = User::find(21);
-        $users = User::where('id','>=', 1)
-            ->where('id', '<=', 10)
+        $users = User::where('id','>=', 230)
+            ->where('id', '<=', 300)
             ->where('confirmed', 0)
             ->get();
 
@@ -110,14 +110,17 @@ class RegisterController extends Controller
             //$image = file_get_contents($user->image);
             $fileurl = $user->image;
 
-            $tmp = explode("/", $fileurl);
+            /*$tmp = explode("/", $fileurl);
             $size = sizeof($tmp);
-            $fileName = $tmp[$size - 1];
+            $fileName = $tmp[$size - 1];*/
+
+            $fileName = $user->id.".png";
             
             //Storage::disk('local')->put("tpm-".$fileName, $image);
 
             if($fileName != 'logoloreal.jpeg'){
-                $filePath = storage_path('app\\todos\\'.$fileName);
+                //$filePath = storage_path('app\\rslt\\'.$fileName);
+                $filePath = storage_path('app\\rslt\\'.$fileName);
 
                 // Utilizando https://www.ailabtools.com/
                 $consulta = Http::withHeaders([
@@ -125,8 +128,8 @@ class RegisterController extends Controller
                             'ailabapi-api-key' => env('API_AILAB_TOKEN')
                         ])
                         ->attach('image', file_get_contents($filePath), $fileName)
-                        //->post("https://www.ailabapi.com/api/portrait/effects/portrait-animation?type=head");
-                        ->post("https://www.ailabapi.com/api/cutout/portrait/avatar-extraction");
+                        ->post("https://www.ailabapi.com/api/portrait/effects/portrait-animation?type=sketch");
+                        //->post("https://www.ailabapi.com/api/cutout/portrait/avatar-extraction");
 
                 $rpta_json = json_decode($consulta);
 
@@ -155,16 +158,16 @@ class RegisterController extends Controller
                     logger('Imagen success: image_format@RegisterController', ["user_id" => $user->id, "rpta_api" => $rpta_json]);
 
                     if(!is_null($rpta_json->data)){
-                        //$image_rslt = file_get_contents($rpta_json->data->image_url);
-                        $image_rslt = file_get_contents($rpta_json->data->elements[0]->image_url);
+                        $image_rslt = file_get_contents($rpta_json->data->image_url);
+                        //$image_rslt = file_get_contents($rpta_json->data->elements[0]->image_url);
                         
                         $filenamerslt = $user->id.".png";
-                        Storage::disk('local')->put('rslt/'.$filenamerslt, $image_rslt);
+                        Storage::disk('local')->put('rslt-sketch/'.$filenamerslt, $image_rslt);
 
-                        $path = 'public/loreal/images/profilecartoon';
+                        //$path = 'public/loreal/images/profilecartoon';
                         //$s3 = Storage::disk('s3')->putFileAs($path, $image_rslt, $fileName, 'public');
 
-                        $user->image = 'https://signme4.s3.us-east-1.amazonaws.com/public/loreal/images/profilecartoon/'.$filenamerslt;
+                        //$user->image = 'https://signme4.s3.us-east-1.amazonaws.com/public/loreal/images/profilecartoon/'.$filenamerslt;
                         $user->confirmed = 1;
                         $user->save();
                     }
@@ -184,6 +187,125 @@ class RegisterController extends Controller
             'success' => true,
             'data' => [
                 $rpta_json
+            ]
+        ]);
+    }
+
+    public function extract_head(Request $request) {
+        
+
+        $users = User::where('id','>=', 200)
+            ->where('id', '<=', 300)
+            ->where('confirmed', 0)
+            //->whereNotin('id', [3,4,14,20,23,24,35,37])
+            ->get();
+
+        foreach ($users as $user) {
+            //$image = Storage::get('1.jpeg'); 
+            //$image = file_get_contents($user->image);
+            /*$fileurl = $user->image;
+
+            $tmp = explode("/", $fileurl);
+            $size = sizeof($tmp);
+            $fileName = $tmp[$size - 1];*/
+
+            $fileName = $user->id.".jpg";
+            
+            //Storage::disk('local')->put("tpm-".$fileName, $image);
+
+            if($fileName != 'logoloreal.jpeg'){
+                $filePath = storage_path('app\\head-wbg\\'.$fileName);
+
+                // Utilizando https://www.ailabtools.com/
+                $consulta = Http::withHeaders([
+                            //'Content-Type' => 'multipart/form-data',
+                            'ailabapi-api-key' => env('API_AILAB_TOKEN')
+                        ])
+                        ->attach('image', file_get_contents($filePath), $fileName)
+                        //->post("https://www.ailabapi.com/api/portrait/effects/portrait-animation?type=head");
+                        ->post("https://www.ailabapi.com/api/cutout/portrait/portrait-background-removal");
+
+                $rpta_json = json_decode($consulta);
+
+
+                if($rpta_json->error_code != 0){
+                    $user->image_error_code = $rpta_json->error_code;
+                    $user->error_message = $rpta_json->error_msg;
+                    $user->save();
+                }
+                else{
+                    logger('Imagen success: image_format@RegisterController', ["user_id" => $user->id, "rpta_api" => $rpta_json]);
+
+                    if(!is_null($rpta_json->data)){
+                        $image_rslt = file_get_contents($rpta_json->data->image_url);
+                        //$image_rslt = file_get_contents($rpta_json->data->elements[0]->image_url);
+                        
+                        $filenamerslt = $user->id.".png";
+                        Storage::disk('local')->put('rslt/'.$filenamerslt, $image_rslt);
+
+                        $path = 'public/loreal/images/profilecartoon';
+                        //$s3 = Storage::disk('s3')->putFileAs($path, $image_rslt, $fileName, 'public');
+
+                        //$user->image = 'https://signme4.s3.us-east-1.amazonaws.com/public/loreal/images/profilecartoon/'.$filenamerslt;
+                        $user->confirmed = 1;
+                        $user->save();
+                    }
+                    else{
+                        $user->error_message = 'error desconocido';
+                        $user->save();
+
+                        logger('error procesamiento imagen: image_format@RegisterController', ["user_id" => $user->id, "rpta_api" => $rpta_json]);
+                    }
+                }
+            }
+        }
+
+            
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                //$rpta_json
+            ]
+        ]);
+    }
+
+    public function change_names(Request $request) {
+        
+
+        $users = User::where('id','>=', 51)
+            ->where('id', '<=', 300)
+            ->get();
+
+        foreach ($users as $user) {
+            $fileurl = $user->image;
+
+            $tmp = explode("/", $fileurl);
+            $size = sizeof($tmp);
+            $fileName = $tmp[$size - 1];
+
+
+            if($fileName != 'logoloreal.jpeg'){
+
+                $filenamerslt = $user->id.".png";
+
+                $user->image = 'https://signme4.s3.us-east-1.amazonaws.com/public/loreal/images/profilecartoon/'.$filenamerslt;
+                $user->save();
+
+
+                $filePath = storage_path('app\\rslt-sketch\\'.$filenamerslt);
+                $image_rslt = file_get_contents($filePath);
+
+                $filewithname = $user->name." ".$user->last_name." - ".$filenamerslt;
+
+                Storage::disk('local')->put('rslt-names/'.$filewithname, $image_rslt);
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                $fileName
             ]
         ]);
     }

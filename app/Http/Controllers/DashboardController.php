@@ -146,7 +146,7 @@ class DashboardController extends Controller
     public function get_agenda (Request $request) {
         $validator = Validator::make($request->all(), [
             'language' => 'required|in:es,en',
-            'date' => 'required|date',
+            //'date' => 'required|date',
         ]);
 
         if($validator->fails()) {return response()->json(['success' => false,'errors' => $validator->errors()->toJson()]);}
@@ -155,11 +155,16 @@ class DashboardController extends Controller
              'agenda:id,agenda_category_id,start_date,subject_usd as subject' => [
                  'speakers:id,name,agenda_id,specialty_usd as specialty'
              ]
-        ])->whereRaw("start_date = '".$request->date."'")->get() : AgendaCategory::select('agenda_categories.id','name_es as name')->with([
+        ])
+        //->whereRaw("start_date = '".$request->date."'")
+        ->get() 
+        : AgendaCategory::select('agenda_categories.id','name_es as name')->with([
              'agenda:id,agenda_category_id,start_date,subject_pen as subject' => [
                  'speakers:id,name,agenda_id,specialty_pen as specialty'
              ]
-        ])->whereRaw("start_date = '".$request->date."'")->get();
+        ])
+        //->whereRaw("start_date = '".$request->date."'")
+        ->get();
 
         return response()->json([
             'success' => true,
