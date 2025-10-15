@@ -445,12 +445,25 @@ class DashboardController extends Controller
 
     public function get_clima(Request $request) {
         $data = Storage::get('clima.json'); 
-       $jsonData = json_decode($data, true);
+        $jsonData = json_decode($data, true);
 
         return response()->json([
             'success' => true,
             'data' => [
                 'clima' => $jsonData
+            ]
+        ]);
+
+    }
+
+    public function get_transporte(Request $request) {
+        $data = Storage::get('transporte.json'); 
+        $jsonData = json_decode($data, true);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'transport' => $jsonData
             ]
         ]);
 

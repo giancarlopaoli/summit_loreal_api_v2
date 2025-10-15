@@ -60,6 +60,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::GET('studies', [\App\Http\Controllers\DashboardController::class, 'get_studies']);
 
     Route::GET('clima', [\App\Http\Controllers\DashboardController::class, 'get_clima']);
+    Route::GET('transporte', [\App\Http\Controllers\DashboardController::class, 'get_transporte']);
 
 
     ################# Trivia ###############
