@@ -323,8 +323,8 @@ class DashboardController extends Controller
 
     public function get_media(Request $request) {
         $media = array(
-            'photos' => Media::select('id','url')->where('document_type','foto')->get(),
-            'videos' => Media::select('id','url')->where('document_type','video')->get()
+            'photos' => Media::select('id','url','user_id')->where('document_type','foto')->orderByDesc('id')->get(),
+            'videos' => Media::select('id','url','user_id')->where('document_type','video')->orderByDesc('id')->get()
         );
 
         Media::get();
