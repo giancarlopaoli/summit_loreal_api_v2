@@ -20,6 +20,7 @@ use App\Models\Recomendation;
 use App\Models\RecomendationCategory;
 use App\Models\Destiny;
 use App\Models\Connectivity;
+use App\Models\Communication;
 use App\Models\Survey;
 use App\Models\FinalSurvey;
 use Illuminate\Support\Facades\Hash;
@@ -259,6 +260,60 @@ class DashboardController extends Controller
             'success' => true,
             'data' => [
                 'connectivity' => $connectivity
+            ]
+        ]);
+    }
+
+    public function get_communications (Request $request) {
+        $validator = Validator::make($request->all(), [
+            'language' => 'required|in:es,en'
+        ]);
+        
+        if($validator->fails()) {return response()->json(['success' => false,'errors' => $validator->errors()->toJson()]);}
+
+
+        $communications = ($request->language == 'es') ? Communication::select('id','name_es as description')->first() : Communication::select('id','name_en as description')->first();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'communications' => $communications
+            ]
+        ]);
+    }
+
+    public function get_certificate (Request $request) {
+        $validator = Validator::make($request->all(), [
+            'language' => 'required|in:es,en'
+        ]);
+        if($validator->fails()) {return response()->json(['success' => false,'errors' => $validator->errors()->toJson()]);}
+
+        $certificate = Auth::user()->certificate;
+
+        if(is_null($certificate)){
+            if($request->language == 'es'){
+                return response()->json([
+                    'success' => false,
+                    'errors' => [
+                        'El certificado estará disponible al final del evento'
+                    ]
+                ]);
+            }
+            else{
+                return response()->json([
+                    'success' => false,
+                    'errors' => [
+                        'The certificate will be available at the end of the event.'
+                    ]
+                ]);
+            }
+                
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'certificate' => $certificate
             ]
         ]);
     }

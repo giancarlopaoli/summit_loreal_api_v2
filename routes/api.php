@@ -50,6 +50,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::GET('recommendations/{recommendation_category}', [\App\Http\Controllers\DashboardController::class, 'get_recommendations']);
     Route::GET('destinies', [\App\Http\Controllers\DashboardController::class, 'get_destinies']);
     Route::GET('connectivity', [\App\Http\Controllers\DashboardController::class, 'get_connectivity']);
+    Route::GET('communications', [\App\Http\Controllers\DashboardController::class, 'get_communications']);
+    Route::GET('certificate', [\App\Http\Controllers\DashboardController::class, 'get_certificate']);
 
     Route::POST('upload-media', [\App\Http\Controllers\DashboardController::class, 'upload_media']);
     Route::GET('media', [\App\Http\Controllers\DashboardController::class, 'get_media']);
