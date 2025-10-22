@@ -117,7 +117,7 @@ class DashboardController extends Controller
 
         if($validator->fails()) {return response()->json(['success' => false,'errors' => $validator->errors()->toJson()]);}
 
-        $speakers = ($request->language == 'en') ? Speaker::select('id','name','english_description as description','image','document','document2','document3')->get() : Speaker::select('id','name','spanish_description as description','image','document','document2','document3')->get();
+        $speakers = ($request->language == 'en') ? Speaker::select('id','name','english_description as description','country','image','document','document2','document3')->get() : Speaker::select('id','name','spanish_description as description','country','image','document','document2','document3')->get();
 
         return response()->json([
             'success' => true,
@@ -134,7 +134,7 @@ class DashboardController extends Controller
 
         if($validator->fails()) {return response()->json(['success' => false,'errors' => $validator->errors()->toJson()]);}
 
-        $rpta = ($request->language == 'en') ?  Speaker::select('id','name','english_description as description','image','document','document2','document3')->where('id',$speaker->id)->first() : Speaker::select('id','name','spanish_description as description','image','document','document2','document3')->where('id',$speaker->id)->first();
+        $rpta = ($request->language == 'en') ?  Speaker::select('id','name','english_description as description','country','image','document','document2','document3')->where('id',$speaker->id)->first() : Speaker::select('id','name','spanish_description as description','country','image','document','document2','document3')->where('id',$speaker->id)->first();
 
         return response()->json([
             'success' => true,
