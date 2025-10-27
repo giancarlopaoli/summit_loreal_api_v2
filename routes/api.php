@@ -55,6 +55,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::POST('upload-media', [\App\Http\Controllers\DashboardController::class, 'upload_media']);
     Route::GET('media', [\App\Http\Controllers\DashboardController::class, 'get_media']);
+    Route::DELETE('delete-media', [\App\Http\Controllers\DashboardController::class, 'delete_media']);
 
     Route::GET('survey', [\App\Http\Controllers\DashboardController::class, 'save_survey']);
     Route::POST('finalsurvey', [\App\Http\Controllers\DashboardController::class, 'survey']);

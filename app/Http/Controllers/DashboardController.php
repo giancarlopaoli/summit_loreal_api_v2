@@ -392,6 +392,34 @@ class DashboardController extends Controller
         ]);
     }
 
+    public function delete_media(Request $request) {
+        $validator = Validator::make($request->all(), [
+            'media_id' => 'required|exists:media,id'
+        ]);
+
+        if($validator->fails()) {return response()->json(['success' => false,'errors' => $validator->errors()->toJson()]);}
+
+        $media = Media::find($request->media_id);
+
+        if($media->user_id == auth()->user()->id){
+            $media->delete();
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'Elemento eliminado'
+                ]
+            ]);
+        }
+
+        return response()->json([
+            'success' => false,
+            'data' => [
+                'Error al eliminar elemento'
+            ]
+        ]);
+    }
+
     public function save_survey (Request $request) {
         $validator = Validator::make($request->all(), [
             'question_1' => 'required|string',

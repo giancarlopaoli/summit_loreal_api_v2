@@ -70,22 +70,17 @@ class RegisterController extends Controller
         $data = Storage::get('users.json'); 
         $jsonData = json_decode($data, true);
 
-
         foreach ($jsonData as $key => $value) {
             $insert = User::create(
                 $mergedArray = array_merge(
                     $value, 
                     [
-                        'password' => Hash::make('password'),
-                        'accepts_publicity' => 1
+                        'password' => Hash::make('Loreal'),
+                        'accepts_publicity' => 1,
+                        'confirmed' => 1,
                     ]
                 ) 
             );
-
-            /*return response()->json([
-                //'success' => true,
-                $insert
-            ]);*/
         }
 
         return response()->json([
@@ -94,15 +89,18 @@ class RegisterController extends Controller
                 $insert
             ]
         ]);
+
+        //User::where('id', '<=', 1000)->update(['password' => Hash::make('Loreal')]);
     }
 
     public function image_format(Request $request) {
         
 
         //$user = User::find(21);
-        $users = User::where('id','>=', 230)
+        $users = User::where('id','>=', 100)
             ->where('id', '<=', 300)
-            ->where('confirmed', 0)
+            //->where('confirmed', 0)
+            ->whereIn('id', [256,259,260,294])
             ->get();
 
         foreach ($users as $user) {
@@ -120,7 +118,7 @@ class RegisterController extends Controller
 
             if($fileName != 'logoloreal.jpeg'){
                 //$filePath = storage_path('app\\rslt\\'.$fileName);
-                $filePath = storage_path('app\\rslt\\'.$fileName);
+                $filePath = storage_path('app\\rslt_new_v3_bg\\'.$fileName);
 
                 // Utilizando https://www.ailabtools.com/
                 $consulta = Http::withHeaders([
@@ -132,21 +130,6 @@ class RegisterController extends Controller
                         //->post("https://www.ailabapi.com/api/cutout/portrait/avatar-extraction");
 
                 $rpta_json = json_decode($consulta);
-
-                /*$rpta_json = json_decode('{
-                    "data": {
-                        "image_url": "https://ai-result-rapidapi.ailabtools.com/faceBody/portraitAnimation/2025-10-08/012100-97ea4d3e-1005-ee68-53f5-5b8054aa4cd6-1759857660.png"
-                    },
-                    "error_code": 0,
-                    "error_detail": {
-                        "status_code": 200,
-                        "code": "",
-                        "code_message": "",
-                        "message": ""
-                    },
-                    "log_id": "77496025",
-                    "request_id": "A6697900-DAA5-510F-BF1E-12F51DAD40D1"
-                }');*/
 
 
                 if($rpta_json->error_code != 0){
@@ -162,12 +145,15 @@ class RegisterController extends Controller
                         //$image_rslt = file_get_contents($rpta_json->data->elements[0]->image_url);
                         
                         $filenamerslt = $user->id.".png";
-                        Storage::disk('local')->put('rslt-sketch/'.$filenamerslt, $image_rslt);
+                        Storage::disk('local')->put('rslt-newv3-sketch/'.$filenamerslt, $image_rslt);
+
+                        $filewithname = $user->name." ".$user->last_name." - ".$filenamerslt;
+                        Storage::disk('local')->put('rslt-newv3-names/'.$filewithname, $image_rslt);
 
                         //$path = 'public/loreal/images/profilecartoon';
                         //$s3 = Storage::disk('s3')->putFileAs($path, $image_rslt, $fileName, 'public');
 
-                        //$user->image = 'https://signme4.s3.us-east-1.amazonaws.com/public/loreal/images/profilecartoon/'.$filenamerslt;
+                        $user->image = 'https://signme4.s3.us-east-1.amazonaws.com/public/loreal/images/profilecartoon/'.$filenamerslt;
                         $user->confirmed = 1;
                         $user->save();
                     }
@@ -194,17 +180,18 @@ class RegisterController extends Controller
     public function extract_head(Request $request) {
         
 
-        $users = User::where('id','>=', 200)
+        $users = User::where('id','>=', 100)
             ->where('id', '<=', 300)
-            ->where('confirmed', 0)
+            //->where('confirmed', 0)
             //->whereNotin('id', [3,4,14,20,23,24,35,37])
+            ->whereIn('id', [294])
             ->get();
 
         foreach ($users as $user) {
             //$image = Storage::get('1.jpeg'); 
             //$image = file_get_contents($user->image);
-            /*$fileurl = $user->image;
-
+            $fileurl = $user->image;
+            /*
             $tmp = explode("/", $fileurl);
             $size = sizeof($tmp);
             $fileName = $tmp[$size - 1];*/
@@ -214,7 +201,7 @@ class RegisterController extends Controller
             //Storage::disk('local')->put("tpm-".$fileName, $image);
 
             if($fileName != 'logoloreal.jpeg'){
-                $filePath = storage_path('app\\head-wbg\\'.$fileName);
+                $filePath = storage_path('app\\new_v3\\'.$fileName);
 
                 // Utilizando https://www.ailabtools.com/
                 $consulta = Http::withHeaders([
@@ -241,7 +228,7 @@ class RegisterController extends Controller
                         //$image_rslt = file_get_contents($rpta_json->data->elements[0]->image_url);
                         
                         $filenamerslt = $user->id.".png";
-                        Storage::disk('local')->put('rslt/'.$filenamerslt, $image_rslt);
+                        Storage::disk('local')->put('rslt_new_v3_bg/'.$filenamerslt, $image_rslt);
 
                         $path = 'public/loreal/images/profilecartoon';
                         //$s3 = Storage::disk('s3')->putFileAs($path, $image_rslt, $fileName, 'public');
