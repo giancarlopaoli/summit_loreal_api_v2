@@ -5,11 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Connectivity extends Model
+class ConnectivityCategory extends Model
 {
     use HasFactory;
 
-    public function category() {
-        return $this->belongsTo(ConnectivityCategory::class);
+    public function connectivities() {
+        return $this->hasMany(Connectivity::class);
     }
 }

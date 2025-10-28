@@ -20,6 +20,7 @@ use App\Models\Recomendation;
 use App\Models\RecomendationCategory;
 use App\Models\Destiny;
 use App\Models\Connectivity;
+use App\Models\ConnectivityCategory;
 use App\Models\Communication;
 use App\Models\Survey;
 use App\Models\FinalSurvey;
@@ -254,7 +255,9 @@ class DashboardController extends Controller
 
     public function get_connectivity (Request $request) {
 
-        $connectivity = Connectivity::select('id','ssid','password')->get();
+        $connectivity = ConnectivityCategory::select('id','name')
+            ->with('connectivities:id,connectivity_category_id,name,ssid,password')
+            ->get();
 
         return response()->json([
             'success' => true,
