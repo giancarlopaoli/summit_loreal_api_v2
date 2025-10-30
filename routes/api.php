@@ -18,6 +18,9 @@ Route::POST('login', [\App\Http\Controllers\AuthController::class, 'login'])->na
 Route::POST('logout', [\App\Http\Controllers\AuthController::class, 'logout']);
 Route::POST('forgot-password', [\App\Http\Controllers\AuthController::class, 'forgot_password']);
 
+Route::GET('youtubeid', [\App\Http\Controllers\DashboardController::class, 'youtubeid']);
+
+
 Route::prefix('register')->group(function () {
 
     ################# Registro ###############

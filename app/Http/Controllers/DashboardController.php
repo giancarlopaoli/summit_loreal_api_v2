@@ -16,6 +16,7 @@ use App\Models\Study;
 use App\Models\Music;
 use App\Models\MusicVote;
 use App\Models\Trip;
+use App\Models\Configuration;
 use App\Models\Recomendation;
 use App\Models\RecomendationCategory;
 use App\Models\Destiny;
@@ -619,6 +620,18 @@ class DashboardController extends Controller
             'success' => true,
             'data' => [
                 'Encuesta guardada exitosamente'
+            ]
+        ]);
+    }
+
+    public function youtubeid () {
+
+        $youtubeid = Configuration::where('name', 'YOUTUBEID')->first()->value;
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'youtubeid' => $youtubeid
             ]
         ]);
     }
