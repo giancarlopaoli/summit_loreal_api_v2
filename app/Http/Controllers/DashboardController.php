@@ -229,10 +229,18 @@ class DashboardController extends Controller
     }
 
     public function get_recommendations (Request $request, RecomendationCategory $recommendation_category) {
+        $validator = Validator::make($request->all(), [
+            'language' => 'required|in:es,en'
+        ]);
+
+        if($validator->fails()) {return response()->json(['success' => false,'errors' => $validator->errors()->toJson()]);}
+        
+        $recommendations = ($request->language == 'es') ? Recomendation::where('recomendation_category_id', $recommendation_category->id)->select('id','recomendation_category_id','name','address')->get() : Recomendation::where('recomendation_category_id', $recommendation_category->id)->select('id','recomendation_category_id','name_en as name','address_en as address')->get();
+
         return response()->json([
             'success' => true,
             'data' => [
-                'recommendations' => $recommendation_category->recomendations
+                'recommendations' => $recommendations
             ]
         ]);
     }
@@ -255,10 +263,22 @@ class DashboardController extends Controller
     }
 
     public function get_connectivity (Request $request) {
+        $validator = Validator::make($request->all(), [
+            'language' => 'required|in:es,en'
+        ]);
+        
+        if($validator->fails()) {return response()->json(['success' => false,'errors' => $validator->errors()->toJson()]);}
 
-        $connectivity = ConnectivityCategory::select('id','name')
-            ->with('connectivities:id,connectivity_category_id,name,ssid,password')
-            ->get();
+        if($request->language == 'es'){
+            $connectivity = ConnectivityCategory::select('id','name')
+                ->with('connectivities:id,connectivity_category_id,name,ssid,password')
+                ->get();
+        }
+        else{
+            $connectivity = ConnectivityCategory::select('id','name_en as name')
+                ->with('connectivities:id,connectivity_category_id,name,ssid,password_en as password')
+                ->get();
+        }
 
         return response()->json([
             'success' => true,
