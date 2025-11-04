@@ -655,4 +655,14 @@ class DashboardController extends Controller
             ]
         ]);
     }
+
+    public function version () {
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'version' => env('APP_VERSION')
+            ]
+        ]);
+    }
 }

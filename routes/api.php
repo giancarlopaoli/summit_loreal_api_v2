@@ -19,6 +19,7 @@ Route::POST('logout', [\App\Http\Controllers\AuthController::class, 'logout']);
 Route::POST('forgot-password', [\App\Http\Controllers\AuthController::class, 'forgot_password']);
 
 Route::GET('youtubeid', [\App\Http\Controllers\DashboardController::class, 'youtubeid']);
+Route::GET('version', [\App\Http\Controllers\DashboardController::class, 'version']);
 
 
 Route::prefix('register')->group(function () {
