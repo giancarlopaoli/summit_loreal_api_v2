@@ -661,7 +661,8 @@ class DashboardController extends Controller
         return response()->json([
             'success' => true,
             'data' => [
-                'version' => env('APP_VERSION')
+                'android_version' => env('APP_ANDROID_VERSION'),
+                'ios_version' => env('APP_IOS_VERSION')
             ]
         ]);
     }
