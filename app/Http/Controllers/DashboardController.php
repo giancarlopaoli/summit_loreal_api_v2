@@ -312,6 +312,26 @@ class DashboardController extends Controller
         ]);
         if($validator->fails()) {return response()->json(['success' => false,'errors' => $validator->errors()->toJson()]);}
 
+        $show = Configuration::where('name', 'CERTIFICATE')->first()->value;
+        if($show == 0){
+            if($request->language == 'es'){
+                return response()->json([
+                    'success' => false,
+                    'errors' => [
+                        'El certificado estará disponible al final del evento'
+                    ]
+                ]);
+            }
+            else{
+                return response()->json([
+                    'success' => false,
+                    'errors' => [
+                        'The certificate will be available at the end of the event'
+                    ]
+                ]);
+            }
+        }
+
         $certificate = Auth::user()->certificate;
 
         if(is_null($certificate)){
@@ -327,7 +347,7 @@ class DashboardController extends Controller
                 return response()->json([
                     'success' => false,
                     'errors' => [
-                        'The certificate will be available at the end of the event.'
+                        'The certificate will be available at the end of the event'
                     ]
                 ]);
             }
